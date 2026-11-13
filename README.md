@@ -16,6 +16,10 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Roadmap e entregas](docs/roadmap.md)
 - [Arquivos de referência para testes](fixtures/pdfs/README.md)
 
+## Versionamento
+
+A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54).
+
 ## Tecnologias previstas
 
 React, TypeScript e Vite; Spring Boot e Maven; PostgreSQL, Flyway e Spring Data JPA; Spring Security e Spring Session JDBC; Apache PDFBox; GitHub Actions, SonarQube Cloud e Docker Compose.

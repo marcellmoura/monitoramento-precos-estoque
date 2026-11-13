@@ -1,6 +1,6 @@
 # Roadmap do projeto
 
-Atualização: 2026-11-13. Estado: especificação preparada e 53 issues publicadas no Project; Git local inicializado e primeiro incremento documental em andamento na TT-02; implementação pendente.
+Atualização: 2026-11-13. Estado: especificação preparada e 53 issues publicadas no Project; Git local e documentação versionados; primeiro incremento documental publicado pela TT-02; estrutura executável e implementação pendentes.
 
 ## Entregas
 
@@ -38,7 +38,7 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 
 ## Próxima atividade
 
-Revisão inicial da TT-01 realizada: repositório, E0 e stack conferidos, sem impedimento para o versionamento documental. TT-02 iniciada: versionar e enviar a seleção de arquivos técnicos locais; branch `docs/tt-02-documentacao-inicial`, com integração por Pull Request após revisão documental. Conferir a submissão do E0 no Classroom. Versões compatíveis e contratos concretos serão alinhados antes da configuração executável e dos incrementos funcionais dependentes.
+Revisão inicial da TT-01 realizada: repositório, E0 e stack conferidos, sem impedimento para o versionamento documental. Primeiro incremento documental da TT-02 publicado na branch `docs/tt-02-documentacao-inicial`, com [Pull Request #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54) e validação documental registrada. TT-02 permanece aberta para os critérios restantes. Próximo alinhamento técnico: verificar versões estáveis compatíveis e o escopo da estrutura mínima da TT-03, antes de gerar arquivos executáveis. Conferir a submissão do E0 no Classroom. Versões compatíveis e contratos concretos serão alinhados antes da configuração executável e dos incrementos funcionais dependentes.
 
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
 
@@ -60,5 +60,7 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-13 | P2 / publicação concluída | Publicadas 37 histórias e 16 tarefas técnicas, atribuídas a marcellmoura; campos de prioridade, épico, escopo, categoria, estimativa e fase preenchidos | 53 registros exportados e comparados com os arquivos locais, sem divergências; todos em Backlog. Tabela Backlog e Quadro por status; submissão no Classroom pendente. |
 | 2026-11-13 | TT-01 / revisão inicial | Repositório, raiz local, organização do E0 e stack conferidos; primeiro critério atendido; pendências classificadas por incremento | [Registro na issue #38](https://github.com/marcellmoura/monitoramento-precos-estoque/issues/38#issuecomment-6859744791); TT-01 Em andamento e aberta. TT-02 sem bloqueio documental; ainda não iniciada. |
 | 2026-11-13 | TT-02 / início do versionamento | Git inicializado exclusivamente em `Projeto/`, remoto confirmado, base `main` com `.gitignore` e branch documental criada | Seleção de 68 arquivos técnicos auditada; links locais válidos; PDFs originais preservados. Sem configuração executável da aplicação; submissão no Classroom e validação da revisão individual continuam pendentes. |
+
+| 2026-11-13 | TT-02 / publicação documental | Enviados commits da base Git e documentação; Pull Request relacionado à issue #39 | [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); 69 arquivos selecionados; links, originais e diff conferidos. Estado de integração consultável no PR. Critérios de estrutura executável e revisão individual continuam pendentes. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.
