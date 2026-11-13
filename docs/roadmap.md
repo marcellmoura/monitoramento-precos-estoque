@@ -42,12 +42,14 @@ Revisão inicial da TT-01 realizada: repositório, E0 e stack conferidos, sem im
 
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
 
-## Pendências de validação
+## Definições de entrega e pendências atuais
 
-- Aceitação da massa sintética na apresentação ou versões adicionais de referência.
-- Forma de evidenciar revisão de PR no trabalho individual.
-- Detalhes oficiais de submissão/avaliação; metas internas de qualidade já definidas em AP19.
-- Versões numéricas compatíveis e contratos concretos antes dos incrementos dependentes.
+- Revisão individual esclarecida: o responsável abre, confere e aceita o próprio PR.
+- PDFs sintéticos permitidos na apresentação, além dos originais de referência.
+- Classificação A é a orientação relatada; percentuais e demais metas de AP19 são internos ao projeto.
+- E0 será submetido por link do Project na atividade do Classroom; envio ainda não realizado.
+- Permanecem pendentes as versões numéricas compatíveis e os contratos concretos dos incrementos dependentes.
+- TT-02 aguarda apenas a organização dos diretórios frontend/backend na TT-03; revisão individual deixa de ser pendência externa.
 
 ## Histórico de progresso
 
@@ -62,5 +64,7 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-13 | TT-02 / início do versionamento | Git inicializado exclusivamente em `Projeto/`, remoto confirmado, base `main` com `.gitignore` e branch documental criada | Seleção de 68 arquivos técnicos auditada; links locais válidos; PDFs originais preservados. Sem configuração executável da aplicação; submissão no Classroom e validação da revisão individual continuam pendentes. |
 
 | 2026-11-13 | TT-02 / publicação documental | Enviados commits da base Git e documentação; Pull Request relacionado à issue #39 | [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); 69 arquivos selecionados; links, originais e diff conferidos. Estado de integração consultável no PR. Critérios de estrutura executável e revisão individual continuam pendentes. |
+
+| 2026-11-13 | TT-01 / definições de entrega | Esclarecidos revisão individual, uso de PDFs sintéticos, orientação de classificação A e entrega do backlog por link | D01/D11/D12 atualizados com origem e data; removidas as quatro pendências externas. TT-01 segue com detalhamentos técnicos; TT-02 aguarda a estrutura frontend/backend. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

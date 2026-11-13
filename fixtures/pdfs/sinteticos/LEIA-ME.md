@@ -1,6 +1,6 @@
 # Massa de testes de importação
 
-Criada em 2026-11-13. Dados e fornecedores inteiramente fictícios. Não são PDFs do professor nem garantia de aceitação desses arquivos na apresentação da disciplina.
+Criada em 2026-11-13. Dados e fornecedores inteiramente fictícios. São PDFs sintéticos identificados, permitidos na apresentação além dos exemplos do professor, conforme definição registrada em 2026-11-13.
 
 ## Arquivos e sequência
 
@@ -29,6 +29,6 @@ V1 tem quatro linhas; V2 tem seis. Na primeira importação, os itens válidos e
 
 ## Limites
 
-Esta amostra não cobre toda a matriz do projeto: faltam, entre outros, terceiro período com reaparecimento, código repetido entre embalagens, preço ausente, arquivo corrompido, descrições quebradas, tabelas multipágina e documentos digitalizados/OCR. Planejar esses cenários antes das implementações correspondentes. A apresentação com dados sintéticos depende de confirmação do professor; os originais continuam obrigatórios nos testes.
+Esta amostra não cobre toda a matriz do projeto: faltam, entre outros, terceiro período com reaparecimento, código repetido entre embalagens, preço ausente, arquivo corrompido, descrições quebradas, tabelas multipágina e documentos digitalizados/OCR. Planejar esses cenários antes das implementações correspondentes. A apresentação com dados sintéticos é permitida; os originais continuam obrigatórios nos testes.
 
 Arquivos conferidos visualmente e por extração de texto. Nenhum leitor do sistema foi implementado ou validado. Conjunto de referência para validar suporte aos layouts tabela e fichas.

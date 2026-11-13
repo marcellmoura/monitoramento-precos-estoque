@@ -6,7 +6,7 @@ Versão: 2026-11-13. Especificação das regras funcionais, escolhas técnicas e
 
 - Desenvolvimento individual, conta GitHub `marcellmoura`, repositório público `monitoramento-precos-estoque`. [Repositório criado](https://github.com/marcellmoura/monitoramento-precos-estoque), público e inicialmente vazio.
 - Nome do sistema: Monitoramento de Preços, Estoque e Compras. Project público: [AV2 DevOps — Product Backlog](https://github.com/users/marcellmoura/projects/2), com repositório padrão `monitoramento-precos-estoque`.
-- Um repositório com frontend, backend e documentação; main, branches por tarefa, commits pequenos, issues e PRs revisáveis. As entregas são rastreadas por issues e Pull Requests.
+- Um repositório com frontend, backend e documentação; main, branches por tarefa, commits pequenos, issues e PRs revisáveis. No trabalho individual, o próprio responsável abre, confere e aceita o PR; não se exige outro integrante como revisor.
 - Backlog E0: **15/11/2026**, prazo da primeira entrega. Final: **23/11/2026**, data prevista para entrega final. Somente duas datas; sem cronograma diário/intermediário.
 - Revisar especificação, dependências e critérios de aceitação antes de cada incremento. Planejamento não equivale a implementação concluída.
 
@@ -143,7 +143,9 @@ Validar permissão na API e nos campos devolvidos; UI adapta navegação/ações
 
 ## AP19 — Qualidade
 
-Metas internas de qualidade:
+Orientação da disciplina informada em 2026-11-13: obter classificação A no SonarQube. Não foram informados percentuais de cobertura, duplicação ou limites adicionais em aula.
+
+Metas internas de qualidade, mantidas como escolhas do projeto e não exigências adicionais atribuídas ao professor:
 
 - A em segurança, confiabilidade e manutenibilidade, tanto código novo quanto resultado geral da entrega.
 - Cobertura >= 80% no código novo; duplicação <= 3% no código novo.
@@ -154,18 +156,22 @@ Metas internas de qualidade:
 ## AP20 — Ambiente e limites de escopo
 
 - Desenvolvimento/demonstração locais com Compose. Repositório/backlog públicos não significam aplicação ou uploads publicados na internet.
-- Utilizar dados fictícios na demonstração, condicionado à confirmação do professor sobre massa aceita.
+- PDFs sintéticos e dados fictícios são permitidos na demonstração, além dos exemplos fornecidos. Preservar a identificação dos dados sintéticos e testar também os dois originais.
 - Autenticação e perfis compõem o MVP estendido; o núcleo obrigatório permanece rastreado pelos requisitos RF/RNF.
 - Novos layouts e OCR permanecem evoluções. A tecnologia de OCR será avaliada antes dessa etapa; implantação pública da aplicação não faz parte do ambiente local previsto.
 
-## Pendências de validação e execução
+## Definições de entrega — 2026-11-13
 
-Não bloqueiam publicar o backlog, mas devem ser acompanhados:
+- Revisão individual: o responsável abre, confere e aceita o próprio PR. Não há pendência de obter aprovação de outro integrante.
+- Massa de demonstração: PDFs criados para os cenários do projeto são permitidos, além dos originais.
+- Qualidade: classificação A foi a orientação relatada; os limites numéricos de AP19 são metas internas.
+- Backlog E0: enviar o link do GitHub Project na atividade aberta no Classroom. Publicação do link não equivale a submissão realizada.
 
-1. Professor aceita PDFs sintéticos na apresentação ou fornecerá versões sucessivas? Originais preservados e obrigatórios nos testes.
-2. Como evidenciar revisão de PR no trabalho individual, sem fabricar segundo revisor?
-3. Critérios oficiais exatos do A/Quality Gate e detalhes de formato/horário de submissão, além do prazo E0 informado. Metas internas AP19 e data final prevista de 23/11 já definidas.
-4. Antes de configurar, verificar versões compatíveis e registrar números exatos. Antes de cada incremento, detalhar modelos, contratos e interações; alterações de escopo devem ser registradas.
+Origem: informações da disciplina fornecidas pelo responsável pelo projeto em 2026-11-13. Essas definições substituem as quatro dúvidas de validação anteriormente registradas.
+
+## Pendências técnicas por incremento
+
+Antes de configurar, verificar versões compatíveis e registrar números exatos. Antes de cada incremento, detalhar modelos, contratos e interações. Não há pendência externa registrada sobre revisão individual, massa sintética, metas numéricas do SonarQube ou formato de entrega do backlog.
 
 ## Referências técnicas
 
