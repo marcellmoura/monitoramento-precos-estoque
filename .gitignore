@@ -1,0 +1,33 @@
+# Conteúdo versionado na raiz
+/*
+!/.gitignore
+!/README.md
+!/docs/
+!/fixtures/
+!/backend/
+!/frontend/
+!/.github/
+!/compose.yaml
+!/compose.yml
+!/docker-compose.yml
+!/.env.example
+
+# Configuração local, credenciais e arquivos de execução
+**/.env
+**/.env.*
+!**/.env.example
+**/*.local
+**/uploads/
+**/storage/
+**/logs/
+**/*.log
+**/.DS_Store
+
+# Dependências, builds e relatórios
+**/node_modules/
+**/target/
+**/dist/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/.idea/
