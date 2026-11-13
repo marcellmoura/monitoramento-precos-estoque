@@ -132,7 +132,7 @@ Validar permissão na API e nos campos devolvidos; UI adapta navegação/ações
 - Backend: Spring Boot/Maven, Spring Data JPA/Hibernate, PostgreSQL, Flyway, Jakarta Validation/Hibernate Validator, Apache PDFBox.
 - Testes backend: Spring Boot Test/JUnit/Mockito/MockMvc, Testcontainers com PostgreSQL, JaCoCo. Testar também autorização, sessões e exposição indevida de campos.
 - Flyway controla schema; Hibernate valida compatibilidade. Módulos com HTTP, serviços/regras e persistência separados; regras testáveis sem PDF/endpoint.
-- Fixar versões atuais estáveis e mutuamente compatíveis na configuração; não escolher prereleases nem versões isoladas incompatíveis. Números exatos ainda serão verificados, não são ambiente já instalado.
+- Fixar versões atuais estáveis e mutuamente compatíveis na configuração; não escolher prereleases nem versões isoladas incompatíveis. Base numérica aprovada e verificada na TT-03 em 13/11/2026: Temurin 25.0.5+8, Boot 4.1.2, Maven 3.10.0, Node 26.13.1, React 19.3.1, Vite 8.3.8 e TypeScript 6.0.3. Lint com ESLint/typescript-eslint aprovado; TS 6 atende à faixa desse analisador. Versões completas, fontes e validações em [ambiente](ambiente.md). Dependências futuras serão fixadas antes do incremento correspondente.
 
 ## AP18 — API
 
@@ -171,7 +171,7 @@ Origem: informações da disciplina fornecidas pelo responsável pelo projeto em
 
 ## Pendências técnicas por incremento
 
-Antes de configurar, verificar versões compatíveis e registrar números exatos. Antes de cada incremento, detalhar modelos, contratos e interações. Não há pendência externa registrada sobre revisão individual, massa sintética, metas numéricas do SonarQube ou formato de entrega do backlog.
+Base da TT-03 fixada e validada; consultar [ambiente](ambiente.md). Verificar versões das dependências restantes antes de configurá-las. Antes de cada incremento, detalhar modelos, contratos e interações. Não há pendência externa registrada sobre revisão individual, massa sintética, metas numéricas do SonarQube ou formato de entrega do backlog.
 
 ## Referências técnicas
 

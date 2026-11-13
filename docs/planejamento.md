@@ -1,6 +1,6 @@
 # Planejamento funcional e técnico
 
-Versão: 2026-11-13. Estado: especificação documentada; implementação pendente.
+Versão: 2026-11-13. Estado: especificação documentada e estrutura mínima com builds/testes locais; funcionalidades pendentes.
 
 ## 1. Objetivo e referências
 
@@ -128,7 +128,7 @@ O schema SQL será detalhado nas migrations. AP09 definiu que preço de compra i
 
 ### Ferramentas e propósito
 
-Ver AP16/AP17 em [decisoes.md](decisoes.md). Bibliotecas: versões numéricas compatíveis serão fixadas antes da configuração, sem prereleases.
+Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em [ambiente](ambiente.md); dependências das próximas etapas serão fixadas antes de sua configuração, sem prereleases.
 
 | Área | Escolha aprovada |
 |---|---|
@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Bibliotecas: versões numéricas co
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: dependências e configuração executável ainda não instaladas. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF, CI/SonarQube e containers pendentes. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 
@@ -204,7 +204,7 @@ A massa sintética contém fornecedores fictícios com duas versões, cenários 
 | D01 | Backlog 15/11/2026 via link do Project na atividade do Classroom; final prevista 23/11/2026; responsável abre, confere e aceita o próprio PR no trabalho individual |
 | D02 | Repositório público marcellmoura/monitoramento-precos-estoque; Project AV2 DevOps — Product Backlog |
 | D03 | Frontend e testes definidos em AP17 |
-| D04 | Verificar/fixar versões estáveis e compatíveis na configuração |
+| D04 | Base TT-03 fixada/validada em ambiente.md; dependências futuras verificadas por incremento |
 | D05 | Configuração de colunas/modalidade em AP04; escolha comercial confirmada na importação |
 | D06 | Associação e reutilização em AP05 |
 | D07 | Parcial/correção/duplicidade em AP06/AP07/AP10 |
@@ -235,3 +235,7 @@ D01/D11/D12 esclarecidos pelo responsável pelo projeto: revisão e aceite do pr
 6. Executar serviços por Docker Compose e consultar logs de importação.
 
 Validar também autenticação/perfis, extensões do MVP e metas internas de qualidade. Evoluções têm validação integrada em P14. Evidências devem corresponder a commits, execuções e entregas reais.
+
+### Estrutura inicial — 2026-11-13
+
+TT-03: versões compatíveis aprovadas, frontend/backend criados e builds/testes locais verificados. Evidências e limites de cobertura em [ambiente](ambiente.md). Sem implementação funcional. E0 observado como Entregue no Classroom, com links do Project e repositório. Próximo alinhamento: configuração incremental de persistência e CI/qualidade.

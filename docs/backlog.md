@@ -10,7 +10,7 @@ US significa User Story (história de usuário); TT significa tarefa técnica. R
 
 Cada link abre a especificação de uma história ou tarefa. A coluna Issue GitHub contém os links verificados das 53 issues publicadas. Manter status e conteúdo consistentes entre issues e documentos.
 
-Prioridades e sequência representam o planejamento de execução. Alta não significa que a tarefa pode começar sem dependências. Estimativas ficam **A definir**, sem pontos/prazos inventados. Todos os itens começam em **Backlog**, sem funcionalidades concluídas. Situação atual: **TT-01 e TT-02 em Em andamento**; os outros 51 itens continuam em Backlog.
+Prioridades e sequência representam o planejamento de execução. Alta não significa que a tarefa pode começar sem dependências. Estimativas ficam **A definir**, sem pontos/prazos inventados. Todos os itens começam em **Backlog**, sem funcionalidades concluídas. Situação atual: **TT-01 em Em andamento; TT-02 e TT-03 com critérios atendidos**, integração rastreada no PR da estrutura mínima; os outros 50 itens continuam em Backlog.
 
 ## Escopos
 
@@ -163,7 +163,7 @@ As regras de negócio, arquitetura, acesso e qualidade estão em [decisoes.md](d
 
 O backlog contém 37 histórias e 16 tarefas técnicas. Todos os itens de implementação permanecem em Backlog. A avaliação de OCR não faz parte do suporte textual inicial.
 
-Pendências externas: aceitação da massa sintética na apresentação, forma de evidenciar revisão em trabalho individual e detalhes oficiais da avaliação e submissão. Versões compatíveis e contratos executáveis serão fixados na configuração dos incrementos.
+Revisão individual, massa sintética, orientação de qualidade e submissão esclarecidas em decisoes.md. Base compatível fixada na TT-03; contratos/modelos e dependências futuras serão detalhados nos incrementos correspondentes. E0 observado como Entregue no Classroom em 13/11/2026. Cobertura frontend inicial 70,58% ainda abaixo da meta; CI/SonarQube não executados.
 
 O escopo não inclui processamento de pagamentos, pedidos de compra ou registro de vendas. A aplicação apoia decisões de estoque, compras e precificação a partir dos dados importados.
 
@@ -174,6 +174,6 @@ Consultar [documentação de Projects](https://docs.github.com/en/issues/plannin
 ## Publicação verificada
 
 - [Tabela Backlog](https://github.com/users/marcellmoura/projects/2/views/1) e [Quadro por status](https://github.com/users/marcellmoura/projects/2/views/2).
-- 37 histórias de usuário e 16 tarefas técnicas; na publicação inicial, todos em Backlog e atribuídos a `marcellmoura`. TT-01 passou para Em andamento durante a revisão inicial; TT-02, ao iniciar o versionamento. Ambas permanecem abertas.
+- 37 histórias de usuário e 16 tarefas técnicas; na publicação inicial, todos em Backlog e atribuídos a `marcellmoura`. TT-01 passou para Em andamento durante a revisão inicial; TT-02, ao iniciar o versionamento. TT-02/TT-03 têm critérios atendidos pela estrutura mínima e builds verificados; TT-01 permanece aberta para decisões incrementais.
 - Prioridade, épico, escopo, categoria, estimativa e fase conferidos contra as especificações locais em 2026-11-13. Estimativas permanecem A definir.
 - Publicação do backlog não equivale a funcionalidades implementadas nem a submissão no Classroom.
