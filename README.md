@@ -19,7 +19,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 
 ## Versionamento
 
-A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54).
+A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); a estrutura executável está em revisão no [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56).
 
 ## Execução inicial
 
