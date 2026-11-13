@@ -1,0 +1,190 @@
+[
+  {
+    "arquivo": "tabela-v1.pdf",
+    "fornecedor_ficticio": "Serra Verde",
+    "versao": 1,
+    "linhas": [
+      {
+        "codigo": "H01",
+        "descricao": "Hibisco",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "33,00"
+      },
+      {
+        "codigo": "A01",
+        "descricao": "Alecrim",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "15,00"
+      },
+      {
+        "codigo": "C01",
+        "descricao": "Camomila",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "38,00"
+      },
+      {
+        "codigo": "E01",
+        "descricao": "Erva-doce",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "22,00"
+      }
+    ]
+  },
+  {
+    "arquivo": "tabela-v2.pdf",
+    "fornecedor_ficticio": "Serra Verde",
+    "versao": 2,
+    "linhas": [
+      {
+        "codigo": "H01",
+        "descricao": "Hibisco",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "35,00"
+      },
+      {
+        "codigo": "A01",
+        "descricao": "Alecrim",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "14,00"
+      },
+      {
+        "codigo": "C01",
+        "descricao": "Camomila",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "38,00"
+      },
+      {
+        "codigo": "M01",
+        "descricao": "Melissa",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "20,00"
+      },
+      {
+        "codigo": "Z01",
+        "descricao": "Boldo",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "0,00"
+      },
+      {
+        "codigo": "X01",
+        "descricao": "Mistura sem identificação",
+        "unidade": "UN",
+        "apresentacao": "Não informada",
+        "quantidade": 1,
+        "preco_brl": "18,00"
+      }
+    ]
+  },
+  {
+    "arquivo": "fichas-v1.pdf",
+    "fornecedor_ficticio": "Raiz Natural",
+    "versao": 1,
+    "linhas": [
+      {
+        "codigo": "H01",
+        "descricao": "Hibisco",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "33,00"
+      },
+      {
+        "codigo": "A01",
+        "descricao": "Alecrim",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "15,00"
+      },
+      {
+        "codigo": "C01",
+        "descricao": "Camomila",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "38,00"
+      },
+      {
+        "codigo": "E01",
+        "descricao": "Erva-doce",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "22,00"
+      }
+    ]
+  },
+  {
+    "arquivo": "fichas-v2.pdf",
+    "fornecedor_ficticio": "Raiz Natural",
+    "versao": 2,
+    "linhas": [
+      {
+        "codigo": "H01",
+        "descricao": "Hibisco",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "35,00"
+      },
+      {
+        "codigo": "A01",
+        "descricao": "Alecrim",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "14,00"
+      },
+      {
+        "codigo": "C01",
+        "descricao": "Camomila",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "38,00"
+      },
+      {
+        "codigo": "M01",
+        "descricao": "Melissa",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "20,00"
+      },
+      {
+        "codigo": "Z01",
+        "descricao": "Boldo",
+        "unidade": "KG",
+        "apresentacao": "Saco de 1 kg",
+        "quantidade": 1,
+        "preco_brl": "0,00"
+      },
+      {
+        "codigo": "X01",
+        "descricao": "Mistura sem identificação",
+        "unidade": "UN",
+        "apresentacao": "Não informada",
+        "quantidade": 1,
+        "preco_brl": "18,00"
+      }
+    ]
+  }
+]

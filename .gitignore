@@ -1,6 +1,7 @@
 # Conteúdo versionado na raiz
 /*
 !/.gitignore
+!/.gitattributes
 !/README.md
 !/docs/
 !/fixtures/
