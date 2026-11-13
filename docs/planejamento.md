@@ -201,7 +201,7 @@ A massa sintética contém fornecedores fictícios com duas versões, cenários 
 
 | ID | Situação |
 |---|---|
-| D01 | Entregas: backlog 15/11/2026 e final prevista 23/11/2026; detalhes de submissão e revisão individual a confirmar |
+| D01 | Backlog 15/11/2026 via link do Project na atividade do Classroom; final prevista 23/11/2026; responsável abre, confere e aceita o próprio PR no trabalho individual |
 | D02 | Repositório público marcellmoura/monitoramento-precos-estoque; Project AV2 DevOps — Product Backlog |
 | D03 | Frontend e testes definidos em AP17 |
 | D04 | Verificar/fixar versões estáveis e compatíveis na configuração |
@@ -211,8 +211,8 @@ A massa sintética contém fornecedores fictícios com duas versões, cenários 
 | D08 | Cadastro, fornecedor e unidades em AP01–AP03 |
 | D09 | Cronologia/cálculos em AP08/AP09; detalhar interações de desempate e alteração controlada de unidade |
 | D10 | Referência interna/estoque manual em AP09 |
-| D11 | Metas internas AP19; detalhe oficial da avaliação a confirmar |
-| D12 | Confirmar aceitação da massa sintética na apresentação ou obter versões adicionais |
+| D11 | Orientação relatada: classificação A no SonarQube; limites numéricos de AP19 são metas internas |
+| D12 | PDFs sintéticos permitidos na apresentação, além dos originais preservados |
 | D13 | Bibliotecas em AP16/AP17; OCR ainda em avaliação |
 | D14 | Reposição, margem e indicadores em AP12–AP14 |
 | D15 | Upload/armazenamento, perfis/sessões e API em AP11/AP15–AP18; detalhar contratos e parâmetros operacionais por incremento |
@@ -220,6 +220,10 @@ A massa sintética contém fornecedores fictícios com duas versões, cenários 
 ### Revisão inicial da TT-01 — 2026-11-13
 
 Identificação do repositório, organização do E0 e stack verificadas; primeiro critério de TT-01 atendido. Pendências D01/D04/D11/D12 e detalhamentos executáveis de D05–D10/D15 permanecem acompanhados por incremento; não impedem o versionamento documental da TT-02. Nenhuma regra, tecnologia ou funcionalidade nova foi definida nesta revisão. Evidência e classificação das pendências em [TT-01](backlog/TT-01.md).
+
+### Atualização das definições de entrega — 2026-11-13
+
+D01/D11/D12 esclarecidos pelo responsável pelo projeto: revisão e aceite do próprio PR no trabalho individual; PDFs sintéticos permitidos; orientação de classificação A sem percentuais adicionais informados; backlog entregue por link na atividade do Classroom. Essas quatro dúvidas deixam de ser pendências externas. Permanecem as definições técnicas dos incrementos, incluindo versões, modelo e contratos. As metas internas AP19 permanecem identificadas separadamente.
 
 ## 13. Aceitação final
 
