@@ -1,6 +1,6 @@
 # Roadmap do projeto
 
-Atualização: 2026-11-13. Estado: especificação preparada e 53 issues publicadas no Project; Git local e documentação versionados; primeiro incremento documental publicado pela TT-02; estrutura executável e implementação pendentes.
+Atualização: 2026-11-13. Estado: 53 issues publicadas; estrutura mínima React/Spring Boot com builds/testes locais verificados; funcionalidades, banco, CI/SonarQube e containers pendentes.
 
 ## Entregas
 
@@ -17,8 +17,8 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 |---|---|---|---|---|---|
 | P0 / preparação | Inventariar requisitos e preparar documentação técnica | Concluída | Documento da disciplina | RF/RNF mapeados, fontes conferidas e regras documentadas | Planejamento, decisões técnicas e roadmap |
 | P1 / alinhamento | Revisar e aprovar escopo, forma de trabalho e decisões iniciais | Concluída | P0 | Especificação funcional/técnica e controle de escopo registrados; versões verificadas antes da configuração | AP01–AP20; validações externas e detalhes executáveis por incremento |
-| P2 / E0 | Detalhar histórias de usuário e priorizar Product Backlog | Concluída | P1 e definição do formato da entrega | RF01–RF10 cobertos por histórias com ator, objetivo, benefício e critérios testáveis; prioridade, épico e escopo identificados; tarefas DevOps rastreáveis; MVP separado das evoluções; estimativas definidas ou explicitamente a definir | [Project público](https://github.com/users/marcellmoura/projects/2) com 53 issues (37 US/16 TT); campos e vínculos verificados; links em `docs/backlog.md`. Submissão no Classroom pendente |
-| P3 / E1 | Configurar Git/GitHub e estrutura técnica mínima | Em andamento | P1, P2 e aprovação da stack/versões | Raiz e visibilidade definidas; estrutura frontend/backend, wrappers/lockfile, README inicial e exemplo de ambiente; build local reproduzível; branch/PR com revisão; nenhuma regra funcional fora do incremento definido | Repositório, PR e instruções de build verificadas |
+| P2 / E0 | Detalhar histórias de usuário e priorizar Product Backlog | Concluída | P1 e definição do formato da entrega | RF01–RF10 cobertos por histórias com ator, objetivo, benefício e critérios testáveis; prioridade, épico e escopo identificados; tarefas DevOps rastreáveis; MVP separado das evoluções; estimativas definidas ou explicitamente a definir | [Project público](https://github.com/users/marcellmoura/projects/2) com 53 issues (37 US/16 TT); campos e vínculos verificados; links em `docs/backlog.md`. E0 observado como Entregue no Classroom em 13/11/2026 |
+| P3 / E1 | Configurar Git/GitHub e estrutura técnica mínima | Em revisão | P1, P2 e aprovação da stack/versões | Raiz e visibilidade definidas; estrutura frontend/backend, wrappers/lockfile, README inicial e exemplo de ambiente; build local reproduzível; branch/PR com revisão; nenhuma regra funcional fora do incremento definido | TT-02/TT-03; backend/frontend, Wrapper, lockfile e ambiente.md; builds e testes locais aprovados; integração pendente no [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56) |
 | P4 / E1–E3 | Estabelecer CI e análise SonarQube desde o início | Pendente | P3; contas/chaves; metas internas AP19 definidas | Actions executa build/testes em push/PR definidos; falhas reprovam; análise via CI com secret; configuração do scanner coerente; resultado e Quality Gate inspecionados; limitações iniciais registradas | Workflow, execução de CI e análise vinculada ao commit; eventual `Not computed` permanece pendência |
 | P3a / MVP adicional | Usuários, autenticação e autorização | Pendente | P3, P4 | US-29–US-34; perfis/filtragem, primeiro acesso/reset, sessões 30min/revogação/CSRF, bootstrap sem senha pública; testes incrementais TT-14 e autoria TT-16 | Matriz AP15/AP16 testada na API e frontend; implementação pendente |
 | P5 / E1 | Implementar cadastros e dados básicos de estoque | Pendente | P3a; AP01–AP03 definidos | Cadastrar/consultar/editar produto (RF01), cadastrar/consultar fornecedor (RF02), dados de estoque/preços/status; validações e testes HTTP/domínio/persistência; fluxo frontend/API definido | Histórias aceitas, testes e PR revisado |
@@ -38,8 +38,11 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 
 ## Próxima atividade
 
-Revisão inicial da TT-01 realizada: repositório, E0 e stack conferidos, sem impedimento para o versionamento documental. Primeiro incremento documental da TT-02 publicado na branch `docs/tt-02-documentacao-inicial`, com [Pull Request #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54) e validação documental registrada. TT-02 permanece aberta para os critérios restantes. Próximo alinhamento técnico: verificar versões estáveis compatíveis e o escopo da estrutura mínima da TT-03, antes de gerar arquivos executáveis. Conferir a submissão do E0 no Classroom. Versões compatíveis e contratos concretos serão alinhados antes da configuração executável e dos incrementos funcionais dependentes.
+TT-02 e TT-03 em revisão no [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56), com critérios técnicos atendidos. Falta conferência e merge pelo responsável; não encerrar as issues antes da integração. Consultar [ambiente](ambiente.md) para comandos e evidências. TT-01 permanece transversal, com contratos/modelos detalhados antes de cada incremento.
 
+Próximo alinhamento proposto: **P4, CI inicial (TT-06) e preparação de qualidade (TT-07/TT-08)**. Definir eventos/branches, jobs e execução de testes; depois tratar conexão/credencial do SonarQube e meta de cobertura ainda não atingida no frontend. TT-06/TT-07 permanecem abertas até seus próprios critérios. Banco/migrations da TT-04 dependem de alinhamento próprio. Nenhuma dessas etapas começou automaticamente.
+
+E0 observado como **Entregue** no Classroom em 13/11/2026, com os links do Project e repositório anexados.
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
 
 ## Definições de entrega e pendências atuais
@@ -47,9 +50,9 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 - Revisão individual esclarecida: o responsável abre, confere e aceita o próprio PR.
 - PDFs sintéticos permitidos na apresentação, além dos originais de referência.
 - Classificação A é a orientação relatada; percentuais e demais metas de AP19 são internos ao projeto.
-- E0 será submetido por link do Project na atividade do Classroom; envio ainda não realizado.
-- Permanecem pendentes as versões numéricas compatíveis e os contratos concretos dos incrementos dependentes.
-- TT-02 aguarda apenas a organização dos diretórios frontend/backend na TT-03; revisão individual deixa de ser pendência externa.
+- E0 observado como Entregue no Classroom em 13/11/2026, com links do Project e repositório.
+- Base numérica TT-03 aprovada e validada; contratos/modelos e dependências futuras serão detalhados por incremento.
+- TT-02: frontend/backend/docs organizados no mesmo repositório; revisão individual definida. TT-03: builds/testes locais verificados. CI/SonarQube não executados; cobertura unitária frontend 70,58% permanece abaixo da meta interna.
 
 ## Histórico de progresso
 
@@ -66,5 +69,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-13 | TT-02 / publicação documental | Enviados commits da base Git e documentação; Pull Request relacionado à issue #39 | [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); 69 arquivos selecionados; links, originais e diff conferidos. Estado de integração consultável no PR. Critérios de estrutura executável e revisão individual continuam pendentes. |
 
 | 2026-11-13 | TT-01 / definições de entrega | Esclarecidos revisão individual, uso de PDFs sintéticos, orientação de classificação A e entrega do backlog por link | D01/D11/D12 atualizados com origem e data; removidas as quatro pendências externas. TT-01 segue com detalhamentos técnicos; TT-02 aguarda a estrutura frontend/backend. |
+
+| 2026-11-13 | TT-03 / análise prévia | Inventariadas ferramentas locais e consultadas versões estáveis, requisitos e gerenciamento de dependências nas fontes oficiais | Proposta de versões e escopo preparada para alinhamento; sem instalação, scaffold, build ou implementação. TT-03 permanece pendente de aprovação da configuração. |
+
+| 2026-11-13 | TT-02/TT-03 / estrutura mínima | Configurados Java/Node isolados, React/Router/Fetch/CSS Modules, Spring Boot/Wrapper, lint e ferramentas de testes; sem funcionalidades de negócio | npm ci, lint, 4 testes Vitest, build Vite, 1 teste Chromium e Maven verify com 1 teste aprovados. Cobertura backend 3/3 linhas; frontend 70,58%, abaixo da meta. Evidências em ambiente.md; PR #56 aberto e vinculado às issues #39/#40; integração pendente. |
+| 2026-11-13 | E0 / submissão observada | Classroom exibe Entregue com links do Project e repositório | Verificação visual do estado; não representa entrega final da aplicação. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

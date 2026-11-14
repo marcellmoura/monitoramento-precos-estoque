@@ -2,6 +2,8 @@
 /*
 !/.gitignore
 !/.gitattributes
+!/.java-version
+!/.nvmrc
 !/README.md
 !/docs/
 !/fixtures/
@@ -31,4 +33,8 @@
 **/coverage/
 **/playwright-report/
 **/test-results/
+**/*.tsbuildinfo
+**/.vite/
+**/.m2/
+**/.mvn/wrapper/maven-wrapper.jar
 **/.idea/

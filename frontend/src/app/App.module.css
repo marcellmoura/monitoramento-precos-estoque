@@ -1,0 +1,35 @@
+.container {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 8vw, 7rem) 1.5rem;
+}
+
+.eyebrow {
+  color: #345c48;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.container h1 {
+  max-width: 14ch;
+  margin: 1rem 0;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  line-height: 1.1;
+}
+
+.description {
+  max-width: 42ch;
+  color: #45534c;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.notice {
+  display: inline-block;
+  margin-top: 2rem;
+  border: 1px solid #b7cbbd;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #edf3ee;
+}
