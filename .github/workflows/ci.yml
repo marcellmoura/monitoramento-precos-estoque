@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    name: Build e testes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25.0.5'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Configurar Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Verificar backend
+        working-directory: backend
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Instalar dependências do frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Verificar lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Testar frontend e medir cobertura
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Gerar build do frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Preparar Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Testar navegação
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Guardar relatórios de diagnóstico
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: relatorios-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
+            backend/target/site/jacoco/
+            frontend/coverage/
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Guardar aplicação validada
+        if: ${{ success() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aplicacao-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            backend/target/monitoramento-0.1.0.jar
+            frontend/dist/
+          if-no-files-found: error
+          retention-days: 7
