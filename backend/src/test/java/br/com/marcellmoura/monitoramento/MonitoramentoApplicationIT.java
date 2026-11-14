@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
 @AutoConfigureMockMvc
-class MonitoramentoApplicationTests {
+class MonitoramentoApplicationIT {
 
 	@Autowired
 	private MockMvc mockMvc;
