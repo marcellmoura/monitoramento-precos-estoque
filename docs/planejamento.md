@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF, CI/SonarQube e containers pendentes. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF e containers pendentes; CI inicial validada em PR, SonarQube pendente. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 
@@ -239,3 +239,7 @@ Validar também autenticação/perfis, extensões do MVP e metas internas de qua
 ### Estrutura inicial — 2026-11-13
 
 TT-03: versões compatíveis aprovadas, frontend/backend criados e builds/testes locais verificados. Evidências e limites de cobertura em [ambiente](ambiente.md). Sem implementação funcional. E0 observado como Entregue no Classroom, com links do Project e repositório. Próximo alinhamento: configuração incremental de persistência e CI/qualidade.
+
+### CI inicial — 2026-11-14
+
+Configuração em implementação na TT-06: testes unitários/integração separados no Maven, workflow para backend/frontend/Chromium, relatórios e artefatos rastreáveis. Validação local e execuções de PR aprovadas; ensaio vermelho/verde e artefatos conferidos. Integração e execução de main aguardam merge do PR #57. Não implementa regra funcional nem conclui análise SonarQube/Quality Gate. Ver [ci.md](ci.md).
