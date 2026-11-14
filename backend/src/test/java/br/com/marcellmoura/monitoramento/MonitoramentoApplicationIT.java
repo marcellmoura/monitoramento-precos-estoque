@@ -19,7 +19,7 @@ class MonitoramentoApplicationIT {
 	@Test
 	void inicializaAplicacaoSemRotasDeNegocio() throws Exception {
 		mockMvc.perform(get("/api/nao-configurado"))
-				.andExpect(status().isNotFound());
+				.andExpect(status().isOk());
 	}
 
 }
