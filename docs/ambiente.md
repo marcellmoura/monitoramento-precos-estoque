@@ -69,7 +69,7 @@ Executados em macOS ARM64 com os runtimes fixados:
 - JaCoCo: 100% das 3 linhas da única classe inicial. Esse valor não representa cobertura de funcionalidades ainda inexistentes.
 - V8: 70,58% de linhas/instruções; entrada `main.tsx` e composição do Router ainda sem cobertura unitária. Abertura real é verificada por Playwright, em relatório separado. A meta interna de 80% não foi atingida por essa medição; não foram excluídos arquivos de aplicação para elevá-la.
 
-Relatórios locais: `backend/target/surefire-reports/`, `backend/target/site/jacoco/`, `frontend/coverage/`, `frontend/playwright-report/`. CI, análise SonarQube e Quality Gate ainda não executados. Nenhum teste de persistência, acesso, PDF ou regra comercial é declarado aprovado.
+Relatórios locais: `backend/target/surefire-reports/`, `backend/target/site/jacoco/`, `frontend/coverage/`, `frontend/playwright-report/`. As evidências acima correspondem à estrutura inicial. CI inicial está em validação na TT-06; análise SonarQube e Quality Gate ainda não executados. Nenhum teste de persistência, acesso, PDF ou regra comercial é declarado aprovado.
 
 ## Fontes oficiais consultadas
 
@@ -77,3 +77,7 @@ Relatórios locais: `backend/target/surefire-reports/`, `backend/target/site/jac
 - [Temurin 25.0.5](https://adoptium.net/news/2026/10/eclipse-temurin-17021-21013-2505-2701-available/), [Node 26.13.1](https://nodejs.org/en/blog/release/v26.13.1/) e [histórico do Maven](https://maven.apache.org/docs/history.html).
 - Metadados do registro npm: [React](https://registry.npmjs.org/react/latest), [Vite](https://registry.npmjs.org/vite/latest), [typescript-eslint](https://registry.npmjs.org/typescript-eslint/latest), [React Router](https://registry.npmjs.org/react-router/latest), [Vitest](https://registry.npmjs.org/vitest/latest) e [Playwright](https://registry.npmjs.org/@playwright/test/latest).
 - [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/changes.html); suporte SonarQube Cloud a [Java](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/languages/java) e [JavaScript/TypeScript](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/languages/javascript-typescript-css). O scanner deverá provisionar seu próprio runtime Node; não presumir compatibilidade do seu runtime interno com Node 26 de build.
+
+## Organização dos testes e CI — 14/11/2026
+
+Surefire/Failsafe 3.5.6 gerenciados pelo Boot; contexto/MVC movido para `MonitoramentoApplicationIT`. `test` executa a suíte rápida, atualmente sem testes Java de negócio; `clean verify` inclui integração e gera cobertura. Maven verify, instalação pelo lockfile, lint, Vitest, build e Playwright aprovados localmente após o ajuste. Ver [CI](ci.md) para eventos, comandos, relatórios e limites.

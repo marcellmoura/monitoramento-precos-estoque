@@ -130,7 +130,7 @@ Validar permissão na API e nos campos devolvidos; UI adapta navegação/ações
 
 - Frontend: React + TypeScript, Vite, React Router, Fetch centralizado em serviços, CSS Modules. Testes Vitest + React Testing Library; Playwright para fluxos completos.
 - Backend: Spring Boot/Maven, Spring Data JPA/Hibernate, PostgreSQL, Flyway, Jakarta Validation/Hibernate Validator, Apache PDFBox.
-- Testes backend: Spring Boot Test/JUnit/Mockito/MockMvc, Testcontainers com PostgreSQL, JaCoCo. Testar também autorização, sessões e exposição indevida de campos.
+- Testes backend: Spring Boot Test/JUnit/Mockito/MockMvc, Testcontainers com PostgreSQL, JaCoCo. Surefire para testes rápidos e Failsafe para `*IT`, com verificação completa em `clean verify`; versões 3.5.6 gerenciadas pelo Boot. Testar também autorização, sessões e exposição indevida de campos.
 - Flyway controla schema; Hibernate valida compatibilidade. Módulos com HTTP, serviços/regras e persistência separados; regras testáveis sem PDF/endpoint.
 - Fixar versões atuais estáveis e mutuamente compatíveis na configuração; não escolher prereleases nem versões isoladas incompatíveis. Base numérica aprovada e verificada na TT-03 em 13/11/2026: Temurin 25.0.5+8, Boot 4.1.2, Maven 3.10.0, Node 26.13.1, React 19.3.1, Vite 8.3.8 e TypeScript 6.0.3. Lint com ESLint/typescript-eslint aprovado; TS 6 atende à faixa desse analisador. Versões completas, fontes e validações em [ambiente](ambiente.md). Dependências futuras serão fixadas antes do incremento correspondente.
 
@@ -190,3 +190,7 @@ Base da TT-03 fixada e validada; consultar [ambiente](ambiente.md). Verificar ve
 - https://docs.spring.io/spring-boot/reference/io/validation.html
 - https://pdfbox.apache.org/3.0/faq.html
 - https://www.jacoco.org/jacoco/trunk/doc/maven.html
+
+## CI inicial — 2026-11-14
+
+Eventos PR/main/manual; um job sequencial Linux enquanto a suíte é pequena; cache POM/lockfile; relatórios para diagnóstico e pacote somente após todas as verificações passarem. Artefatos identificados por SHA/execução/tentativa e mantidos 7 dias. Actions fixadas por SHA oficial; menor permissão e nenhum segredo de serviço neste incremento. SonarQube e proteção de merge dependem de configurações próprias. Detalhes em [ci.md](ci.md).

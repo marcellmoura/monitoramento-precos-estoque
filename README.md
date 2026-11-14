@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. Funcionalidades de negócio, banco, CI e containers ainda pendentes.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. Funcionalidades de negócio, banco e containers pendentes; CI inicial em validação.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -11,6 +11,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 ## Documentação
 
 - [Ambiente, versões, execução e testes](docs/ambiente.md)
+- [Integração contínua](docs/ci.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
@@ -19,7 +20,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 
 ## Versionamento
 
-A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); a estrutura executável está em revisão no [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56).
+A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); a estrutura executável foi integrada pelo [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56).
 
 ## Execução inicial
 
