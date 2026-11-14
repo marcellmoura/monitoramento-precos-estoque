@@ -40,7 +40,7 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 
 TT-02 e TT-03 concluídas: [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56) integrado pelo responsável em 14/11/2026 (merge `08eb103`); issues #39/#40 fechadas e ambas Concluído no Project. Main local sincronizada com origin/main. Consultar [ambiente](ambiente.md) para comandos e evidências. TT-01 permanece transversal, com contratos/modelos detalhados antes de cada incremento.
 
-Próximo alinhamento proposto: **P4, CI inicial (TT-06) e preparação de qualidade (TT-07/TT-08)**. Definir eventos/branches, jobs e execução de testes; depois tratar conexão/credencial do SonarQube e meta de cobertura ainda não atingida no frontend. TT-06/TT-07 permanecem abertas até seus próprios critérios. Banco/migrations da TT-04 dependem de alinhamento próprio. Incremento de CI inicial aprovado e iniciado na TT-06; SonarQube/proteção de merge continuam pendentes de alinhamento.
+CI inicial da **TT-06 validada e em revisão no [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57)**. Conferir o check do último commit e integrar pelo fluxo individual. Próximo alinhamento: qualidade SonarQube (TT-07/TT-08) e checks obrigatórios da main. Eventos PR/main/manual, comandos, relatórios e pacote rastreável configurados. Tratar conexão/credencial do SonarQube e metas AP19 no incremento correspondente. TT-06/TT-07 permanecem abertas até seus próprios critérios. Banco/migrations da TT-04 dependem de alinhamento próprio. Incremento de CI inicial aprovado e iniciado na TT-06; SonarQube/proteção de merge continuam pendentes de alinhamento.
 
 E0 observado como **Entregue** no Classroom em 13/11/2026, com os links do Project e repositório anexados.
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
@@ -52,7 +52,7 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 - Classificação A é a orientação relatada; percentuais e demais metas de AP19 são internos ao projeto.
 - E0 observado como Entregue no Classroom em 13/11/2026, com links do Project e repositório.
 - Base numérica TT-03 aprovada e validada; contratos/modelos e dependências futuras serão detalhados por incremento.
-- TT-02: frontend/backend/docs organizados no mesmo repositório; revisão individual definida. TT-03: builds/testes locais verificados. CI/SonarQube não executados; cobertura unitária frontend 70,58% permanece abaixo da meta interna.
+- TT-02: frontend/backend/docs organizados no mesmo repositório; revisão individual definida. TT-03: builds/testes locais verificados. CI executada e aprovada em PR; SonarQube e Quality Gate pendentes. Cobertura unitária inicial frontend permanece abaixo da meta interna, acompanhada em ambiente.md.
 
 ## Histórico de progresso
 
@@ -82,5 +82,7 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-14 | P4 / proposta de CI inicial | Preparados escopo e fluxo para revisão: PR/main/manual, build/testes de backend/frontend, navegador, relatórios e artefatos rastreáveis | Configuração executável ainda não instalada/publicada; separação Surefire/Failsafe e validação de falha/correção propostas. SonarQube e proteção de merge dependem de incrementos/alinhamentos próprios. |
 
 | 2026-11-14 | P4 / CI inicial em implementação | Configurado workflow PR/main/manual, Failsafe e relatórios; comandos de backend/frontend/Chromium aprovados localmente | Branch `ci/tt-06-build-testes`; validação no GitHub em acompanhamento. TT-06 permanece aberta por critérios dependentes de Quality Gate. |
+
+| 2026-11-14 | P4 / CI inicial validada | Execução inicial verde, falha controlada comprovada e correção verde; artefatos e relatórios inspecionados | [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57); runs `43572672207`, `43572899017`, `43573032239`. Pacote bloqueado na falha. TT-06 aberta pelo Quality Gate; revisão/merge e execução da main pendentes. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

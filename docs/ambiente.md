@@ -69,7 +69,7 @@ Executados em macOS ARM64 com os runtimes fixados:
 - JaCoCo: 100% das 3 linhas da única classe inicial. Esse valor não representa cobertura de funcionalidades ainda inexistentes.
 - V8: 70,58% de linhas/instruções; entrada `main.tsx` e composição do Router ainda sem cobertura unitária. Abertura real é verificada por Playwright, em relatório separado. A meta interna de 80% não foi atingida por essa medição; não foram excluídos arquivos de aplicação para elevá-la.
 
-Relatórios locais: `backend/target/surefire-reports/`, `backend/target/site/jacoco/`, `frontend/coverage/`, `frontend/playwright-report/`. As evidências acima correspondem à estrutura inicial. CI inicial está em validação na TT-06; análise SonarQube e Quality Gate ainda não executados. Nenhum teste de persistência, acesso, PDF ou regra comercial é declarado aprovado.
+Relatórios locais: `backend/target/surefire-reports/`, `backend/target/site/jacoco/`, `frontend/coverage/`, `frontend/playwright-report/`. As evidências acima correspondem à estrutura inicial. CI inicial validada em PR na TT-06, com evidências em ci.md; análise SonarQube e Quality Gate ainda não executados. Nenhum teste de persistência, acesso, PDF ou regra comercial é declarado aprovado.
 
 ## Fontes oficiais consultadas
 
