@@ -202,3 +202,7 @@ Primeiro recorte da TT-04: PostgreSQL 18.7 oficial fixado por digest, Compose so
 ## Primeiro fluxo de acesso — 2026-11-16
 
 Inicialização local interativa somente em base sem usuários, sem senha padrão; credencial inicial temporária. Troca exige senha atual e nova diferente com mínimo de 12 caracteres; revoga todas as sessões e pede novo login. Contratos REST, rotas React, persistência de sessão e verificação de versão da credencial descritos em [acesso](acesso.md). Administração/reset e permissões de cada módulo permanecem incrementais conforme AP15/AP16.
+
+## Administração de usuários — 2026-11-16
+
+Senha temporária informada pelo Administrador e confirmada na interface; reset não reativa conta inativa. Alteração real do próprio acesso encerra a sessão quando permitida pela proteção do último Administrador; repetição dos mesmos valores preserva sessões. Reset registra ator/alvo/evento/instante sem credencial e participa da transação com alteração e revogação. Contratos, bloqueio transacional PostgreSQL e verificações em [administração de usuários](administracao-usuarios.md). Sem novas bibliotecas.

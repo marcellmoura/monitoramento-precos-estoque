@@ -1,0 +1,20 @@
+.painel { margin-top: 2rem; padding: 1.5rem; border: 1px solid #ccd8ce; border-radius: 1rem; background: white; }
+.cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.painel h2 { margin-top: 0; }
+.formulario { max-width: 32rem; display: grid; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ccd8ce; }
+.formulario label { display: grid; gap: .4rem; font-weight: 600; }
+.formulario input, .formulario select { width: 100%; padding: .75rem; font: inherit; background: white; color: inherit; border: 1px solid #718879; border-radius: .4rem; }
+.formulario button { padding: .8rem 1.2rem; font: inherit; font-weight: 600; border: 0; border-radius: .4rem; background: #244b38; color: white; cursor: pointer; }
+.formulario button:disabled { opacity: .65; cursor: wait; }
+.formulario :focus-visible { outline: 3px solid #5394bf; outline-offset: 3px; }
+.erro { color: #9c2626; }
+.tabela { overflow-x: auto; margin-bottom: 1rem; }
+.tabela table { width: 100%; min-width: 40rem; border-collapse: collapse; text-align: left; }
+.tabela caption { text-align: left; padding: .5rem 0; font-weight: 600; }
+.tabela th, .tabela td { padding: .8rem; border-bottom: 1px solid #ccd8ce; vertical-align: top; }
+.tabela small { display: block; margin-top: .3rem; overflow-wrap: anywhere; }
+.paginacao { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+.campo { display: grid; gap: .4rem; }
+.tabela:focus-visible { outline: 3px solid #5394bf; outline-offset: 3px; }
+.ajudaTabela { display: none; }
+@media (max-width: 720px) { .ajudaTabela { display: block; font-size: .9rem; } }

@@ -1,4 +1,4 @@
-import { useFetcher, useOutletContext, useSearchParams } from 'react-router';
+import { Link, useFetcher, useOutletContext, useSearchParams } from 'react-router';
 import type { Identidade } from './api';
 import styles from './acesso.module.css';
 
@@ -52,6 +52,7 @@ export function Inicio() {
   return <section className={styles.painel}>
     <h2>Olá, {usuario.nome}</h2>
     <p>Perfil: {perfis[usuario.perfil]}</p>
+    {usuario.perfil === 'ADMINISTRADOR' && <Link to="/usuarios">Administrar usuários</Link>}
     <Sair />
   </section>;
 }

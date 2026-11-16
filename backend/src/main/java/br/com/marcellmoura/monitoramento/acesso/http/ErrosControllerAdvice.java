@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -20,7 +22,15 @@ public class ErrosControllerAdvice {
     ResponseEntity<ErroApi> credencial(AuthenticationException ex) {
         return ResponseEntity.status(401).body(new ErroApi("CREDENCIAL_INVALIDA", "E-mail ou senha inválidos."));
     }
-    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<ErroApi> camposInvalidos(MethodArgumentNotValidException ex) {
+        var campos = new java.util.TreeMap<String, String>();
+        ex.getBindingResult().getFieldErrors().forEach(erro -> campos.put(erro.getField(), "Valor inválido."));
+        return ResponseEntity.badRequest().body(new ErroApi("DADOS_INVALIDOS", "Confira os campos informados.",
+                java.util.UUID.randomUUID().toString(), campos));
+    }
+    @ExceptionHandler({HttpMessageNotReadableException.class,
+            HandlerMethodValidationException.class, MethodArgumentTypeMismatchException.class})
     ResponseEntity<ErroApi> validacao(Exception ex) {
         return ResponseEntity.badRequest().body(new ErroApi("DADOS_INVALIDOS", "Confira os campos informados."));
     }

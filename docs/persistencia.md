@@ -101,3 +101,7 @@ Inicialização real do backend também verificada com o banco do Compose: migra
 O container local foi recriado mantendo o volume nomeado: a migration V1 continuou registrada e a tabela de usuários permaneceu vazia. O processo de backend usado na validação foi encerrado; PostgreSQL permanece disponível para o desenvolvimento.
 
 Validação remota: [CI 43868438423](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43868438423) aprovada para `e58967c`, incluindo backend/PostgreSQL, frontend, navegador, ambos os gates e artefatos. Conferir também o check do último commit do PR antes de integrar. A TT-04 segue aberta, Em andamento, por abranger a evolução dos demais modelos.
+
+## Histórico de redefinição de senha
+
+Migration V3: histórico transacional com ator/usuário/evento/instante, sem credenciais. Operação e testes em [administração de usuários](administracao-usuarios.md). As migrations anteriores permanecem intactas.

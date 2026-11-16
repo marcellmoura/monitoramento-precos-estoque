@@ -1,4 +1,4 @@
-import { HttpError, requestJson } from '../../shared/http';
+import { HttpError, mutateJson, requestJson } from '../../shared/http';
 
 export interface Identidade {
   id: number;
@@ -18,13 +18,7 @@ export async function carregarIdentidade() {
 }
 
 export async function alterarAcesso(path: string, method: string, body?: object) {
-  const csrf = await requestJson<{ token: string; headerName: string }>('/auth/csrf');
-  if (!csrf) throw new Error('Não foi possível iniciar a operação.');
-  return requestJson<Identidade>(`/auth/${path}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  return mutateJson<Identidade>(`/auth/${path}`, method, body);
 }
 
 export function mensagemErro(error: unknown): string {

@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência PostgreSQL/usuários integrada. Fluxo de login, troca obrigatória de senha e logout implementado para revisão. Administração de usuários, cadastros e importação de PDFs pendentes.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência PostgreSQL/usuários integrada. Login, troca obrigatória de senha e logout integrados. Administração de usuários/perfis/reset implementada para revisão; cadastros de produtos/fornecedores e importação de PDFs pendentes.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -14,6 +14,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Integração contínua](docs/ci.md)
 - [Banco e persistência](docs/persistencia.md)
 - [Login e criação do primeiro administrador](docs/acesso.md)
+- [Administração de usuários](docs/administracao-usuarios.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
@@ -55,4 +56,4 @@ Testes: Vitest, React Testing Library e Playwright; Spring Boot Test, JUnit, Moc
 - Backlog: 15/11/2026.
 - Projeto final: 23/11/2026.
 
-CI de build/testes e gates SonarQube integrados e validados em PR e na main. Banco PostgreSQL local e persistência de usuários documentados em persistencia.md; login e primeiro acesso descritos em acesso.md. Administração/permissões de negócio, PDFs e execução completa por containers serão acrescentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
+CI de build/testes e gates SonarQube integrados e validados em PR e na main. Banco PostgreSQL local e persistência de usuários documentados em persistencia.md; login e primeiro acesso descritos em acesso.md. Permissões dos módulos de negócio, PDFs e execução completa por containers serão acrescentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
