@@ -1,6 +1,6 @@
 # Integração contínua
 
-Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Integração SonarQube em preparação na TT-07, com inicialização pela main antes da análise de PRs; proteção de merge pendente.
+Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Integração SonarQube em revisão no [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com inicialização pela main antes da análise de PRs; proteção de merge pendente.
 
 ## Eventos e ambiente
 

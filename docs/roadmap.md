@@ -1,6 +1,6 @@
 # Roadmap do projeto
 
-Atualização: 2026-11-16. Estado: backlog entregue, estrutura mínima e CI de build/testes integradas; inicialização SonarQube em preparação. Funcionalidades, banco e containers pendentes.
+Atualização: 2026-11-16. Estado: backlog entregue, estrutura mínima e CI de build/testes integradas; inicialização SonarQube em revisão. Funcionalidades, banco e containers pendentes.
 
 ## Entregas
 
@@ -93,6 +93,6 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-16 | P4 / projetos de analise criados | Confirmados dois projetos publicos no SonarQube, backend e frontend, vinculados ao repositorio | Ambos ainda sem analise. Credencial de CI, scanners, cobertura importada, gates e protecao da main pendentes. |
 
-| 2026-11-16 | P4 / inicialização SonarQube em implementação | Secret cadastrado; configurados scanners por componente, cobertura e espera pelos gates na main | Builds, lint, 1 IT/4 Vitest/1 Chromium aprovados localmente; plugin e relatórios conferidos; PR em preparação. Primeira análise depende da integração. Gates de PR, ratings gerais e proteção continuam pendentes; TT-06/TT-07 abertas. |
+| 2026-11-16 | P4 / inicialização SonarQube em implementação | Secret cadastrado; configurados scanners por componente, cobertura e espera pelos gates na main | Builds, lint, 1 IT/4 Vitest/1 Chromium aprovados localmente; plugin e relatórios conferidos; [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) aberto. Primeira análise depende da integração. Gates de PR, ratings gerais e proteção continuam pendentes; TT-06/TT-07 abertas. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.
