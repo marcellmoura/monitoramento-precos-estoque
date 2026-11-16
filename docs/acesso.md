@@ -45,8 +45,10 @@ A API devolve erros JSON com `codigo`, `mensagem` e `identificador`. Login invá
 
 ## Verificação
 
-`./mvnw verify` inclui testes HTTP em servidor real com cookies e PostgreSQL Testcontainers: login, dados inválidos, usuário inativo, CSRF, primeiro acesso, troca, revogação de múltiplas sessões, logout, expiração, fixação de sessão e inicialização da primeira conta. Casos de expiração manipulam o horário da sessão de teste; não esperam 30 minutos.
+`./mvnw test` verifica confirmação, entrada ausente e limpeza dos buffers de senha do comando local, inclusive em falhas. `./mvnw verify` inclui testes HTTP em servidor real com cookies e PostgreSQL Testcontainers: login, dados inválidos, usuário inativo, CSRF, primeiro acesso, troca, revogação de múltiplas sessões, logout, expiração, fixação de sessão e inicialização da primeira conta. Casos de expiração manipulam o horário da sessão de teste; não esperam 30 minutos.
 
 Frontend: `npm run lint`, `npm run test:coverage`, `npm run build` e `npm run test:e2e`. Testes React cobrem formulários, confirmação, mensagens, redirecionamentos e saída. O smoke Playwright intercepta somente a consulta de sessão para verificar visitante sem depender de backend; não comprova integração completa. O fluxo completo React/API/PostgreSQL foi adicionalmente exercitado localmente com banco temporário e credenciais sintéticas, em 16/11/2026; telas desktop/móvel conferidas.
 
 Referências: [sessões e persistência do contexto](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html), [Spring Session JDBC e schema PostgreSQL](https://docs.spring.io/spring-session/reference/configuration/jdbc.html), [armazenamento de senhas](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html) e [metadados oficiais do artefato Bouncy Castle](https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk18on/maven-metadata.xml).
+
+Implementação em revisão no [PR #61](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/61).

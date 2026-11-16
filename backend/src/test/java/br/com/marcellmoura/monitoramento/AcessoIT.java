@@ -176,6 +176,24 @@ class AcessoIT {
                 .POST(HttpRequest.BodyPublishers.ofString("texto")).build();
         assertThat(client.send(request,HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(415);
     }
+    @Test void comandoLocalInicializaContextoSemServidorERecusaEntradaNaoInterativa() throws Exception {
+        try (var connection = jdbc.getDataSource().getConnection()) {
+            String url = connection.getMetaData().getURL();
+            assertThatThrownBy(() -> MonitoramentoApplication.main(new String[]{"--inicializar-admin",
+                    "--spring.datasource.url="+url, "--spring.datasource.username=test", "--spring.datasource.password=test"}))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasStackTraceContaining("Execute o JAR em terminal interativo");
+        }
+        assertThat(usuarios.count()).isEqualTo(1);
+    }
+    @Test void rejeitaUsuarioRemovidoESenhaAusente() throws Exception {
+        var invalido=enviar(client,"POST","/api/auth/login","{\"senha\":\"teste\"}",true);
+        assertThat(invalido.statusCode()).isEqualTo(400);
+        var desconhecido=enviar(client,"POST","/api/auth/login","{\"email\":\"ausente@example.com\",\"senha\":\"teste\"}",true);
+        assertThat(desconhecido.statusCode()).isEqualTo(401);
+        login(client);usuarios.deleteById(id);
+        assertThat(enviar(client,"GET","/api/auth/me",null,false).statusCode()).isEqualTo(401);
+    }
     @Test void inicializaAdministradorUmaVezSemSobrescreverBase() {
         usuarios.deleteAll();
         administrador.criar("Primeiro admin",EMAIL,SENHA.toCharArray());

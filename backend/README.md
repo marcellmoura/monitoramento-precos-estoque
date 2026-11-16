@@ -15,6 +15,6 @@ Com Java 25 selecionado, executar nesta pasta:
 
 O Wrapper fixa Maven 3.10.0; não é necessário instalar Maven globalmente. Relatórios: `target/surefire-reports/`, `target/failsafe-reports/` e `target/site/jacoco/`.
 
-`./mvnw test` executa testes rápidos (`*Test`/`*Tests`, também `Test*`/`*TestCase`); `./mvnw verify` inclui integração (`*IT`). Contexto, persistência de usuários e migrations são testes de integração via Failsafe. Ainda não há testes unitários Java de negócio; a rodada rápida pode ficar vazia nesta etapa. JaCoCo acumula as duas suítes no ciclo; executar `clean verify` para descartar dados antigos. Ver [CI](../docs/ci.md).
+`./mvnw test` executa testes rápidos (`*Test`/`*Tests`, também `Test*`/`*TestCase`); `./mvnw verify` inclui integração (`*IT`). Contexto, persistência de usuários e migrations são testes de integração via Failsafe. Testes rápidos verificam a entrada interativa e a limpeza de buffers do bootstrap; a integração também verifica a recusa da execução sem terminal. JaCoCo acumula as duas suítes no ciclo; executar `clean verify` para descartar dados antigos. Ver [CI](../docs/ci.md).
 
 Servidor local: `127.0.0.1:8080`. `SERVER_PORT` e `SERVER_ADDRESS` permitem configurar o bind. Rotas protegidas exigem sessão (401); senha temporária restringe funções (403); rota inexistente para usuário com senha definitiva retorna 404.

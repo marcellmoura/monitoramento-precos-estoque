@@ -1,6 +1,7 @@
 package br.com.marcellmoura.monitoramento.acesso.bootstrap;
 
 import java.util.Arrays;
+import java.io.Console;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,9 @@ public class AdministradorInicialRunner implements CommandLineRunner {
     private final AdministradorInicialService service;
     public AdministradorInicialRunner(AdministradorInicialService service) { this.service = service; }
     @Override public void run(String... args) {
-        var console = System.console();
+        executar(System.console());
+    }
+    void executar(Console console) {
         if (console == null) { throw new IllegalStateException("Execute o JAR em terminal interativo; senha não aceita por argumento ou arquivo."); }
         String nome = console.readLine("Nome do primeiro administrador: ");
         String email = console.readLine("E-mail: ");
