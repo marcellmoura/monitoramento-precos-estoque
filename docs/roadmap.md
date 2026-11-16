@@ -121,4 +121,6 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-16 | P5 / cadastro e consulta de produtos | US-01/US-02 implementadas para revisão com preços por perfil e precisão decimal preservada | 16 testes unitários e 68 de integração backend, 60 frontend, lint/build/smoke Chromium aprovados localmente; fluxo React/API/PostgreSQL real nos quatro perfis, desktop/móvel conferido. CI remota/revisão pendentes; fornecedores e edição/estoque fora deste incremento. |
 
+| 2026-11-16 | P5 / produtos validados em PR | CI e gates backend/frontend aprovados no primeiro envio | [PR #63](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/63), commit `f56c3c8`; [CI 43930563488](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43930563488). US-01/US-02 Em revisão no Project. Aguardando integração pelo responsável; fornecedores e edição/estoque permanecem nos próximos incrementos. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

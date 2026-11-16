@@ -46,6 +46,6 @@ A compra manual deste cadastro não cria histórico de cotação. Importações,
 
 Validação local em 16/11/2026: 16 testes unitários e 68 de integração backend; 60 testes frontend; lint, build e smoke Chromium aprovados. Testes cobrem persistência, código, unidades, preços zero/ausente/máximo, negativos, precisão, limites, paginação, estado vazio, campos por perfil, sessão/CSRF/primeiro acesso e ausência de edição neste recorte. Restrições de estoque no banco também são verificadas.
 
-Fluxo React/API/PostgreSQL real exercitado em banco temporário, com credenciais sintéticas: cadastro por Administrador/Compras, consulta nos quatro perfis, compra ausente/zero, venda zero e valores máximos exatos. Telas desktop/móvel conferidas. CI remota e revisão do incremento pendentes.
+Fluxo React/API/PostgreSQL real exercitado em banco temporário, com credenciais sintéticas: cadastro por Administrador/Compras, consulta nos quatro perfis, compra ausente/zero, venda zero e valores máximos exatos. Telas desktop/móvel conferidas. A [CI 43930563488](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43930563488), commit `f56c3c8`, aprovou todas as verificações e os dois Quality Gates. Implementação em revisão no [PR #63](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/63).
 
 Referência técnica: [tipos numéricos exatos do PostgreSQL](https://www.postgresql.org/docs/18/datatype-numeric.html).
