@@ -1,6 +1,6 @@
 # Integração contínua
 
-Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Inicialização SonarQube integrada pelo [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com os dois gates aprovados na main. Ajuste do escopo e análise de PRs em revisão; proteção de merge pendente.
+Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Inicialização SonarQube integrada pelo [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com os dois gates aprovados na main. Ajuste do escopo e análise de PRs validados no [PR #59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59), aguardando integração; proteção de merge pendente.
 
 ## Eventos e ambiente
 
@@ -44,7 +44,7 @@ Os relatórios podem existir em uma execução reprovada; isso não libera o pac
 
 ## Limites atuais
 
-A configuração em revisão habilita Sonar na main e nos PRs destinados a ela. Autenticação, importação de cobertura e gates da main já foram verificados; ajuste de escopo e gates de PR serão comprovados na CI deste incremento. Execuções manuais devem selecionar main. A meta de qualidade AP19 permanece vigente e pendente de verificação. CI vermelha sozinha não bloqueia o botão de merge: checks obrigatórios dependem da configuração adicional da branch, a alinhar depois dos checks existirem.
+A configuração em revisão habilita Sonar na main e nos PRs destinados a ela. Autenticação, importação de cobertura e gates da main já foram verificados; ajuste de escopo e gates de PR comprovados na CI do PR #59. Execuções manuais devem selecionar main. A meta de qualidade AP19 permanece vigente e pendente de verificação. CI vermelha sozinha não bloqueia o botão de merge: checks obrigatórios dependem da configuração adicional da branch, a alinhar depois dos checks existirem.
 
 Não encerrar TT-06 antes dos critérios ainda dependentes do Quality Gate. Execução após merge na main conferida e aprovada em 14/11/2026. Evidências da validação inicial estão abaixo; execuções futuras permanecem consultáveis no PR e na aba Actions.
 
@@ -75,7 +75,7 @@ Dois projetos públicos vinculados ao mesmo repositório, organização `marcell
 
 Identificadores são públicos; apenas `SONAR_TOKEN` é secreto. O secret está cadastrado no GitHub; sua autenticação foi comprovada pelas análises da main. O checkout obtém histórico completo (`fetch-depth: 0`). Cada scanner recebe o token apenas no ambiente do próprio passo. Não há `pull_request_target`, credenciais persistidas no checkout nem leitura local do token.
 
-O backend importa `target/site/jacoco/jacoco.xml` e resultados Surefire/Failsafe; o frontend importa `coverage/lcov.info`. O escopo explícito separa testes `.test.ts`/`.test.tsx`, suporte `src/test/` e `e2e/` das fontes de produção. A configuração automática do scanner está fixada como desativada nos arquivos versionados; validar o resultado remoto deste ajuste, conforme o diagnóstico e registro abaixo. Nenhuma exclusão de cobertura de código funcional foi acrescentada. Configurações locais dos scanners ficam fora do Git.
+O backend importa `target/site/jacoco/jacoco.xml` e resultados Surefire/Failsafe; o frontend importa `coverage/lcov.info`. O escopo explícito separa testes `.test.ts`/`.test.tsx`, suporte `src/test/` e `e2e/` das fontes de produção. A configuração automática do scanner está fixada como desativada nos arquivos versionados; resultado remoto deste ajuste conferido no PR #59, conforme o registro abaixo. Nenhuma exclusão de cobertura de código funcional foi acrescentada. Configurações locais dos scanners ficam fora do Git.
 
 Ambos usam `sonar.qualitygate.wait=true` e timeout de 300 segundos. Erro de scanner, credencial ausente, relatório ausente, timeout ou gate reprovado interrompem o job e impedem o upload do pacote na main. Se o backend falhar, a análise seguinte não é executada; isso não representa aprovação do frontend. Relatórios já existentes continuam disponíveis para diagnóstico.
 
@@ -128,3 +128,11 @@ Configuração na branch `ci/tt-07-sonar-prs`, em revisão:
 - Sem secret, a verificação reprova explicitamente. PRs de forks não recebem `SONAR_TOKEN` e não comprovam qualidade por pular análise; não usar `pull_request_target` para contornar essa restrição.
 
 Sintaxe YAML e blocos shell conferidos; a CI do PR validará builds/testes, escopo, cobertura e os dois gates. O fluxo normal passa a ser desenvolver com testes, abrir PR e conferir as verificações automáticas. Banco e funcionalidades seguem nos incrementos próprios; novas configurações somente por necessidade concreta.
+
+#### Resultado do ajuste no PR #59
+
+[CI 43828814157](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43828814157) aprovada para o commit `40d4dd8`: builds, testes, análises de ambos os componentes, espera pelos dois gates e publicação de relatórios/pacote concluídos. API pública confirma `OK` nos dois gates de `pullRequest=59`.
+
+O log do frontend confirma o arquivo de configuração carregado e `Included tests: src/**/*.test.ts, src/**/*.test.tsx, src/test/**, e2e/**`, com os testes excluídos das fontes de produção. Foram indexados 10 arquivos, correspondentes aos 6 arquivos de aplicação/estilo e 4 arquivos de testes/suporte existentes; configurações da raiz ficaram fora do escopo explícito. Perfis de linguagem Sonar way core. A análise de PR não lista arquivos sem alterações na árvore pública; a conferência do escopo usou o log do scanner. A main receberá o mesmo ajuste após o merge.
+
+A configuração pode acompanhar o desenvolvimento automaticamente; não é necessário reconfigurá-la por funcionalidade. Testes continuam sendo acrescentados com o comportamento implementado. Após a integração, seguir para o incremento de banco e funcionalidades, mantendo AP19 acompanhado durante o desenvolvimento. Checks obrigatórios de merge ainda não foram ativados.
