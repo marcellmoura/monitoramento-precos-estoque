@@ -105,3 +105,7 @@ Validação remota: [CI 43868438423](https://github.com/marcellmoura/monitoramen
 ## Histórico de redefinição de senha
 
 Migration V3: histórico transacional com ator/usuário/evento/instante, sem credenciais. Operação e testes em [administração de usuários](administracao-usuarios.md). As migrations anteriores permanecem intactas.
+
+## Produtos
+
+Migration V4: catálogo com unidade, preços decimais, estoques e estado; código de apresentação derivado do ID. Restrições, autorização de campos e testes em [produtos](produtos.md). Migrations anteriores preservadas.

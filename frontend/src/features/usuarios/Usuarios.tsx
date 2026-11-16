@@ -3,7 +3,7 @@ import { Link, useFetcher, useLoaderData, useOutletContext, useSearchParams } fr
 import type { Identidade } from '../acesso/api';
 import { perfis } from './api';
 import type { Falha, PaginaUsuarios, Usuario } from './api';
-import styles from './usuarios.module.css';
+import styles from '../../shared/gestao.module.css';
 
 type Resultado = { erro?: string; sucesso?: string };
 function Mensagem({ resultado }: { resultado?: Resultado }) {

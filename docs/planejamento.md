@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. PostgreSQL/JPA/Flyway integrados; login, primeiro acesso e logout integrados. Administração de usuários/perfis/reset implementada para revisão. Permissões dos futuros módulos, leitura PDF e containers completos pendentes; CI/SonarQube integrados e validados. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. PostgreSQL/JPA/Flyway integrados; login, primeiro acesso e logout integrados. Administração de usuários/perfis/reset integrada; cadastro/consulta de produtos implementados para revisão. Fornecedores, edição/estoque, permissões dos demais módulos, leitura PDF e containers completos pendentes; CI/SonarQube integrados e validados. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 
@@ -265,3 +265,7 @@ Primeiro recorte da TT-04 implementado para revisão: PostgreSQL local persisten
 ### Fluxo de acesso — 2026-11-16
 
 Inicialização local somente com base sem usuários; troca de senha encerra todas as sessões e exige novo login. US-29/US-32 implementadas para revisão; US-30 parcial (logout/expiração), US-34 transversal. Contratos, operação e verificações em [acesso](acesso.md). Sem cadastros ou importações neste incremento.
+
+### Primeiro incremento de produtos — 2026-11-16
+
+US-01/US-02: cadastro, lista paginada e detalhe; compra opcional, estados iniciais definidos pelo servidor e campos filtrados conforme perfil. Sem preços para Estoque e sem compra para Consulta. Valores decimais preservados em texto na API. Contratos e evidências em [produtos](produtos.md). Fornecedores (US-04/US-05) e edição/estoque (US-03) seguem em incrementos próprios.

@@ -18,3 +18,7 @@
 .tabela:focus-visible { outline: 3px solid #5394bf; outline-offset: 3px; }
 .ajudaTabela { display: none; }
 @media (max-width: 720px) { .ajudaTabela { display: block; font-size: .9rem; } }
+.dados { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr); gap: .8rem 1rem; }
+.dados dt { font-weight: 600; }
+.dados dd { margin: 0; overflow-wrap: anywhere; }
+.painel h2 { overflow-wrap: anywhere; }

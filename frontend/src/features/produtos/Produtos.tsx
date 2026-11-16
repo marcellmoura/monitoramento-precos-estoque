@@ -1,0 +1,84 @@
+import { Link, useFetcher, useLoaderData, useOutletContext, useSearchParams } from 'react-router';
+import type { Identidade } from '../acesso/api';
+import { formatarMoeda } from '../../shared/decimal';
+import { unidades } from './api';
+import type { FalhaProduto, PaginaProdutos, Produto } from './api';
+import styles from '../../shared/gestao.module.css';
+
+function podeCadastrar(usuario: Identidade) {
+  return usuario.perfil === 'ADMINISTRADOR' || usuario.perfil === 'COMPRAS';
+}
+function quantidade(valor: string, unidade: Produto['unidade']) {
+  return unidade === 'UN' ? valor.split('.')[0] : valor.replace('.', ',');
+}
+function Falha({ mensagem }: { mensagem: string }) {
+  return <p role="alert" className={styles.erro}>{mensagem}</p>;
+}
+
+export function Produtos() {
+  const usuario = useOutletContext<Identidade>();
+  const data = useLoaderData<PaginaProdutos | FalhaProduto>();
+  const vendaVisivel = usuario.perfil !== 'ESTOQUE';
+  const compraVisivel = podeCadastrar(usuario);
+  if ('erro' in data) return <section><h2>Produtos</h2><Falha mensagem={data.erro} /><Link to="/">Voltar ao início</Link></section>;
+  return <section className={styles.painel}>
+    <div className={styles.cabecalho}><h2>Produtos</h2>{podeCadastrar(usuario) && <Link to="/produtos/novo">Cadastrar produto</Link>}</div>
+    {data.total === 0 ? <p>Nenhum produto cadastrado.</p> : <>
+      <p>{data.total} produto(s) cadastrado(s).</p><p className={styles.ajudaTabela}>Deslize a tabela para ver todas as colunas.</p>
+      <div className={styles.tabela} role="region" aria-label="Catálogo de produtos" tabIndex={0}>
+        <table><caption>Produtos da loja</caption><thead><tr><th scope="col">Código / produto</th><th scope="col">Unidade</th>
+          {vendaVisivel && <th scope="col">Venda</th>}{compraVisivel && <th scope="col">Compra</th>}<th scope="col">Estoque atual / mínimo</th><th scope="col">Estado</th><th scope="col">Ação</th>
+        </tr></thead><tbody>{data.itens.map(produto => <tr key={produto.id}>
+          <td>{produto.codigo}<small>{produto.nome}</small></td><td>{produto.unidade}</td>
+          {vendaVisivel && <td>{produto.precoVenda !== undefined ? formatarMoeda(produto.precoVenda) : 'Indisponível'}</td>}
+          {compraVisivel && <td>{produto.precoCompra == null ? 'Não informado' : formatarMoeda(produto.precoCompra)}</td>}
+          <td>{quantidade(produto.estoqueAtual, produto.unidade)} / {quantidade(produto.estoqueMinimo, produto.unidade)}</td>
+          <td>{produto.ativo ? 'Ativo' : 'Inativo'}</td><td><Link to={`/produtos/${produto.id}`} aria-label={`Consultar ${produto.nome}`}>Consultar</Link></td>
+        </tr>)}</tbody></table>
+      </div>
+      {data.itens.length === 0 && <p>Nenhum produto nesta página.</p>}
+      <nav aria-label="Paginação de produtos" className={styles.paginacao}>
+        {data.pagina > 0 && <Link to={`?pagina=${data.pagina - 1}`}>Página anterior</Link>}
+        <span>Página {data.pagina + 1} de {Math.max(data.paginas, 1)}</span>
+        {data.pagina + 1 < data.paginas && <Link to={`?pagina=${data.pagina + 1}`}>Próxima página</Link>}
+      </nav>
+    </>}
+    <Link to="/">Voltar ao início</Link>
+  </section>;
+}
+export function NovoProduto() {
+  const usuario = useOutletContext<Identidade>();
+  const fetcher = useFetcher<FalhaProduto>();
+  if (!podeCadastrar(usuario)) return <section><h2>Acesso restrito</h2><Falha mensagem="Cadastro disponível para Administrador e Compras." /><Link to="/produtos">Voltar aos produtos</Link></section>;
+  return <section className={styles.painel}><h2>Cadastrar produto</h2>
+    <p>Estoque atual e mínimo começam em zero. O produto fica ativo após o cadastro.</p>
+    <fetcher.Form method="post" className={styles.formulario}>
+      <label>Nome<input name="nome" maxLength={255} required /></label>
+      <label>Categoria (opcional)<input name="categoria" maxLength={100} /></label>
+      <div className={styles.campo}><label htmlFor="unidade-produto">Unidade</label><select id="unidade-produto" name="unidade" defaultValue="" required>
+        <option value="" disabled>Selecione</option>{Object.entries(unidades).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
+      </select></div>
+      <p id="ajuda-precos">Preços em reais. Use vírgula ou ponto para os centavos, sem separador de milhar.</p>
+      <label>Preço de venda<input name="precoVenda" type="text" inputMode="decimal" maxLength={20} pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-precos" required /></label>
+      <label>Preço de compra (opcional)<input name="precoCompra" type="text" inputMode="decimal" maxLength={20} pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-precos" /></label>
+      {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
+      <button type="submit" disabled={fetcher.state !== 'idle'}>{fetcher.state === 'idle' ? 'Cadastrar produto' : 'Salvando…'}</button>
+    </fetcher.Form><Link to="/produtos">Voltar aos produtos</Link>
+  </section>;
+}
+export function DetalheProduto() {
+  const data = useLoaderData<Produto | FalhaProduto>();
+  const [params] = useSearchParams();
+  if ('erro' in data) return <section><h2>Produto</h2><Falha mensagem={data.erro} /><Link to="/produtos">Voltar aos produtos</Link></section>;
+  return <section className={styles.painel}><h2>{data.nome}</h2>
+    {params.get('criado') === '1' && <p role="status">Produto cadastrado.</p>}
+    <dl className={styles.dados}>
+      <dt>Código</dt><dd>{data.codigo}</dd><dt>Categoria</dt><dd>{data.categoria ?? 'Sem categoria'}</dd>
+      <dt>Unidade</dt><dd>{unidades[data.unidade]}</dd>
+      {data.precoVenda !== undefined && <><dt>Preço de venda</dt><dd>{formatarMoeda(data.precoVenda)}</dd></>}
+      {'precoCompra' in data && <><dt>Preço de compra</dt><dd>{data.precoCompra == null ? 'Não informado' : formatarMoeda(data.precoCompra)}</dd></>}
+      <dt>Estoque atual</dt><dd>{quantidade(data.estoqueAtual, data.unidade)}</dd>
+      <dt>Estoque mínimo</dt><dd>{quantidade(data.estoqueMinimo, data.unidade)}</dd><dt>Estado</dt><dd>{data.ativo ? 'Ativo' : 'Inativo'}</dd>
+    </dl><Link to="/produtos">Voltar aos produtos</Link>
+  </section>;
+}
