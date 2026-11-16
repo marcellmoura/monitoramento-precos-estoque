@@ -7,7 +7,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MonitoramentoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MonitoramentoApplication.class, args);
+		if (java.util.Arrays.asList(args).contains("--inicializar-admin")) {
+            var application = new SpringApplication(MonitoramentoApplication.class);
+            application.setWebApplicationType(org.springframework.boot.WebApplicationType.NONE);
+            application.setAdditionalProfiles("bootstrap-admin");
+            try (var context = application.run(args)) {
+                // O procedimento local termina sem iniciar servidor HTTP.
+            }
+        } else {
+            SpringApplication.run(MonitoramentoApplication.class, args);
+        }
 	}
 
 }

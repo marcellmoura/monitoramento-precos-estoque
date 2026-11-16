@@ -1,6 +1,6 @@
 # Ambiente de desenvolvimento
 
-Base configurada em 13/11/2026 para a TT-03. A base inicial foi ampliada na TT-04 com PostgreSQL/JPA/Flyway; ainda não oferece endpoints de negócio. Execução atual em [persistência](persistencia.md).
+Base configurada em 13/11/2026 para a TT-03. A base inicial foi ampliada na TT-04 com PostgreSQL/JPA/Flyway; ainda não oferece endpoints de negócio. Execução atual em [persistência](persistencia.md) e [acesso](acesso.md).
 
 ## Versões fixadas
 
@@ -17,6 +17,8 @@ Base configurada em 13/11/2026 para a TT-03. A base inicial foi ampliada na TT-0
 | Vitest / cobertura V8 | 5.1.0 | Versões pareadas no lockfile |
 | React Testing Library / jsdom | 16.3.3 / 31.0.1 | `frontend/package.json` e lockfile |
 | Playwright | 1.65.0 | Chromium instalado pelo próprio Playwright |
+| Spring Security / Spring Session | 7.1.2 / 4.1.1 | Gerenciamento de dependências do Spring Boot |
+| Bouncy Castle | 1.87 | `backend/pom.xml`; Argon2id |
 | JaCoCo | 0.8.16 | `backend/pom.xml` |
 | JUnit Jupiter / Mockito / Testcontainers | 6.0.3 / 5.23.0 / 2.0.5 | Gerenciamento de dependências do Spring Boot |
 

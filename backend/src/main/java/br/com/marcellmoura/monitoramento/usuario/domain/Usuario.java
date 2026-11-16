@@ -42,6 +42,9 @@ public class Usuario {
 	@Column(name = "troca_senha_obrigatoria", nullable = false)
 	private boolean trocaSenhaObrigatoria;
 
+	@Column(name = "versao_credencial", nullable = false)
+	private long versaoCredencial;
+
 	@Column(name = "criado_em", nullable = false, updatable = false)
 	private Instant criadoEm;
 
@@ -63,6 +66,14 @@ public class Usuario {
 	public void atualizarNome(String nome) {
 		this.nome = Objects.requireNonNull(nome).strip();
 	}
+
+    public void trocarSenha(String hash) {
+        this.senhaHash = Objects.requireNonNull(hash);
+        this.trocaSenhaObrigatoria = false;
+        this.versaoCredencial++;
+    }
+
+    public long getVersaoCredencial() { return versaoCredencial; }
 
 	@PrePersist
 	void registrarCriacao() {

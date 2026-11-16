@@ -1,14 +1,29 @@
+import { Navigate, Outlet, useLoaderData, useLocation } from 'react-router';
+import type { Identidade } from '../features/acesso/api';
 import styles from './App.module.css';
 
 export function App() {
-  return (
-    <main className={styles.container}>
-      <p className={styles.eyebrow}>Monitoramento</p>
-      <h1>Preços, estoque e compras</h1>
-      <p className={styles.description}>
-        Organize seu catálogo e acompanhe os preços dos fornecedores.
-      </p>
-      <p className={styles.notice}>Sistema em preparação.</p>
-    </main>
-  );
+  const usuario = useLoaderData<Identidade | null>();
+  const { pathname } = useLocation();
+  if (!usuario && pathname !== '/login') return <Navigate to="/login" replace />;
+  if (usuario?.trocaSenhaObrigatoria && pathname !== '/alterar-senha') {
+    return <Navigate to="/alterar-senha" replace />;
+  }
+  if (usuario && !usuario.trocaSenhaObrigatoria && ['/login', '/alterar-senha'].includes(pathname)) {
+    return <Navigate to="/" replace />;
+  }
+  return <main className={styles.container}>
+    <p className={styles.eyebrow}>Monitoramento</p>
+    <h1>Preços, estoque e compras</h1>
+    <p className={styles.description}>Organize seu catálogo e acompanhe os preços dos fornecedores.</p>
+    <Outlet context={usuario} />
+  </main>;
+}
+
+export function FalhaDeConexao() {
+  return <main className={styles.container}>
+    <h1>Não foi possível acessar o sistema</h1>
+    <p role="alert">Verifique sua conexão e tente novamente.</p>
+    <button onClick={() => window.location.reload()}>Tentar novamente</button>
+  </main>;
 }

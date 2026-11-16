@@ -21,9 +21,9 @@ class MonitoramentoApplicationIT {
 	private MockMvc mockMvc;
 
 	@Test
-	void inicializaAplicacaoSemRotasDeNegocio() throws Exception {
+	void exigeAutenticacaoParaRotasProtegidas() throws Exception {
 		mockMvc.perform(get("/api/nao-configurado"))
-				.andExpect(status().isNotFound());
+				.andExpect(status().isUnauthorized());
 	}
 
 }

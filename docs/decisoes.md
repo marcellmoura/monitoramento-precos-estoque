@@ -198,3 +198,7 @@ Eventos PR/main/manual; um job sequencial Linux enquanto a suíte é pequena; ca
 ## Persistência inicial — 2026-11-16
 
 Primeiro recorte da TT-04: PostgreSQL 18.7 oficial fixado por digest, Compose somente para banco local e volume persistente, JPA/Flyway com versões gerenciadas pelo Boot. Flyway controla schema e Hibernate valida. Tabela usuarios conforme AP15/AP16: BIGINT identity; nome120, email254, hash255, perfil20 restrito aos quatro valores; flags e timestamps. E-mail único sem diferenciar caixa. Sem conta padrão ou credencial em migration. Especificação e testes em [persistência](persistencia.md). A TT-04 continua para os demais modelos; login será o incremento funcional seguinte.
+
+## Primeiro fluxo de acesso — 2026-11-16
+
+Inicialização local interativa somente em base sem usuários, sem senha padrão; credencial inicial temporária. Troca exige senha atual e nova diferente com mínimo de 12 caracteres; revoga todas as sessões e pede novo login. Contratos REST, rotas React, persistência de sessão e verificação de versão da credencial descritos em [acesso](acesso.md). Administração/reset e permissões de cada módulo permanecem incrementais conforme AP15/AP16.

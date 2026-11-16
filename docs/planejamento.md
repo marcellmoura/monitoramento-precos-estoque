@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF e containers pendentes; CI inicial integrada e validada na main, SonarQube pendente. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. PostgreSQL/JPA/Flyway integrados; login, primeiro acesso e logout implementados para revisão. Administração de usuários, permissões dos módulos, leitura PDF e containers completos pendentes; CI/SonarQube integrados e validados. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 
@@ -261,3 +261,7 @@ Validação desse incremento: PR #59, CI 43828814157 aprovada, dois gates `OK` e
 ### Persistência inicial de usuários — 2026-11-16
 
 Primeiro recorte da TT-04 implementado para revisão: PostgreSQL local persistente, JPA/Flyway e schema usuarios. O modelo físico, configuração por ambiente, normalização e integridade estão em [persistência](persistencia.md). Dez casos de integração com PostgreSQL real aprovados localmente; CI/Sonar do PR devem ser conferidos. Não implementa login, contas padrão ou endpoints de cadastro; TT-04 permanece aberta para a evolução do modelo.
+
+### Fluxo de acesso — 2026-11-16
+
+Inicialização local somente com base sem usuários; troca de senha encerra todas as sessões e exige novo login. US-29/US-32 implementadas para revisão; US-30 parcial (logout/expiração), US-34 transversal. Contratos, operação e verificações em [acesso](acesso.md). Sem cadastros ou importações neste incremento.
