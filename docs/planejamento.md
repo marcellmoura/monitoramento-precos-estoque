@@ -257,3 +257,7 @@ PR #58 integrado (merge `af0ea2c`); CI 43825308754, tentativa 4 aprovada com os 
 Incremento em revisão: configuração explícita de fontes/testes com autoconfiguração desativada nos scanners; seleção dos relatórios Java existentes; análise em PRs para main e espera dos dois gates antes de publicar artefatos. Checkout e identificação dos artefatos pelo SHA de origem do PR. Sem secret, reprovar explicitamente; sem execução de forks com credenciais privilegiadas. Detalhes e evidências em [ci.md](ci.md). Concluída essa configuração, verificações acompanham automaticamente as alterações; preparação de banco e funcionalidades serão tratadas por necessidade do incremento.
 
 Validação desse incremento: PR #59, CI 43828814157 aprovada, dois gates `OK` e escopo explícito do frontend confirmado no log. Integração pendente; nenhum comportamento funcional novo. A verificação de qualidade passa a acompanhar os incrementos automaticamente, sem exigir ajuste rotineiro por funcionalidade.
+
+### Persistência inicial de usuários — 2026-11-16
+
+Primeiro recorte da TT-04 implementado para revisão: PostgreSQL local persistente, JPA/Flyway e schema usuarios. O modelo físico, configuração por ambiente, normalização e integridade estão em [persistência](persistencia.md). Dez casos de integração com PostgreSQL real aprovados localmente; CI/Sonar do PR devem ser conferidos. Não implementa login, contas padrão ou endpoints de cadastro; TT-04 permanece aberta para a evolução do modelo.

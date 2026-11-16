@@ -194,3 +194,7 @@ Base da TT-03 fixada e validada; consultar [ambiente](ambiente.md). Verificar ve
 ## CI inicial — 2026-11-14
 
 Eventos PR/main/manual; um job sequencial Linux enquanto a suíte é pequena; cache POM/lockfile; relatórios para diagnóstico e pacote somente após todas as verificações passarem. Artefatos identificados por SHA/execução/tentativa e mantidos 7 dias. Actions fixadas por SHA oficial; menor permissão e nenhum segredo de serviço neste incremento. SonarQube e proteção de merge dependem de configurações próprias. Detalhes em [ci.md](ci.md).
+
+## Persistência inicial — 2026-11-16
+
+Primeiro recorte da TT-04: PostgreSQL 18.7 oficial fixado por digest, Compose somente para banco local e volume persistente, JPA/Flyway com versões gerenciadas pelo Boot. Flyway controla schema e Hibernate valida. Tabela usuarios conforme AP15/AP16: BIGINT identity; nome120, email254, hash255, perfil20 restrito aos quatro valores; flags e timestamps. E-mail único sem diferenciar caixa. Sem conta padrão ou credencial em migration. Especificação e testes em [persistência](persistencia.md). A TT-04 continua para os demais modelos; login será o incremento funcional seguinte.

@@ -1,6 +1,6 @@
 # Roadmap do projeto
 
-Atualização: 2026-11-16. Estado: backlog entregue, estrutura mínima e CI de build/testes integradas; gates SonarQube aprovados na main; ajuste de escopo e análise de PR em revisão. Funcionalidades, banco e containers pendentes.
+Atualização: 2026-11-16. Estado: backlog entregue, estrutura mínima e CI de build/testes integradas; CI e gates SonarQube automáticos validados em PR e main. Persistência inicial de usuários em revisão; funcionalidades e containerização completa pendentes.
 
 ## Entregas
 
@@ -40,7 +40,7 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 
 TT-02 e TT-03 concluídas: [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56) integrado pelo responsável em 14/11/2026 (merge `08eb103`); issues #39/#40 fechadas e ambas Concluído no Project. Main local sincronizada com origin/main. Consultar [ambiente](ambiente.md) para comandos e evidências. TT-01 permanece transversal, com contratos/modelos detalhados antes de cada incremento.
 
-CI inicial da TT-06 integrada; [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) integrado em 16/11/2026 (merge `af0ea2c`). [run 43825308754, tentativa 4](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43825308754/attempts/4) aprovado com gates backend/frontend `OK`. Referências iniciais formadas; autenticação e cobertura importada conferidas. Ajuste do escopo explícito, relatórios Java existentes, rótulos e análise/gates em PR implementados na branch `ci/tt-07-sonar-prs`, em revisão. CI do [PR #59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59) aprovada com os dois gates; escopo explícito confirmado no log. Integração pelo responsável pendente. Checks obrigatórios ainda não ativados. TT-06/TT-07 permanecem abertas. Nenhuma funcionalidade ou configuração de banco iniciada neste incremento.
+CI inicial da TT-06 integrada; [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) integrado em 16/11/2026 (merge `af0ea2c`). [run 43825308754, tentativa 4](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43825308754/attempts/4) aprovado com gates backend/frontend `OK`. Referências iniciais formadas; autenticação e cobertura importada conferidas. Ajuste do escopo explícito, relatórios Java existentes, rótulos e análise/gates em PR integrados pelo PR #59. CI do [PR #59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59) aprovada com os dois gates; escopo explícito confirmado no log. PR #59 integrado pelo responsável, merge `79e5f45`; CI da main aprovada. Checks obrigatórios ainda não ativados. TT-06/TT-07 permanecem abertas. Persistência inicial da TT-04 em revisão, conforme registro abaixo.
 
 E0 observado como **Entregue** no Classroom em 13/11/2026, com os links do Project e repositório anexados.
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
@@ -100,5 +100,9 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-16 | P4 / automação de PR em revisão | Configuração explícita do scanner, relatórios Java existentes, nomes dos componentes e análise de PR implementados | Branch `ci/tt-07-sonar-prs`; YAML/shell conferidos; CI e escopo remoto serão verificados no PR. Sem nova funcionalidade. |
 
 | 2026-11-16 | P4 / automação de PR validada | Dois gates `OK`; builds/testes e artefatos aprovados; frontend indexa as fontes/testes esperadas | [PR #59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59); [CI 43828814157](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43828814157) para `40d4dd8`. Aguardando revisão/merge; após integração, seguir para banco e funcionalidades. Metas AP19 seguem transversais. |
+
+| 2026-11-16 | P4 / automação integrada | PR #59 integrado, merge `79e5f45`; CI pós-merge aprovada | [Run 43830357214](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43830357214). Verificações automáticas estabelecidas; próximo incremento: persistência, a detalhar antes de implementar. AP19 segue transversal. |
+
+| 2026-11-16 | TT-04 / persistência inicial | PostgreSQL 18.7, JPA/Flyway e primeira migration de usuários implementados | 10 casos de integração locais aprovados; modelo e execução em persistencia.md. Banco local na porta disponível configurada; CI/PR em preparação. Sem login ou endpoints novos. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.
