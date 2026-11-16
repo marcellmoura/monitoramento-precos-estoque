@@ -53,4 +53,4 @@ Testes: Vitest, React Testing Library e Playwright; Spring Boot Test, JUnit, Moc
 - Backlog: 15/11/2026.
 - Projeto final: 23/11/2026.
 
-CI de build/testes integrada; análise SonarQube da main em preparação, com gates de PR ainda pendentes. Banco, segurança, PDFs e execução completa por containers serão documentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
+CI de build/testes integrada; análises e gates SonarQube aprovados na main, com ajuste do escopo e gates de PR em revisão. Banco, segurança, PDFs e execução completa por containers serão documentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
