@@ -103,6 +103,6 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-16 | P4 / automação integrada | PR #59 integrado, merge `79e5f45`; CI pós-merge aprovada | [Run 43830357214](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43830357214). Verificações automáticas estabelecidas; próximo incremento: persistência, a detalhar antes de implementar. AP19 segue transversal. |
 
-| 2026-11-16 | TT-04 / persistência inicial | PostgreSQL 18.7, JPA/Flyway e primeira migration de usuários implementados | 10 casos de integração locais aprovados; modelo e execução em persistencia.md. Banco local na porta disponível configurada; CI/PR em preparação. Sem login ou endpoints novos. |
+| 2026-11-16 | TT-04 / persistência inicial | PostgreSQL 18.7, JPA/Flyway e primeira migration de usuários implementados | 10 casos de integração locais aprovados; modelo e execução em persistencia.md. Banco local na porta disponível configurada; [PR #60](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/60) aberto e [CI 43868438423](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43868438423) aprovada com os dois gates. Revisão/merge pendentes. Sem login ou endpoints novos. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

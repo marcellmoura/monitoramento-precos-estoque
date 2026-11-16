@@ -92,10 +92,12 @@ A suíte comprova:
 - PostgreSQL rejeita e-mail duplicado mesmo com caixa diferente, perfil inválido e nome vazio, inclusive por SQL direto.
 - Uma migration aplica uma vez, reexecução preserva dados e alteração do arquivo aplicado é detectada pelo checksum. Esse teste altera somente uma cópia temporária em schema isolado do container descartável; não modifica a migration original ou o banco local.
 
-Validação local: 10 casos de integração aprovados em 16/11/2026. CI e gates são executados automaticamente pelo fluxo existente; consultar o PR do incremento antes de integrá-lo. A TT-04 permanece em andamento para a evolução de produtos, fornecedores, importações e histórico.
+Validação local: 10 casos de integração aprovados em 16/11/2026. CI e gates são executados automaticamente pelo fluxo existente; [PR #60](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/60) em revisão. A TT-04 permanece em andamento para a evolução de produtos, fornecedores, importações e histórico.
 
 Fontes: [imagem oficial PostgreSQL](https://hub.docker.com/_/postgres), [inicialização de dados no Spring Boot](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [suporte PostgreSQL no Flyway](https://documentation.red-gate.com/flyway/reference/database-driver-reference/postgresql-database).
 
 Inicialização real do backend também verificada com o banco do Compose: migration V1 aplicada, Hibernate validou o modelo e a rota inexistente manteve HTTP 404. Nenhum usuário foi criado no banco local. A porta local usada nesta validação foi 5433, preservando o serviço que já ocupava a 5432.
 
 O container local foi recriado mantendo o volume nomeado: a migration V1 continuou registrada e a tabela de usuários permaneceu vazia. O processo de backend usado na validação foi encerrado; PostgreSQL permanece disponível para o desenvolvimento.
+
+Validação remota: [CI 43868438423](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43868438423) aprovada para `e58967c`, incluindo backend/PostgreSQL, frontend, navegador, ambos os gates e artefatos. Conferir também o check do último commit do PR antes de integrar. A TT-04 segue aberta, Em andamento, por abranger a evolução dos demais modelos.
