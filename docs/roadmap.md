@@ -1,6 +1,6 @@
 # Roadmap do projeto
 
-Atualização: 2026-11-14. Estado: 53 issues publicadas; estrutura mínima React/Spring Boot com builds/testes locais verificados; funcionalidades, banco, CI/SonarQube e containers pendentes.
+Atualização: 2026-11-16. Estado: backlog entregue, estrutura mínima e CI de build/testes integradas; inicialização SonarQube em preparação. Funcionalidades, banco e containers pendentes.
 
 ## Entregas
 
@@ -40,7 +40,7 @@ Consultar [planejamento](planejamento.md), [decisões](decisoes.md) e [backlog](
 
 TT-02 e TT-03 concluídas: [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56) integrado pelo responsável em 14/11/2026 (merge `08eb103`); issues #39/#40 fechadas e ambas Concluído no Project. Main local sincronizada com origin/main. Consultar [ambiente](ambiente.md) para comandos e evidências. TT-01 permanece transversal, com contratos/modelos detalhados antes de cada incremento.
 
-CI inicial da **TT-06 validada e em revisão no [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57)**. Conferir o check do último commit e integrar pelo fluxo individual. Próximo alinhamento: qualidade SonarQube (TT-07/TT-08) e checks obrigatórios da main. Eventos PR/main/manual, comandos, relatórios e pacote rastreável configurados. Tratar conexão/credencial do SonarQube e metas AP19 no incremento correspondente. TT-06/TT-07 permanecem abertas até seus próprios critérios. Banco/migrations da TT-04 dependem de alinhamento próprio. Incremento de CI inicial aprovado e iniciado na TT-06; SonarQube/proteção de merge continuam pendentes de alinhamento.
+CI inicial da TT-06 integrada pelo [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57), com [execução da main aprovada](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43573638537). TT-07 em implementação: dois projetos públicos SonarQube criados, secret cadastrado e scanners configurados para inicializar a main após integração. Validação remota ainda pendente; análise/gates de PRs serão habilitados após a baseline. Não concluir TT-06/TT-07 nem ativar proteção antes das evidências. Banco/migrations da TT-04 dependem de incremento próprio.
 
 E0 observado como **Entregue** no Classroom em 13/11/2026, com os links do Project e repositório anexados.
 Testes, logs, documentação e qualidade acompanham os incrementos; as etapas finais consolidam a verificação. CI é introduzida cedo para detectar regressões continuamente.
@@ -84,5 +84,15 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 | 2026-11-14 | P4 / CI inicial em implementação | Configurado workflow PR/main/manual, Failsafe e relatórios; comandos de backend/frontend/Chromium aprovados localmente | Branch `ci/tt-06-build-testes`; validação no GitHub em acompanhamento. TT-06 permanece aberta por critérios dependentes de Quality Gate. |
 
 | 2026-11-14 | P4 / CI inicial validada | Execução inicial verde, falha controlada comprovada e correção verde; artefatos e relatórios inspecionados | [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57); runs `43572672207`, `43572899017`, `43573032239`. Pacote bloqueado na falha. TT-06 aberta pelo Quality Gate; revisão/merge e execução da main pendentes. |
+
+| 2026-11-14 | P4 / CI integrada | PR #57 integrado pelo responsável, merge `8787b1b`; CI executada automaticamente na main | [Run 43573638537](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43573638537) aprovado; backend/frontend/Chromium e uploads concluídos. Main local sincronizada. TT-06 aberta/Em andamento pelo Quality Gate pendente; SonarQube e proteção de merge aguardam alinhamento. |
+
+| 2026-11-14 | P4 / preparação de qualidade | Conferidas documentação e configuração atual; proposta de análises por componente e checks obrigatórios preparada | Sem sessão SonarQube; cadastro ainda necessário. Nenhum projeto remoto, segredo, permissão ou regra criado; abordagem e configuração dependem de alinhamento. |
+
+| 2026-11-16 | P4 / cadastro SonarQube preparado | Organizacao marcellmoura criada; mudanca para Free agendada para 28/11/2026; formulario de analises backend/frontend preparado para revisao | Mesmo repositorio; nenhum projeto de analise criado ainda, token/scanners/gates e protecao da main pendentes. |
+
+| 2026-11-16 | P4 / projetos de analise criados | Confirmados dois projetos publicos no SonarQube, backend e frontend, vinculados ao repositorio | Ambos ainda sem analise. Credencial de CI, scanners, cobertura importada, gates e protecao da main pendentes. |
+
+| 2026-11-16 | P4 / inicialização SonarQube em implementação | Secret cadastrado; configurados scanners por componente, cobertura e espera pelos gates na main | Builds, lint, 1 IT/4 Vitest/1 Chromium aprovados localmente; plugin e relatórios conferidos; PR em preparação. Primeira análise depende da integração. Gates de PR, ratings gerais e proteção continuam pendentes; TT-06/TT-07 abertas. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.
