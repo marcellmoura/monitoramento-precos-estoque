@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF e containers pendentes; CI inicial validada em PR, SonarQube pendente. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. Banco, segurança, leitura PDF e containers pendentes; CI inicial integrada e validada na main, SonarQube pendente. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 
@@ -242,4 +242,8 @@ TT-03: versões compatíveis aprovadas, frontend/backend criados e builds/testes
 
 ### CI inicial — 2026-11-14
 
-Configuração em implementação na TT-06: testes unitários/integração separados no Maven, workflow para backend/frontend/Chromium, relatórios e artefatos rastreáveis. Validação local e execuções de PR aprovadas; ensaio vermelho/verde e artefatos conferidos. Integração e execução de main aguardam merge do PR #57. Não implementa regra funcional nem conclui análise SonarQube/Quality Gate. Ver [ci.md](ci.md).
+Configuração em implementação na TT-06: testes unitários/integração separados no Maven, workflow para backend/frontend/Chromium, relatórios e artefatos rastreáveis. Validação local e execuções de PR aprovadas; ensaio vermelho/verde e artefatos conferidos. PR #57 integrado, merge `8787b1b`; execução 43573638537 na main aprovada. Não implementa regra funcional nem conclui análise SonarQube/Quality Gate. Ver [ci.md](ci.md).
+
+### Inicialização SonarQube — 2026-11-16
+
+Dois projetos públicos por componente na organização `marcellmoura`, mesmo repositório. Integração em implementação: Maven 5.8.0.7211 no backend, Action SonarSource 8.4.1 no frontend, JaCoCo/LCOV e espera de até 300s por gate. `SONAR_TOKEN` cadastrado como repository secret. Inicializar pela main e comprovar importação/resultados antes de habilitar análises de PR e checks obrigatórios. Nenhuma funcionalidade de negócio nesta etapa; TT-06/TT-07 permanecem abertas. Escopo, limites e validação em [ci.md](ci.md).

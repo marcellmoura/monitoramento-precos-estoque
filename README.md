@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. Funcionalidades de negócio, banco e containers pendentes; CI inicial validada em PR, aguardando integração.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. Funcionalidades de negócio, banco e containers pendentes; CI inicial integrada e validada na main.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -20,7 +20,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 
 ## Versionamento
 
-A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); a estrutura executável foi integrada pelo [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56). A CI inicial está em revisão no [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57).
+A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um Pull Request relacionado à issue correspondente. A documentação inicial está registrada no [PR #54](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/54); a estrutura executável foi integrada pelo [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56). A CI inicial foi integrada pelo [PR #57](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/57).
 
 ## Execução inicial
 
@@ -53,4 +53,4 @@ Testes: Vitest, React Testing Library e Playwright; Spring Boot Test, JUnit, Moc
 - Backlog: 15/11/2026.
 - Projeto final: 23/11/2026.
 
-Banco, pipeline, segurança, PDFs e execução completa por containers serão documentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
+CI de build/testes integrada; análise SonarQube da main em preparação, com gates de PR ainda pendentes. Banco, segurança, PDFs e execução completa por containers serão documentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
