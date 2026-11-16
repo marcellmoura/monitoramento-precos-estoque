@@ -247,3 +247,11 @@ Configuração em implementação na TT-06: testes unitários/integração separ
 ### Inicialização SonarQube — 2026-11-16
 
 Dois projetos públicos por componente na organização `marcellmoura`, mesmo repositório. Integração em implementação: Maven 5.8.0.7211 no backend, Action SonarSource 8.4.1 no frontend, JaCoCo/LCOV e espera de até 300s por gate. `SONAR_TOKEN` cadastrado como repository secret. Inicializar pela main e comprovar importação/resultados antes de habilitar análises de PR e checks obrigatórios. Nenhuma funcionalidade de negócio nesta etapa; TT-06/TT-07 permanecem abertas. Escopo, limites e validação em [ci.md](ci.md).
+
+### SonarQube na main validado — 2026-11-16
+
+PR #58 integrado (merge `af0ea2c`); CI 43825308754, tentativa 4 aprovada com os dois gates `OK` e classificações gerais A. Referências iniciais em previous_version/0.1.0; cobertura importada. A conferência mostrou parâmetros de escopo ignorados pelo mecanismo atual do frontend; ajustar a separação efetiva de fontes/testes antes da conclusão de TT-07. Relatórios Java ausentes e rótulos dos componentes também precisam de ajuste. Análise de PR e proteção continuam pendentes; nenhum limite de qualidade foi alterado. Evidências e limitações em [ci.md](ci.md).
+
+### Automação de qualidade nos PRs — 2026-11-16
+
+Incremento em revisão: configuração explícita de fontes/testes com autoconfiguração desativada nos scanners; seleção dos relatórios Java existentes; análise em PRs para main e espera dos dois gates antes de publicar artefatos. Checkout e identificação dos artefatos pelo SHA de origem do PR. Sem secret, reprovar explicitamente; sem execução de forks com credenciais privilegiadas. Detalhes e evidências em [ci.md](ci.md). Concluída essa configuração, verificações acompanham automaticamente as alterações; preparação de banco e funcionalidades serão tratadas por necessidade do incremento.

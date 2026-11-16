@@ -1,6 +1,6 @@
 # Integração contínua
 
-Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Integração SonarQube em revisão no [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com inicialização pela main antes da análise de PRs; proteção de merge pendente.
+Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Inicialização SonarQube integrada pelo [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com os dois gates aprovados na main. Ajuste do escopo e análise de PRs em revisão; proteção de merge pendente.
 
 ## Eventos e ambiente
 
@@ -17,9 +17,9 @@ Temurin Java 25.0.5 e Node definido em `.nvmrc`; Maven Wrapper e lockfile npm pr
 1. Backend: `./mvnw -B -ntp clean verify`, a partir de `backend/`.
 2. Frontend: `npm ci`, lint, Vitest/cobertura e build, a partir de `frontend/`.
 3. Chromium e bibliotecas Linux instalados pelo Playwright; executar o teste de navegação do build.
-4. Na main, verificar a presença da credencial e dos relatórios de cobertura, analisar backend e frontend e aguardar cada Quality Gate.
+4. Em PRs e na main, verificar a presença da credencial e dos relatórios de cobertura, analisar backend e frontend e aguardar cada Quality Gate.
 5. Guardar relatórios existentes, inclusive em caso de falha de testes ou análise.
-6. Guardar JAR e `dist/` somente quando todas as verificações anteriores passarem, sem reconstruir os pacotes para o upload. Neste primeiro incremento, PRs validam build/testes; seus gates ainda não são executados.
+6. Guardar JAR e `dist/` somente quando todas as verificações anteriores passarem, sem reconstruir os pacotes para o upload. O pacote depende também dos dois gates em PRs.
 
 Não há `skipTests` nem `continue-on-error`. Um JAR pode ser criado antes da fase Maven `verify`; isso não significa que foi aprovado. Seu upload depende do resultado de todas as verificações.
 
@@ -40,11 +40,11 @@ Na aba Actions, abrir a execução e o job; conferir o primeiro passo com falha 
 - `relatorios-<sha>-<run-id>-<tentativa>`: Surefire/Failsafe, JaCoCo, cobertura frontend e relatórios/diagnóstico Playwright, quando produzidos.
 - `aplicacao-<sha>-<run-id>-<tentativa>`: JAR executável do backend e build estático do frontend, após sucesso.
 
-Os relatórios podem existir em uma execução reprovada; isso não libera o pacote da aplicação. Dependências, credenciais, uploads e contexto local não são incluídos. Artefato não equivale a deploy. Em PR, o SHA identifica o commit de integração que o runner verificou, não necessariamente o último commit isolado da branch de trabalho.
+Os relatórios podem existir em uma execução reprovada; isso não libera o pacote da aplicação. Dependências, credenciais, uploads e contexto local não são incluídos. Artefato não equivale a deploy. Em PR, checkout e nomes dos artefatos usam o SHA da branch de origem (`pull_request.head.sha`); na main, usam `github.sha`. Assim, pacote e relatórios identificam o código efetivamente analisado.
 
 ## Limites atuais
 
-A integração SonarQube deste incremento executa somente na main (push ou execução manual na main). A autenticação, importação de cobertura e resultado remoto ainda dependem da primeira execução após integração. PRs exibem aviso explícito e ainda não executam Sonar; habilitar e comprovar seus gates após estabelecer a baseline. A meta de qualidade AP19 permanece vigente e pendente de verificação. CI vermelha sozinha não bloqueia o botão de merge: checks obrigatórios dependem da configuração adicional da branch, a alinhar depois dos checks existirem.
+A configuração em revisão habilita Sonar na main e nos PRs destinados a ela. Autenticação, importação de cobertura e gates da main já foram verificados; ajuste de escopo e gates de PR serão comprovados na CI deste incremento. Execuções manuais devem selecionar main. A meta de qualidade AP19 permanece vigente e pendente de verificação. CI vermelha sozinha não bloqueia o botão de merge: checks obrigatórios dependem da configuração adicional da branch, a alinhar depois dos checks existirem.
 
 Não encerrar TT-06 antes dos critérios ainda dependentes do Quality Gate. Execução após merge na main conferida e aprovada em 14/11/2026. Evidências da validação inicial estão abaixo; execuções futuras permanecem consultáveis no PR e na aba Actions.
 
@@ -73,9 +73,9 @@ Dois projetos públicos vinculados ao mesmo repositório, organização `marcell
 | [Backend](https://sonarcloud.io/dashboard?id=marcellmoura_monitoramento-precos-estoque_backend) | `marcellmoura_monitoramento-precos-estoque_backend` | Propriedades e SonarScanner Maven 5.8.0.7211 fixados em `backend/pom.xml`; `./mvnw -B -ntp sonar:sonar` depois de `clean verify` |
 | [Frontend](https://sonarcloud.io/dashboard?id=marcellmoura_monitoramento-precos-estoque_frontend) | `marcellmoura_monitoramento-precos-estoque_frontend` | `frontend/sonar-project.properties`; Action oficial SonarSource 8.4.1 fixada por SHA, base `frontend/` |
 
-Identificadores são públicos; apenas `SONAR_TOKEN` é secreto. O secret está cadastrado no GitHub; sua validade será comprovada pela análise. O checkout obtém histórico completo (`fetch-depth: 0`). Cada scanner recebe o token apenas no ambiente do próprio passo. Não há `pull_request_target`, credenciais persistidas no checkout nem leitura local do token.
+Identificadores são públicos; apenas `SONAR_TOKEN` é secreto. O secret está cadastrado no GitHub; sua autenticação foi comprovada pelas análises da main. O checkout obtém histórico completo (`fetch-depth: 0`). Cada scanner recebe o token apenas no ambiente do próprio passo. Não há `pull_request_target`, credenciais persistidas no checkout nem leitura local do token.
 
-O backend importa `target/site/jacoco/jacoco.xml` e resultados Surefire/Failsafe; o frontend importa `coverage/lcov.info`. Testes `.test.ts`/`.test.tsx`, suporte `src/test/` e `e2e/` são classificados como testes, sem duplicá-los como fontes de produção. Nenhuma exclusão de cobertura de código funcional foi acrescentada. Configurações locais dos scanners ficam fora do Git.
+O backend importa `target/site/jacoco/jacoco.xml` e resultados Surefire/Failsafe; o frontend importa `coverage/lcov.info`. O escopo explícito separa testes `.test.ts`/`.test.tsx`, suporte `src/test/` e `e2e/` das fontes de produção. A configuração automática do scanner está fixada como desativada nos arquivos versionados; validar o resultado remoto deste ajuste, conforme o diagnóstico e registro abaixo. Nenhuma exclusão de cobertura de código funcional foi acrescentada. Configurações locais dos scanners ficam fora do Git.
 
 Ambos usam `sonar.qualitygate.wait=true` e timeout de 300 segundos. Erro de scanner, credencial ausente, relatório ausente, timeout ou gate reprovado interrompem o job e impedem o upload do pacote na main. Se o backend falhar, a análise seguinte não é executada; isso não representa aprovação do frontend. Relatórios já existentes continuam disponíveis para diagnóstico.
 
@@ -93,3 +93,38 @@ Referências: [monorepos e análise por CI](https://docs.sonarsource.com/sonarqu
 ### Validação local — 16/11/2026
 
 Maven `clean verify` aprovado com 1 teste de integração; lint, 4 testes Vitest, build e 1 teste Chromium aprovados. POM/XML, sintaxe YAML e caminhos JaCoCo/LCOV conferidos; o plugin Maven 5.8.0.7211 foi resolvido pelo Maven Central e seu goal `sonar` confirmado. O teste de navegador exigiu execução com permissão para abrir a porta local 4173. Nenhuma análise autenticada foi executada localmente. A primeira análise remota e os gates permanecem pendentes da integração.
+
+### Validação remota após o PR #58 — 16/11/2026
+
+Merge `af0ea2c`; main local sincronizada. [run 43825308754, tentativa 4](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43825308754/attempts/4) concluído com sucesso: testes, builds, análises backend/frontend, espera pelos dois gates e uploads aprovados. Pacote publicado somente na tentativa aprovada, identificado pelo mesmo SHA e tentativa. Nenhuma credencial acessada localmente.
+
+| Tentativa | Resultado observado |
+|---|---|
+| 1 | Maven Central respondeu HTTP 429 ao resolver o parent; testes e Sonar não iniciaram |
+| 2 | Build/testes aprovados; primeira análise backend criou referência, gate `NONE`/Not computed; scanner falhou e frontend/pacote foram bloqueados |
+| 3 | Backend com gate `OK`; primeira análise frontend criou referência, gate `NONE`; CI reprovou e não publicou pacote |
+| 4 | Gates `OK` em ambos; CI aprovada, relatórios e pacote publicados |
+
+Os dois componentes registram A em segurança, confiabilidade e manutenibilidade gerais, zero problemas abertos e duplicação geral 0%. Backend: JaCoCo 100% e 1 teste importado. Frontend: cobertura geral Sonar 54,5%; essa métrica e seu escopo não são diretamente equivalentes às linhas do relatório Vitest. Não representa comprovação da meta de cobertura de código novo de AP19.
+
+A referência de código novo é `previous_version`, versão 0.1.0: backend em 16/11/2026 07:43:48 UTC e frontend em 07:50:02 UTC. Os resultados de gate recebidos têm condições de ratings/hotspots; ainda não há valor de cobertura/duplicação de código novo para demonstrar os limites numéricos. A configuração completa do gate e o tratamento de mudanças pequenas devem ser conferidos antes de encerrar TT-07.
+
+#### Ajustes identificados na conferência
+
+- O log do frontend informa que `sonar.sources`, `sonar.tests` e `sonar.test.inclusions` não têm efeito no novo mecanismo de escopo deste ambiente. A configuração foi carregada, mas os arquivos indexados incluem configurações na raiz e `e2e/inicio.spec.ts`. A intenção de analisar fontes/testes separadamente ainda não foi comprovada; adaptar o escopo suportado antes de tratar as métricas como definitivas. A documentação pública consultada ainda descreve os parâmetros antigos; prevalece o comportamento observado na execução para este diagnóstico.
+- O backend importou o resultado Failsafe, mas o scanner registra ausência de `target/surefire-reports`, pois ainda não há testes unitários Java. Ajustar a seleção dos relatórios existentes, sem inventar testes ou relatórios vazios.
+- O scanner adotou nomes derivados do POM/package.json; as chaves dos dois projetos continuam distintas. Fixar os rótulos Backend/Frontend para facilitar identificação.
+
+TT-06/TT-07 continuam abertas: falta validar o escopo correto e o comportamento dos gates em PR. Nenhum limite foi reduzido, regra desabilitada ou fonte funcional excluída durante a inicialização. Ajustes, análise de PR e proteção devem seguir o próximo incremento.
+
+### Ajuste de escopo e análise de PRs — 16/11/2026
+
+Configuração na branch `ci/tt-07-sonar-prs`, em revisão:
+
+- `sonar.scanner.autoconfig.enabled=false` nos dois componentes preserva o escopo explícito do repositório. A interface do serviço informa que a configuração automática está em evolução; não depender dela para substituir fontes/testes. Nenhuma regra, limite de gate ou fonte funcional foi excluída.
+- Nomes Backend/Frontend definidos nos scanners, mantendo as mesmas chaves públicas. Os nomes da main serão atualizados na análise após merge.
+- Backend seleciona somente diretórios de relatórios existentes após `verify`, incluindo Surefire quando houver testes unitários e Failsafe para os testes de integração.
+- Sonar executa em cada PR para main, além de push/manual na main. Checkout da origem do PR e histórico completo; autodetecção do contexto do PR pelo scanner. O job espera ambos os gates antes de publicar o pacote.
+- Sem secret, a verificação reprova explicitamente. PRs de forks não recebem `SONAR_TOKEN` e não comprovam qualidade por pular análise; não usar `pull_request_target` para contornar essa restrição.
+
+Sintaxe YAML e blocos shell conferidos; a CI do PR validará builds/testes, escopo, cobertura e os dois gates. O fluxo normal passa a ser desenvolver com testes, abrir PR e conferir as verificações automáticas. Banco e funcionalidades seguem nos incrementos próprios; novas configurações somente por necessidade concreta.
