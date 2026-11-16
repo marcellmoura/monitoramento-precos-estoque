@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. Funcionalidades de negócio, banco e containers pendentes; CI inicial integrada e validada na main.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência inicial PostgreSQL/usuários em revisão. Login, cadastros e importação de PDFs pendentes.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -12,6 +12,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 
 - [Ambiente, versões, execução e testes](docs/ambiente.md)
 - [Integração contínua](docs/ci.md)
+- [Banco e persistência](docs/persistencia.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
@@ -26,7 +27,7 @@ A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um
 
 Requisitos: Temurin Java 25.0.5+8 e Node 26.13.1. Maven está fixado pelo Wrapper.
 
-Em `backend/`:
+Prepare o banco e exporte as variáveis conforme [persistência](docs/persistencia.md). Depois, em `backend/`:
 
 ```sh
 ./mvnw verify
@@ -53,4 +54,4 @@ Testes: Vitest, React Testing Library e Playwright; Spring Boot Test, JUnit, Moc
 - Backlog: 15/11/2026.
 - Projeto final: 23/11/2026.
 
-CI de build/testes integrada; análises e gates SonarQube aprovados na main, com ajuste do escopo e gates de PR em revisão. Banco, segurança, PDFs e execução completa por containers serão documentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
+CI de build/testes e gates SonarQube integrados e validados em PR e na main. Banco PostgreSQL local e persistência de usuários documentados em persistencia.md; segurança, PDFs e execução completa por containers serão acrescentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.

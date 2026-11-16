@@ -1,6 +1,6 @@
 # Ambiente de desenvolvimento
 
-Base configurada em 13/11/2026 para a TT-03. A aplicação inicia sem banco e ainda não oferece funcionalidades de negócio.
+Base configurada em 13/11/2026 para a TT-03. A base inicial foi ampliada na TT-04 com PostgreSQL/JPA/Flyway; ainda não oferece endpoints de negócio. Execução atual em [persistência](persistencia.md).
 
 ## Versões fixadas
 
@@ -22,9 +22,11 @@ Base configurada em 13/11/2026 para a TT-03. A aplicação inicia sem banco e ai
 
 ESLint 10.14.0 com typescript-eslint 8.72.2, regras de Hooks e React Refresh. Dependências auxiliares e transitivas estão no lockfile. Usar npm fornecido com Node (validação local com npm 11.20.0); `npm ci` preserva a resolução. Não executar atualização automática de dependências sem verificar compatibilidade e testes.
 
-PostgreSQL, JPA/Flyway, segurança e PDFBox serão configurados nos incrementos correspondentes. Testcontainers/PostgreSQL já consta nas dependências de testes, mas não há teste de banco nesta etapa. Docker ativo será necessário quando essa integração existir.
+PostgreSQL 18.7/JPA/Flyway e testes de banco estão configurados no incremento inicial da TT-04, conforme [persistência](persistencia.md). Segurança e PDFBox serão acrescentados nos incrementos correspondentes. Docker ativo é necessário para os testes de integração.
 
 ## Execução e validação
+
+Antes de iniciar o backend, prepare o PostgreSQL e exporte o ambiente conforme [persistência](persistencia.md). Para `verify`, mantenha o Docker disponível: os testes provisionam seus próprios bancos.
 
 Selecionar Java e Node nas versões acima; conferir `java -version`, `node --version` e `npm --version`. Arquivos de versão auxiliam gerenciadores, mas não instalam runtimes automaticamente. Maven global não é necessário.
 
