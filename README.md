@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência inicial PostgreSQL/usuários em revisão. Login, cadastros e importação de PDFs pendentes.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência PostgreSQL/usuários integrada. Fluxo de login, troca obrigatória de senha e logout implementado para revisão. Administração de usuários, cadastros e importação de PDFs pendentes.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -13,6 +13,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Ambiente, versões, execução e testes](docs/ambiente.md)
 - [Integração contínua](docs/ci.md)
 - [Banco e persistência](docs/persistencia.md)
+- [Login e criação do primeiro administrador](docs/acesso.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
@@ -27,7 +28,7 @@ A branch principal é `main`. Cada incremento utiliza uma branch por tarefa e um
 
 Requisitos: Temurin Java 25.0.5+8 e Node 26.13.1. Maven está fixado pelo Wrapper.
 
-Prepare o banco e exporte as variáveis conforme [persistência](docs/persistencia.md). Depois, em `backend/`:
+Prepare o banco e exporte as variáveis conforme [persistência](docs/persistencia.md). Crie o primeiro administrador conforme [acesso](docs/acesso.md). Para iniciar o backend, em `backend/`:
 
 ```sh
 ./mvnw verify
@@ -41,7 +42,7 @@ npm ci
 npm run dev
 ```
 
-Abrir `http://127.0.0.1:5173`. O backend inicia em `127.0.0.1:8080`; ainda não há endpoints de negócio. Para validar o frontend: `npm run lint`, `npm run test:coverage`, `npm run build`, `npx playwright install chromium` e `npm run test:e2e`. Detalhes de ambiente, Windows e relatórios em [ambiente](docs/ambiente.md).
+Abrir `http://127.0.0.1:5173`. O backend inicia em `127.0.0.1:8080`; o login protege o acesso. Para validar o frontend: `npm run lint`, `npm run test:coverage`, `npm run build`, `npx playwright install chromium` e `npm run test:e2e`. Detalhes de ambiente, Windows e relatórios em [ambiente](docs/ambiente.md).
 
 ## Tecnologias
 
@@ -54,4 +55,4 @@ Testes: Vitest, React Testing Library e Playwright; Spring Boot Test, JUnit, Moc
 - Backlog: 15/11/2026.
 - Projeto final: 23/11/2026.
 
-CI de build/testes e gates SonarQube integrados e validados em PR e na main. Banco PostgreSQL local e persistência de usuários documentados em persistencia.md; segurança, PDFs e execução completa por containers serão acrescentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
+CI de build/testes e gates SonarQube integrados e validados em PR e na main. Banco PostgreSQL local e persistência de usuários documentados em persistencia.md; login e primeiro acesso descritos em acesso.md. Administração/permissões de negócio, PDFs e execução completa por containers serão acrescentados nos incrementos correspondentes. Dados locais de execução, credenciais e uploads não fazem parte do conteúdo versionado.
