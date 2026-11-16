@@ -1,6 +1,6 @@
 # Autenticação e primeiro acesso
 
-Fluxo implementado para US-29 e US-32; logout e expiração da US-30 implementados. A administração/reset de usuários e a matriz de permissões dos módulos de negócio seguem pendentes. Não há cadastro público.
+Fluxo implementado para US-29 e US-32; logout e expiração da US-30 implementados. Administração/reset implementados para revisão em [administração de usuários](administracao-usuarios.md); a matriz dos futuros módulos de negócio segue transversal. Não há cadastro público.
 
 ## Criar o primeiro administrador
 

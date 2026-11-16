@@ -30,3 +30,13 @@ export async function requestJson<T>(
 
   return response.json() as Promise<T>;
 }
+
+export async function mutateJson<T>(path: string, method: string, body?: object) {
+  const csrf = await requestJson<{ token: string; headerName: string }>('/auth/csrf');
+  if (!csrf) throw new Error('Não foi possível iniciar a operação.');
+  return requestJson<T>(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}

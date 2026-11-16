@@ -73,6 +73,21 @@ public class Usuario {
         this.versaoCredencial++;
     }
 
+    public boolean alterarAcesso(Perfil novoPerfil, boolean novoAtivo) {
+        Objects.requireNonNull(novoPerfil);
+        if (perfil == novoPerfil && ativo == novoAtivo) { return false; }
+        perfil = novoPerfil;
+        ativo = novoAtivo;
+        versaoCredencial++;
+        return true;
+    }
+
+    public void redefinirSenha(String hash) {
+        senhaHash = Objects.requireNonNull(hash);
+        trocaSenhaObrigatoria = true;
+        versaoCredencial++;
+    }
+
     public long getVersaoCredencial() { return versaoCredencial; }
 
 	@PrePersist

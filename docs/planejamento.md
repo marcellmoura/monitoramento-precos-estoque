@@ -141,7 +141,7 @@ Ver AP16/AP17 em [decisoes.md](decisoes.md). Base inicial fixada e verificada em
 | Frontend | React/TypeScript/Vite, React Router, Fetch, CSS Modules; Vitest/Testing Library/Playwright |
 | CI/execução | GitHub Actions/SonarQube Cloud e Dockerfiles/Compose; logs, banco e PDFs persistentes |
 
-Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. PostgreSQL/JPA/Flyway integrados; login, primeiro acesso e logout implementados para revisão. Administração de usuários, permissões dos módulos, leitura PDF e containers completos pendentes; CI/SonarQube integrados e validados. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
+Status: estrutura React/Spring Boot e ferramentas de testes configuradas na TT-03; builds locais aprovados. PostgreSQL/JPA/Flyway integrados; login, primeiro acesso e logout integrados. Administração de usuários/perfis/reset implementada para revisão. Permissões dos futuros módulos, leitura PDF e containers completos pendentes; CI/SonarQube integrados e validados. Organização por funcionalidade com separação HTTP/aplicação/domínio/persistência descrita em `backend/README.md`; sem classes vazias de negócio. Registrar mudanças de dependências no controle de arquitetura.
 
 ## 8. Requisitos DevOps, evidências e qualidade
 

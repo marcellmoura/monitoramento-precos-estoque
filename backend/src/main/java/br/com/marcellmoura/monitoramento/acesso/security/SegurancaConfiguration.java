@@ -58,6 +58,7 @@ public class SegurancaConfiguration {
                             "ACESSO_NEGADO", "Requisição não autorizada. Atualize a página e tente novamente.")))
                 .authorizeHttpRequests(config -> config
                     .requestMatchers("/api/auth/csrf", "/api/auth/login").permitAll()
+                    .requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated())
                 .addFilterBefore(new ValidacaoSessaoFilter(usuarios), AuthorizationFilter.class)
                 .build();
