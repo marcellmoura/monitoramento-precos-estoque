@@ -51,4 +51,4 @@ Frontend: `npm run lint`, `npm run test:coverage`, `npm run build` e `npm run te
 
 Referências: [sessões e persistência do contexto](https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html), [Spring Session JDBC e schema PostgreSQL](https://docs.spring.io/spring-session/reference/configuration/jdbc.html), [armazenamento de senhas](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html) e [metadados oficiais do artefato Bouncy Castle](https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk18on/maven-metadata.xml).
 
-Implementação em revisão no [PR #61](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/61).
+Implementação em revisão no [PR #61](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/61). A [CI 43901233247](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/43901233247), commit `3134108`, aprovou 6 testes unitários e 27 de integração backend, 17 testes frontend, lint/build/navegação e os dois Quality Gates.
