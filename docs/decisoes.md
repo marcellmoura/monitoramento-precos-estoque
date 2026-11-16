@@ -206,3 +206,7 @@ Inicialização local interativa somente em base sem usuários, sem senha padrã
 ## Administração de usuários — 2026-11-16
 
 Senha temporária informada pelo Administrador e confirmada na interface; reset não reativa conta inativa. Alteração real do próprio acesso encerra a sessão quando permitida pela proteção do último Administrador; repetição dos mesmos valores preserva sessões. Reset registra ator/alvo/evento/instante sem credencial e participa da transação com alteração e revogação. Contratos, bloqueio transacional PostgreSQL e verificações em [administração de usuários](administracao-usuarios.md). Sem novas bibliotecas.
+
+## Cadastro e consulta de produtos — 2026-11-16
+
+Administrador/Compras cadastram e consultam todos os campos de produto; Estoque consulta identificação/categoria/unidade/quantidades/estado sem preços; Consulta acessa venda e dados comuns, sem compra. A filtragem ocorre na API. Código derivado do ID no formato PRD-000001, sem unicidade por nome; nome até 255 e categoria até 100. Preços BigDecimal/NUMERIC(19,2), quantidades NUMERIC(19,3); decimais de resposta em texto JSON. Entrada de preço até duas casas, sem arredondar excesso. Estoques inicialmente zero e estado ativo. Contratos, limites e verificações em [produtos](produtos.md).

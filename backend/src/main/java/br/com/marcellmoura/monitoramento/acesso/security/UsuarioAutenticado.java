@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import br.com.marcellmoura.monitoramento.usuario.domain.Usuario;
+import br.com.marcellmoura.monitoramento.usuario.domain.Perfil;
 
 public final class UsuarioAutenticado implements UserDetails, CredentialsContainer {
     @Serial private static final long serialVersionUID = 1L;
@@ -23,6 +24,9 @@ public final class UsuarioAutenticado implements UserDetails, CredentialsContain
         perfil = usuario.getPerfil().name();
         ativo = usuario.isAtivo();
         senhaHash = usuario.getSenhaHash();
+    }
+    public Perfil getPerfil() {
+        return Perfil.valueOf(perfil);
     }
     public Long getId() { return id; }
     public long getVersaoCredencial() { return versaoCredencial; }

@@ -52,7 +52,8 @@ export function Inicio() {
   return <section className={styles.painel}>
     <h2>Olá, {usuario.nome}</h2>
     <p>Perfil: {perfis[usuario.perfil]}</p>
-    {usuario.perfil === 'ADMINISTRADOR' && <Link to="/usuarios">Administrar usuários</Link>}
+    <p><Link to="/produtos">Consultar produtos</Link></p>
+    {usuario.perfil === 'ADMINISTRADOR'  && <Link to="/usuarios">Administrar usuários</Link>}
     <Sair />
   </section>;
 }

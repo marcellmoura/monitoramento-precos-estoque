@@ -2,6 +2,7 @@ package br.com.marcellmoura.monitoramento.acesso.security;
 
 import java.util.List;
 import java.util.Locale;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -59,6 +60,7 @@ public class SegurancaConfiguration {
                 .authorizeHttpRequests(config -> config
                     .requestMatchers("/api/auth/csrf", "/api/auth/login").permitAll()
                     .requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("ADMINISTRADOR")
+                    .requestMatchers(HttpMethod.POST, "/api/produtos").hasAnyRole("ADMINISTRADOR", "COMPRAS")
                     .anyRequest().authenticated())
                 .addFilterBefore(new ValidacaoSessaoFilter(usuarios), AuthorizationFilter.class)
                 .build();
