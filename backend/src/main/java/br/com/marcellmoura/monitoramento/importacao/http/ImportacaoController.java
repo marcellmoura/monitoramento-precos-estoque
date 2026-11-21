@@ -25,6 +25,7 @@ import br.com.marcellmoura.monitoramento.importacao.application.ImportacaoExcept
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
 import br.com.marcellmoura.monitoramento.importacao.application.RegistroImportacoes;
 import br.com.marcellmoura.monitoramento.importacao.domain.TentativaImportacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 
 @RestController
 @RequestMapping("/api/importacoes")
@@ -65,6 +66,12 @@ public class ImportacaoController {
     public TentativaImportacao confirmar(@AuthenticationPrincipal UsuarioAutenticado ator, @PathVariable @Positive long id) {
         return registro.confirmar(id, ator.getId());
     }
+
+    @GetMapping("/{id}/previa")
+    public PreviaImportacao previa(@PathVariable @Positive long id) { return registro.previa(id); }
+
+    @PostMapping("/{id}/reprocessamento")
+    public TentativaImportacao reprocessar(@PathVariable @Positive long id) { return registro.reprocessar(id); }
 
     @ExceptionHandler(ImportacaoException.class)
     ResponseEntity<ErroApi> falha(ImportacaoException ex) {

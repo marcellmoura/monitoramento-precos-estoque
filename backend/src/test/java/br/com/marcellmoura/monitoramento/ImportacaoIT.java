@@ -31,6 +31,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import br.com.marcellmoura.monitoramento.fornecedor.domain.Fornecedor;
 import br.com.marcellmoura.monitoramento.fornecedor.persistence.FornecedorRepository;
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
+import br.com.marcellmoura.monitoramento.importacao.application.ProcessamentoPdf;
+import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
+import br.com.marcellmoura.monitoramento.importacao.persistence.ExtracaoRepository;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import br.com.marcellmoura.monitoramento.support.ClienteHttpTeste;
 import br.com.marcellmoura.monitoramento.support.PostgreSqlTestConfiguration;
 import br.com.marcellmoura.monitoramento.usuario.domain.Perfil;
@@ -39,7 +45,7 @@ import br.com.marcellmoura.monitoramento.usuario.persistence.UsuarioRepository;
 import static br.com.marcellmoura.monitoramento.support.ClienteHttpTeste.json;
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, useMainMethod = SpringBootTest.UseMainMethod.ALWAYS)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, useMainMethod = SpringBootTest.UseMainMethod.ALWAYS, properties = "app.importacao.processamento-ativo=false")
 @Import(PostgreSqlTestConfiguration.class)
 class ImportacaoIT {
     private static final String ROTA = "/api/importacoes";
@@ -52,6 +58,8 @@ class ImportacaoIT {
     @Autowired private PasswordEncoder encoder;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private RecepcaoPdf recepcao;
+    @Autowired private ProcessamentoPdf processamento;
+    @Autowired private ExtracaoRepository extracoes;
     private ClienteHttpTeste admin;
     private Fornecedor fornecedor;
     private String hashSenha;
@@ -65,6 +73,8 @@ class ImportacaoIT {
     }
 
     @BeforeEach void preparar() throws Exception {
+        jdbc.update("UPDATE tentativas_importacao SET execucao_atual = NULL");
+        jdbc.update("DELETE FROM execucoes_extracao");
         jdbc.update("DELETE FROM tentativas_importacao");
         jdbc.update("DELETE FROM arquivos_importacao");
         jdbc.update("DELETE FROM spring_session");
@@ -243,4 +253,127 @@ class ImportacaoIT {
             Files.createDirectory(pasta);
         }
     }
+    @ParameterizedTest
+    @ValueSource(strings = { ORIGINAL, "Fornecedor_2.pdf", "sinteticos/tabela-v1.pdf", "sinteticos/tabela-v2.pdf",
+            "sinteticos/fichas-v1.pdf", "sinteticos/fichas-v2.pdf" })
+    void extraiOsFormatosENaoDeduzCamposAusentes(String arquivo) throws Exception {
+        long id = json(upload(admin, fornecedor, "cotacao-renomeada.pdf", ler(arquivo))).get("id").asLong();
+        String rota = ROTA + "/" + id;
+        assertThat(admin.enviar("GET", rota + "/previa", null, false).statusCode()).isEqualTo(409);
+        processamento.executarFila();
+        var dados = json(admin.enviar("GET", rota, null, false));
+        assertThat(dados.get("status").asText()).isEqualTo("AGUARDANDO_CONFERENCIA");
+        var previa = json(admin.enviar("GET", rota + "/previa", null, false));
+        var itens = previa.get("itens");
+        assertThat(dados.get("quantidadeItens").asInt()).isEqualTo(itens.size());
+        if (arquivo.startsWith("Fornecedor")) {
+            boolean kgFardo = ORIGINAL.equals(arquivo);
+            assertThat(itens.size()).isEqualTo(2);
+            assertThat(previa.get("dataReferencia").isNull()).isTrue();
+            assertThat(previa.get("layout").asText()).isEqualTo(kgFardo ? "KG_FARDO" : "ATACADO_VAREJO");
+            var primeira = itens.get(0).get("dados");
+            assertThat(primeira.get("descricao").asText()).isEqualTo("ACUCAR DE COCO");
+            assertThat(primeira.get("quantidade").isNull()).isTrue();
+            assertThat(primeira.get("referencia").isNull()).isEqualTo(!kgFardo);
+            assertThat(primeira.get("unidade").isNull()).isEqualTo(!kgFardo);
+            for (String coluna : kgFardo ? java.util.List.of("Preço KG", "Preço Fardo") : java.util.List.of("ATACADO", "VAREJO")) {
+                assertThat(itens.get(0).get("precos").get(coluna).asText()).isEqualTo("32");
+                assertThat(itens.get(1).get("precos").get(coluna).asText()).isEqualTo("78");
+            }
+        } else {
+            verificarSintetico(arquivo, previa);
+        }
+        assertThat(admin.enviar("POST", rota + "/reprocessamento", null, true).statusCode()).isEqualTo(409);
+    }
+
+    private void verificarSintetico(String arquivo, tools.jackson.databind.JsonNode previa) throws Exception {
+        var esperados = tools.jackson.databind.json.JsonMapper.builder().build().readTree(ler("sinteticos/dados-esperados.json"));
+        var itens = previa.get("itens");
+        boolean fichas = arquivo.contains("fichas");
+        assertThat(previa.get("layout").asText()).isEqualTo(fichas ? "FICHAS" : "TABELA");
+        assertThat(previa.get("dataReferencia").asText()).isEqualTo(arquivo.contains("v1") ? "01/11/2026" : "08/11/2026");
+        for (var amostra : esperados) {
+            if (!arquivo.endsWith(amostra.get("arquivo").asText())) continue;
+            var linhas = amostra.get("linhas");
+            assertThat(itens.size()).isEqualTo(linhas.size());
+            for (int i = 0; i < linhas.size(); i++) {
+                var origem = linhas.get(i);
+                var item = itens.get(i);
+                var dados = item.get("dados");
+                assertThat(dados.get("descricao").asText()).isEqualTo(origem.get("descricao").asText());
+                assertThat(dados.get("referencia").asText()).isEqualTo(origem.get("codigo").asText());
+                assertThat(dados.get("unidade").asText()).isEqualTo(origem.get("unidade").asText());
+                assertThat(dados.get("apresentacao").asText()).isEqualTo(origem.get("apresentacao").asText());
+                assertThat(dados.get("quantidade").asText()).isEqualTo(origem.get("quantidade").asText());
+                assertThat(item.get("precos").get(fichas ? "Valor de compra" : "Preço").asText().replace("R$ ", ""))
+                        .isEqualTo(origem.get("preco_brl").asText());
+                if ("0,00".equals(origem.get("preco_brl").asText()) || "Não informada".equals(origem.get("apresentacao").asText())) {
+                    assertThat(item.get("pendencias").size()).isPositive();
+                }
+            }
+        }
+    }
+
+    @Test void reprocessaFalhaDeLeituraSemNovoEnvioNemDuplicacao() throws Exception {
+        byte[] original = ler(ORIGINAL);
+        long id = json(upload(admin, fornecedor, ORIGINAL, original)).get("id").asLong();
+        Path pdf;
+        try (var arquivos = Files.list(pasta)) { pdf = arquivos.findFirst().orElseThrow(); }
+        Files.delete(pdf);
+        processamento.executarFila();
+        String rota = ROTA + "/" + id;
+        var falha = json(admin.enviar("GET", rota, null, false));
+        assertThat(falha.get("status").asText()).isEqualTo("FALHA_EXTRACAO");
+        assertThat(falha.get("motivo").asText()).contains("ler o PDF");
+        assertThat(entrar(Perfil.CONSULTA).enviar("POST", rota + "/reprocessamento", null, true).statusCode()).isEqualTo(403);
+        Files.write(pdf, original);
+        assertThat(json(admin.enviar("POST", rota + "/reprocessamento", null, true)).get("status").asText()).isEqualTo("PENDENTE");
+        processamento.executarFila();
+        processamento.executarFila();
+        assertThat(json(admin.enviar("GET", rota + "/previa", null, false)).get("itens").size()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM execucoes_extracao WHERE tentativa_id = ?", Long.class, id)).isEqualTo(2L);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tentativas_importacao", Long.class)).isEqualTo(1L);
+    }
+
+    @Test void expiraExecucaoEImpedePublicacaoAtrasada() throws Exception {
+        long id = json(upload(admin, fornecedor, ORIGINAL, ler(ORIGINAL))).get("id").asLong();
+        var trabalho = extracoes.reivindicar(60).orElseThrow();
+        assertThat(trabalho.tentativa()).isEqualTo(id);
+        assertThat(extracoes.reivindicar(60)).isEmpty();
+        jdbc.update("UPDATE execucoes_extracao SET expira_em = clock_timestamp() - INTERVAL '1 second' WHERE id = ?", trabalho.execucao());
+        var previaAtrasada = new PreviaImportacao("ATRASADA", null, java.util.List.of());
+        assertThat(extracoes.concluir(trabalho, previaAtrasada)).isFalse();
+        processamento.executarFila();
+        String rota = ROTA + "/" + id;
+        var falha = json(admin.enviar("GET", rota, null, false));
+        assertThat(falha.get("status").asText()).isEqualTo("FALHA_EXTRACAO");
+        assertThat(falha.get("motivo").asText()).contains("interrompido");
+        assertThat(admin.enviar("POST", rota + "/reprocessamento", null, true).statusCode()).isEqualTo(200);
+        processamento.executarFila();
+        assertThat(extracoes.concluir(trabalho, previaAtrasada)).isFalse();
+        assertThat(json(admin.enviar("GET", rota + "/previa", null, false)).get("layout").asText()).isEqualTo("KG_FARDO");
+    }
+
+    @Test void layoutDesconhecidoMantemFalhaExplicita() throws Exception {
+        byte[] conteudo;
+        try (var documento = new PDDocument(); var saida = new ByteArrayOutputStream()) {
+            var pagina = new PDPage();
+            documento.addPage(pagina);
+            try (var escrita = new PDPageContentStream(documento, pagina)) {
+                escrita.beginText();
+                escrita.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+                escrita.newLineAtOffset(50, 700);
+                escrita.showText("Cotacao textual sem tabela de produtos");
+                escrita.endText();
+            }
+            documento.save(saida);
+            conteudo = saida.toByteArray();
+        }
+        long id = json(upload(admin, fornecedor, "formato.pdf", conteudo)).get("id").asLong();
+        processamento.executarFila();
+        var falha = json(admin.enviar("GET", ROTA + "/" + id, null, false));
+        assertThat(falha.get("status").asText()).isEqualTo("FALHA_EXTRACAO");
+        assertThat(falha.get("motivo").asText()).contains("Layout não reconhecido");
+    }
+
 }

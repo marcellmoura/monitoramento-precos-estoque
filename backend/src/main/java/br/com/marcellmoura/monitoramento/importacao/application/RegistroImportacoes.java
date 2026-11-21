@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.marcellmoura.monitoramento.importacao.domain.EnvioPdf;
+import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
+import br.com.marcellmoura.monitoramento.importacao.persistence.ExtracaoRepository;
 import br.com.marcellmoura.monitoramento.importacao.domain.TentativaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.TentativaImportacao.Status;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ImportacaoRepository;
@@ -14,10 +16,12 @@ import br.com.marcellmoura.monitoramento.importacao.persistence.ImportacaoReposi
 public class RegistroImportacoes {
     private final ImportacaoRepository registros;
     private final ArmazenamentoPdf armazenamento;
+    private final ExtracaoRepository extracoes;
 
-    RegistroImportacoes(ImportacaoRepository registros, ArmazenamentoPdf armazenamento) {
+    RegistroImportacoes(ImportacaoRepository registros, ArmazenamentoPdf armazenamento, ExtracaoRepository extracoes) {
         this.registros = registros;
         this.armazenamento = armazenamento;
+        this.extracoes = extracoes;
     }
 
     public Page<TentativaImportacao> listar(int pagina, int tamanho) { return registros.listar(pagina, tamanho); }
@@ -47,6 +51,19 @@ public class RegistroImportacoes {
         }
         registros.inserirArquivo(hash, armazenamento.guardar(arquivo), arquivo.tamanho(), paginas);
         return consultar(registros.inserir(envio, hash, Status.PENDENTE, null, null));
+    }
+
+    public PreviaImportacao previa(long id) {
+        consultar(id);
+        return extracoes.previa(id).orElseThrow(() ->
+                new ImportacaoException(409, "PREVIA_INDISPONIVEL", "A prévia ainda não está disponível."));
+    }
+
+    @Transactional
+    public TentativaImportacao reprocessar(long id) {
+        if (extracoes.reagendar(id)) return consultar(id);
+        consultar(id);
+        throw new ImportacaoException(409, "REPROCESSAMENTO_INDISPONIVEL", "Somente extrações com falha podem ser reprocessadas.");
     }
 
     @Transactional

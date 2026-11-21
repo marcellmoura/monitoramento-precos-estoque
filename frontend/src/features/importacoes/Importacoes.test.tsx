@@ -38,8 +38,17 @@ beforeEach(() => {
       if (options?.method === 'POST') return Response.json(base, { status: 201 });
       return Response.json({ itens: tentativas.slice(pagina, pagina + 1), pagina, total: tentativas.length, paginas: tentativas.length });
     }
+    if (url.pathname.endsWith('/previa')) return Response.json({
+      layout: 'ATACADO_VAREJO', dataReferencia: null,
+      itens: [
+        { dados: { descricao: 'Açúcar', referencia: null, unidade: null, apresentacao: null, quantidade: null },
+          precos: { ATACADO: '32', VAREJO: '35' }, textoOriginal: 'Açúcar 32 35',
+          pendencias: ['Unidade não informada no PDF.'] },
+        { dados: null, precos: {}, textoOriginal: 'Linha incompleta', pendencias: ['Confira o PDF.'] },
+      ],
+    });
     const tentativa = tentativas.find(item => item.id === Number(url.pathname.split('/')[3]));
-    if (tentativa && url.pathname.endsWith('/confirmacao')) {
+    if (tentativa && (url.pathname.endsWith('/confirmacao') || url.pathname.endsWith('/reprocessamento'))) {
       tentativa.status = 'PENDENTE';
       tentativa.motivo = null;
     }
@@ -117,4 +126,27 @@ describe('Importações', () => {
     abrir('/importacoes/999');
     expect(await screen.findByRole('alert')).toHaveTextContent('Tentativa não encontrada.');
   });
+  it('mostra as colunas de preço, campos ausentes e aviso de leitura parcial', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    abrir('/importacoes/1');
+    expect(await screen.findByRole('heading', { name: 'Prévia dos itens' })).toBeVisible();
+    expect(screen.getByText('ATACADO', { exact: true })).toBeVisible();
+    expect(screen.getByText('32', { exact: true })).toBeVisible();
+    expect(screen.getByText('VAREJO', { exact: true })).toBeVisible();
+    expect(screen.getByText('35', { exact: true })).toBeVisible();
+    expect(screen.getByText('Data no PDF: Não informada')).toBeVisible();
+    expect(screen.getByText('Linha incompleta')).toBeVisible();
+    expect(screen.getByRole('alert')).toHaveTextContent('Leitura parcial');
+  });
+
+  it('reprocessa a mesma tentativa em caso de falha', async () => {
+    tentativas = [{ ...base, status: 'FALHA_EXTRACAO', motivo: 'Processamento interrompido.' }];
+    abrir('/importacoes/1');
+    expect(await screen.findByText('Processamento interrompido.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(await screen.findByText('Aguardando processamento')).toBeVisible();
+    expect(fetchMock.mock.calls.some(([rota, init]) =>
+      rota === '/api/importacoes/1/reprocessamento' && init?.method === 'POST')).toBe(true);
+  });
+
 });
