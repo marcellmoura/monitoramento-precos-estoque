@@ -18,4 +18,9 @@ class InterpretadorCotacaoTest {
         assertThatThrownBy(() -> interpretador.interpretar("Descrição\tATACADO\tVAREJO\nSem preços"))
                 .isInstanceOf(ExtracaoPdfException.class).hasMessageContaining("Nenhum item");
     }
+    @Test void reconheceDataComCabecalhoAcentuadoEmMaiusculas() throws Exception {
+        var previa = interpretador.interpretar("DATA DE REFERÊNCIA: 01/11/2026\nDescrição\tATACADO\tVAREJO\nFeijão\t19\t22");
+        assertThat(previa.dataReferencia()).isEqualTo("01/11/2026");
+    }
+
 }

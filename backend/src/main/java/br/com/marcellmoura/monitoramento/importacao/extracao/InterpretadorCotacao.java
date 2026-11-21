@@ -13,7 +13,7 @@ import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Dado
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 
 final class InterpretadorCotacao {
-    private static final Pattern DATA = Pattern.compile("data de referência:\\s*(\\d{2}/\\d{2}/\\d{4})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DATA = Pattern.compile("data de referência:\\s*(\\d{2}/\\d{2}/\\d{4})", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
     private static final Pattern VALOR = Pattern.compile("[+-]?(?:[0-9]{1,3}(?:\\.[0-9]{3})+|[0-9]+)(?:,[0-9]{1,2})?");
     private static final String VALOR_FICHA = "Valor de compra:";
     private static final String APRESENTACAO_FICHA = "Apresentação:";

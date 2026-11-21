@@ -145,6 +145,6 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P6 / recepção de PDFs integrada | PR #66 integrado pelo responsável; merge `7d38afd`; main local sincronizada | US-04 e US-05 encerradas. US-06 e US-07 permanecem abertas para extração e acompanhamento. [CI pós-merge 44885572703](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44885572703) aprovada. Próximo recorte a alinhar: processamento em segundo plano e prévia de extração. |
 
-| 2026-11-21 | P6/P7 / extração e prévia | Fila PostgreSQL gera prévia dos originais e sintéticos, com status e retentativa | 18 testes unitários e 102 de integração, 90 testes frontend, lint, build e Chromium aprovados. Verificação real de prévia automática dos três formatos testados no navegador. Conferência de coluna, correção e associação aguardam recortes próprios. |
+| 2026-11-21 | P6/P7 / extração e prévia | Fila PostgreSQL gera prévia dos originais e sintéticos, com status e retentativa | 19 testes unitários e 102 de integração, 90 testes frontend, lint, build e Chromium aprovados. Verificação real de prévia automática dos três formatos testados no navegador. Conferência de coluna, correção e associação aguardam recortes próprios. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.
