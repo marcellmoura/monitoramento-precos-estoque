@@ -6,7 +6,7 @@ import type { Identidade } from '../acesso/api';
 import type { Produto } from './api';
 
 const comprador: Identidade = { id: 1, nome: 'Marina Teste', email: 'marina@example.com', perfil: 'COMPRAS', trocaSenhaObrigatoria: false };
-const produto: Produto = { id: 1, codigo: 'PRD-000001', nome: 'Arroz', categoria: 'Alimentos', unidade: 'KG', precoCompra: '8.25', precoVenda: '12.34', estoqueAtual: '0.000', estoqueMinimo: '0.000', ativo: true };
+const produto: Produto = { id: 1, codigo: 'PRD-000001', nome: 'Arroz', categoria: 'Alimentos', unidade: 'KG', precoCompra: '8.25', precoVenda: '12.34', estoqueAtual: '0.000', estoqueMinimo: '0.000', ativo: true, versao: 0, unidadeEditavel: true };
 let sessao: Identidade | null;
 let catalogo: Produto[];
 let tamanho: number;
@@ -40,6 +40,11 @@ beforeEach(() => {
         tamanho, total: catalogo.length, paginas: Math.ceil(catalogo.length / tamanho) });
     }
     const item = catalogo.find(p => p.id === Number(path.pathname.split('/')[3]));
+    if (item && init?.method === 'PATCH') {
+      const body = JSON.parse(init.body as string) as Partial<Produto>;
+      if (body.versao !== item.versao) return Response.json({ codigo: 'PRODUTO_DESATUALIZADO' }, { status: 409 });
+      Object.assign(item, body, { versao: item.versao + 1 });
+    }
     return item ? Response.json(filtrar(item)) : Response.json({}, { status: 404 });
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -141,5 +146,69 @@ describe('Produtos', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Confira os campos informados.');
     falha = 403; fireEvent.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Seu perfil não permite esta operação.'));
+  });
+
+  it.each([
+    ['ADMINISTRADOR', ['Nome', 'Categoria (opcional)', 'Unidade', 'Preço de venda', 'Estado', 'Estoque atual', 'Estoque mínimo']],
+    ['COMPRAS', ['Nome', 'Categoria (opcional)']],
+    ['ESTOQUE', ['Estoque atual', 'Estoque mínimo']],
+    ['CONSULTA', []],
+  ] as const)('oferece somente os campos editáveis do perfil %s', async (perfil, campos) => {
+    sessao = { ...comprador, perfil };
+    const router = abrir('/produtos/1');
+    await screen.findByRole('heading', { name: 'Arroz' });
+    const atalho = screen.queryByRole('link', { name: 'Editar produto' });
+    if (perfil === 'CONSULTA') {
+      expect(atalho).not.toBeInTheDocument();
+      await act(() => router.navigate('/produtos/1/editar'));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Seu perfil não permite editar produtos.');
+      return;
+    }
+    fireEvent.click(atalho!);
+    await screen.findByRole('heading', { name: 'Editar produto' });
+    const nomes: readonly string[] = campos;
+    for (const rotulo of ['Nome', 'Categoria (opcional)', 'Unidade', 'Preço de venda', 'Estado', 'Estoque atual', 'Estoque mínimo', 'Preço de compra']) {
+      expect(screen.queryByLabelText(rotulo) !== null).toBe(nomes.includes(rotulo));
+    }
+  });
+
+  it('salva e volta ao detalhe com versão, CSRF e decimais exatos', async () => {
+    sessao = { ...comprador, perfil: 'ADMINISTRADOR' };
+    abrir('/produtos/1/editar');
+    await screen.findByRole('heading', { name: 'Editar produto' });
+    preencher('Nome', 'Arroz especial');
+    preencher('Preço de venda', '13,90');
+    preencher('Estoque atual', '9,125');
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Produto atualizado.');
+    expect(screen.getByRole('heading', { name: 'Arroz especial' })).toBeVisible();
+    const escrita = fetchMock.mock.calls.find(([, options]) => options?.method === 'PATCH');
+    expect(JSON.parse(escrita?.[1]?.body as string)).toEqual({ versao: 0, nome: 'Arroz especial', categoria: 'Alimentos',
+      estoqueAtual: '9.125', estoqueMinimo: '0.000', unidade: 'KG', ativo: true, precoVenda: '13.90' });
+    expect(new Headers(escrita?.[1]?.headers).get('X-CSRF-TOKEN')).toBe('csrf-teste');
+  });
+
+  it('explica a unidade bloqueada e preserva a versão original em caso de conflito', async () => {
+    sessao = { ...comprador, perfil: 'ADMINISTRADOR' };
+    catalogo[0].unidadeEditavel = false;
+    abrir('/produtos/1/editar');
+    expect(await screen.findByText(/A troca direta exige/)).toBeVisible();
+    expect(screen.queryByLabelText('Unidade')).not.toBeInTheDocument();
+    catalogo[0].versao = 1;
+    preencher('Nome', 'Rascunho');
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('O produto mudou.');
+    expect(screen.getByLabelText('Nome')).toHaveValue('Rascunho');
+    expect(catalogo[0].nome).toBe('Arroz');
+  });
+
+  it('rejeita estoque negativo antes de enviar a API', async () => {
+    sessao = { ...comprador, perfil: 'ESTOQUE' };
+    abrir('/produtos/1/editar');
+    const estoque = await screen.findByLabelText('Estoque atual');
+    preencher('Estoque atual', '-1');
+    fireEvent.submit(estoque.closest('form')!);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Informe estoques não negativos');
+    expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'PATCH')).toBe(false);
   });
 });

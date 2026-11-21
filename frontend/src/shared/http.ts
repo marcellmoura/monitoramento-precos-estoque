@@ -1,5 +1,5 @@
 export class HttpError extends Error {
-  constructor(public readonly status: number, public readonly code?: string) {
+  constructor(public readonly status: number, public readonly code?: string, public readonly detail?: string) {
     super(`Não foi possível concluir a requisição (${status}).`);
     this.name = 'HttpError';
   }
@@ -21,7 +21,9 @@ export async function requestJson<T>(
     const error: unknown = await response.json().catch(() => null);
     const code = error && typeof error === 'object' && 'codigo' in error
       && typeof error.codigo === 'string' ? error.codigo : undefined;
-    throw new HttpError(response.status, code);
+    const detail = error && typeof error === 'object' && 'mensagem' in error
+      && typeof error.mensagem === 'string' ? error.mensagem : undefined;
+    throw new HttpError(response.status, code, detail);
   }
 
   if (response.status === 204) {

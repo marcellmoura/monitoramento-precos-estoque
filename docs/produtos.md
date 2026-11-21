@@ -1,6 +1,6 @@
-# Cadastro e consulta de produtos
+# Cadastro, consulta e edição de produtos
 
-Primeiro incremento de P5: US-01/US-02 e o recorte de autorização de produtos da US-34. Cadastro/consulta de fornecedores e edição de produto/estoque permanecem nos incrementos seguintes.
+P5 cobre cadastro e consulta de produtos (US-01/US-02), edição de produto/estoque (recorte da US-03) e as permissões correspondentes da US-34.
 
 ## Uso
 
@@ -16,7 +16,7 @@ O servidor gera o código interno e inicia o produto ativo, com estoques atual/m
 | Estoque | Não permitido | Identificação, categoria, unidade, estoques e estado; sem preços |
 | Consulta | Não permitido | Identificação, categoria, unidade, venda, estoques e estado; sem compra |
 
-A API omite os campos restritos. Esconder colunas no frontend complementa a autorização do servidor. A edição posterior da venda permanece exclusiva do Administrador e será implementada na US-03.
+A API omite os campos restritos. Esconder colunas no frontend complementa a autorização do servidor. A edição posterior da venda é exclusiva do Administrador.
 
 ## API
 
@@ -32,7 +32,7 @@ A interface envia os preços como texto decimal normalizado com ponto. A API dev
 
 Limites técnicos: nome obrigatório após remover espaços nas extremidades, até 255 caracteres; categoria até 100, vazia normalizada para `null`; preços com até 17 dígitos inteiros e 2 fracionários. Entrada com mais casas é recusada, sem arredondamento silencioso. Paginação padrão 20, máximo 100, índice inicial zero.
 
-Autenticação exigida em todas as consultas; cadastro exige Administrador/Compras, senha definitiva e CSRF. Erros AP18: 400 dados/parâmetros inválidos, com campos quando aplicável; 401 sem sessão; 403 perfil sem permissão ou troca obrigatória pendente; 404 produto ausente; 405 método sem implementação. Respostas de falha não expõem detalhes internos.
+Autenticação exigida em todas as consultas; cadastro exige Administrador/Compras, senha definitiva e CSRF. Erros AP18: 400 dados/parâmetros inválidos, com campos quando aplicável; 401 sem sessão; 403 perfil sem permissão ou troca obrigatória pendente; 404 produto ausente; 405 método sem implementação; 409 conflito de edição. Respostas de falha não expõem detalhes internos.
 
 ## Persistência e organização
 
@@ -41,6 +41,23 @@ Migration V4 cria `produtos`, mantendo V1–V3 intactas. ID BIGINT identity; có
 Organização por `produto/domain`, `application`, `persistence` e `http`; controllers delegam à aplicação e retornam projeções específicas por perfil. O catálogo não serializa a entidade JPA diretamente. Nenhuma biblioteca nova foi adicionada. Estilos de gestão são compartilhados entre produtos e usuários em CSS Modules.
 
 A compra manual deste cadastro não cria histórico de cotação. Importações, seleção de referência, mudanças posteriores de preço/unidade e ajustes de estoque mantêm suas regras próprias em AP01/AP03/AP09 e nas histórias correspondentes. A permissão de zero neste cadastro não altera a regra de preço válido de uma importação.
+
+## Edição de produto e estoque
+
+Abra **Consultar produtos**, selecione **Consultar** no produto e clique em **Editar produto**. Após salvar, o sistema retorna aos detalhes. O código permanece o mesmo.
+
+| Perfil | Campos editáveis |
+|---|---|
+| Administrador | Nome, categoria, unidade elegível, preço de venda, estado e estoques atual/mínimo |
+| Compras | Nome e categoria |
+| Estoque | Estoques atual/mínimo |
+| Consulta | Consulta do catálogo |
+
+Para UN, informe quantidades inteiras. Para KG, G, L e ML, informe até três casas decimais. São admitidos valores não negativos. A troca direta de unidade exige que os estoques já estejam zerados e que não haja histórico ou vínculos. Um ajuste que muda as quantidades grava responsável, instante, unidade e valores anteriores e novos. Salvar valores iguais não cria um ajuste. O histórico fica no banco.
+
+`PATCH /api/produtos/{id}` recebe `versao` (inteiro da última consulta) e os campos a alterar. A resposta `200` segue a projeção da consulta e inclui `versao` e `unidadeEditavel`. Omitir um campo preserva seu valor; `categoria: null` ou em branco remove a categoria. Envie decimais como texto com ponto, sem separador de milhar. O preço de venda aceita até 17 dígitos inteiros e duas casas; estoques, até 16 inteiros e três casas. O servidor valida o perfil e rejeita campos fora do contrato. A resposta `409` indica que outra edição mudou o produto. Nesse caso, volte aos detalhes e reabra o formulário.
+
+V6 acrescenta versão e bloqueio de unidade ao produto e cria o histórico de ajustes. A escrita do ajuste e a alteração de estoque são atômicas. O bloqueio permanece após voltar a zero se houver ajustes anteriores. A criação de vínculo e histórico de cotação deve bloquear a unidade e participar do controle de versão na mesma transação. A compra de referência com origem, os efeitos das importações e a margem serão validados nos fluxos correspondentes.
 
 ## Verificação
 

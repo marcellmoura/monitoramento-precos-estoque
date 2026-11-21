@@ -3,6 +3,7 @@ package br.com.marcellmoura.monitoramento.produto.http;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -16,6 +17,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.marcellmoura.monitoramento.acesso.security.UsuarioAutenticado;
 import br.com.marcellmoura.monitoramento.produto.application.ProdutoService;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
+import tools.jackson.databind.JsonNode;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -57,5 +60,10 @@ public class ProdutoController {
         var produto = service.cadastrar(body.nome(), body.categoria(), body.unidade(), body.precoCompra(), body.precoVenda());
         return ResponseEntity.created(URI.create("/api/produtos/" + produto.getId()))
                 .body(ProdutoResposta.de(produto, ator.getPerfil()));
+    }
+    @PatchMapping("/{id}") public ProdutoResposta editar(@AuthenticationPrincipal UsuarioAutenticado ator,
+            @PathVariable @Positive Long id, @RequestBody Map<String, JsonNode> body) {
+        var alteracao = EdicaoProdutoRequest.interpretar(body, ator.getPerfil());
+        return ProdutoResposta.de(service.editar(id, ator.getId(), alteracao), ator.getPerfil());
     }
 }

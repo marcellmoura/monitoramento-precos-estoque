@@ -109,3 +109,5 @@ Migration V3: histórico transacional com ator/usuário/evento/instante, sem cre
 ## Produtos
 
 Migration V4: catálogo com unidade, preços decimais, estoques e estado; código de apresentação derivado do ID. Restrições, autorização de campos e testes em [produtos](produtos.md). Migrations anteriores preservadas.
+
+Migration V6: versão de edição e bloqueio de unidade no catálogo, com valores iniciais compatíveis com produtos existentes. `historico_ajustes_estoque` guarda produto, ator, unidade, instante e quantidades anteriores e novas na mesma transação da alteração. Sem ajustes retroativos. A versão impede concorrência entre uma edição e um ajuste de estoque; futuros vínculos e históricos de importação também devem participar desse controle.

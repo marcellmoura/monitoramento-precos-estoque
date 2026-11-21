@@ -7,10 +7,11 @@ import br.com.marcellmoura.monitoramento.usuario.domain.Perfil;
 
 public sealed interface ProdutoResposta {
     record Dados(Long id, String codigo, String nome, String categoria, Unidade unidade,
-            String estoqueAtual, String estoqueMinimo, boolean ativo) {
+            String estoqueAtual, String estoqueMinimo, boolean ativo, long versao, boolean unidadeEditavel) {
         static Dados de(Produto p) {
             return new Dados(p.getId(), p.getCodigo(), p.getNome(), p.getCategoria(), p.getUnidade(),
-                    p.getEstoqueAtual().toPlainString(), p.getEstoqueMinimo().toPlainString(), p.isAtivo());
+                    p.getEstoqueAtual().toPlainString(), p.getEstoqueMinimo().toPlainString(), p.isAtivo(),
+                    p.getVersao(), p.podeTrocarUnidade());
         }
     }
     record Identificacao(@JsonUnwrapped Dados dados) implements ProdutoResposta {}

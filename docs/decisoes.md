@@ -28,6 +28,7 @@ Versão: 2026-11-13. Especificação das regras funcionais, escolhas técnicas e
 - Unidades iniciais: KG, G, L, ML e UN. Quantidades de KG/G/L/ML com até 3 casas decimais; UN apenas inteiro. Atual e mínimo na unidade do produto; sem negativos.
 - Embalagem do fornecedor é separada da unidade interna. Conversão exige fator informado e confirmado; não adivinhar.
 - Produto com vínculos/histórico não pode trocar unidade por edição simples: exigir alteração controlada para preservar coerência. A interação desse procedimento deverá ser apresentada antes de implementar.
+- A troca direta também exige estoque atual e mínimo zerados. Histórico de ajustes mantém a unidade bloqueada mesmo depois de zerar o estoque. Os futuros vínculos e registros de cotação devem bloquear a unidade na mesma transação em que forem criados.
 - Cotação não altera estoque: ajustes manuais no MVP, com registro do responsável.
 
 ## AP04 — Colunas e modalidades de preço
@@ -113,6 +114,8 @@ Um perfil por usuário. Perfis:
 | Compras | Cadastrar produtos/fornecedores, informar venda inicial, importar/conferir/associar/confirmar/corrigir, selecionar referência de compra e consultar históricos/comparações/sugestões. Sem gerir usuários, alterar margens ou editar venda posterior |
 | Estoque | Consultar identificação/quantidades e ajustar estoque atual/mínimo; acompanhar reposição. Sem custos de compra ou importação |
 | Consulta | Catálogo, preços de venda e disponibilidade de estoque; sem alterações nem custos |
+
+Na edição do cadastro (US-03), Compras pode alterar nome e categoria. Administrador também edita unidade conforme AP03, venda, status e quantidades. Estoque edita apenas as quantidades. A referência de compra usa a seleção com origem definida em AP09.
 
 Validar permissão na API e nos campos devolvidos; UI adapta navegação/ações, sem ser única barreira. Cadastros iniciais por Compras podem conter os campos do cadastro; ajustes posteriores de estoque são Administrador/Estoque. Acesso não previsto permanece negado até alinhamento, sem presumir novas permissões.
 
