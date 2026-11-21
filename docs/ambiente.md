@@ -19,6 +19,7 @@ Base configurada em 13/11/2026 para a TT-03. A base inicial foi ampliada na TT-0
 | Playwright | 1.65.0 | Chromium instalado pelo próprio Playwright |
 | Spring Security / Spring Session | 7.1.2 / 4.1.1 | Gerenciamento de dependências do Spring Boot |
 | Bouncy Castle | 1.87 | `backend/pom.xml`; Argon2id |
+| Apache PDFBox | 3.0.8 | `backend/pom.xml`; validação de PDFs na recepção |
 | JaCoCo | 0.8.16 | `backend/pom.xml` |
 | JUnit Jupiter / Mockito / Testcontainers | 6.0.3 / 5.23.0 / 2.0.5 | Gerenciamento de dependências do Spring Boot |
 

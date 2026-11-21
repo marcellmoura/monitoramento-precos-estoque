@@ -275,3 +275,5 @@ US-01/US-02: cadastro, lista paginada e detalhe; compra opcional, estados inicia
 US-04/US-05 implementam cadastro, lista e detalhe para Administrador e Compras. O telefone opcional recebe DDD e número nacional. A API fornece a identidade que será usada na seleção da origem do PDF. Ver [contratos e validação](fornecedores.md).
 
 O recorte de edição da US-03 inclui nome e categoria para Compras, edição de venda e estado para Administrador e ajuste auditável para Administrador/Estoque. A troca direta de unidade, exclusiva do Administrador, exige estoques zerados e ausência de histórico ou vínculos (AP03/AP15). O fluxo de referência com origem permanece associado a cotações (AP09). Ver [contrato e validações da edição](produtos.md#edição-de-produto-e-estoque).
+
+O primeiro recorte de P6 registra envios e permite consultar tentativas (US-06/US-07) por Administrador/Compras. Verifica o PDF e guarda o original, rastreia rejeições e duplicatas e mantém trabalho pendente no PostgreSQL. A validação de texto identifica PDFs que exigiriam OCR. Extração comercial e prévia seguem nos recortes correspondentes. Ver [envio de PDFs](importacoes.md).

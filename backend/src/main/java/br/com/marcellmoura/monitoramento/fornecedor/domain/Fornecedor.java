@@ -33,7 +33,8 @@ public class Fornecedor {
     }
 
     public Long getId() { return id; }
-    public String getCodigo() { return String.format(Locale.ROOT, "FOR-%06d", id); }
+    public String getCodigo() { return gerarCodigo(id); }
+    public static String gerarCodigo(long id) { return String.format(Locale.ROOT, "FOR-%06d", id); }
     public String getNome() { return nome; }
     public String getCnpj() { return cnpj; }
     public String getTelefone() { return telefone; }

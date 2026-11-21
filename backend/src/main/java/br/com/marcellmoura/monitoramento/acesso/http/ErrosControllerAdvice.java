@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 @RestControllerAdvice
 public class ErrosControllerAdvice {
@@ -30,7 +32,8 @@ public class ErrosControllerAdvice {
                 java.util.UUID.randomUUID().toString(), campos));
     }
     @ExceptionHandler({HttpMessageNotReadableException.class,
-            HandlerMethodValidationException.class, MethodArgumentTypeMismatchException.class})
+            HandlerMethodValidationException.class, MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class})
     ResponseEntity<ErroApi> validacao(Exception ex) {
         return ResponseEntity.badRequest().body(new ErroApi("DADOS_INVALIDOS", "Confira os campos informados."));
     }
@@ -49,6 +52,10 @@ public class ErrosControllerAdvice {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     ResponseEntity<ErroApi> formato(HttpMediaTypeNotSupportedException ex) {
         return ResponseEntity.status(415).body(new ErroApi("FORMATO_NAO_SUPORTADO", "Envie os dados em JSON."));
+    }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ErroApi> uploadMuitoGrande() {
+        return ResponseEntity.status(413).body(new ErroApi("UPLOAD_MUITO_GRANDE", "O arquivo ultrapassa o limite de envio."));
     }
     @ExceptionHandler(Exception.class)
     ResponseEntity<ErroApi> inesperado(Exception ex) {

@@ -4,6 +4,8 @@ Administrador e Compras podem cadastrar, listar e consultar fornecedores. Após 
 
 O telefone aceita DDD e número nacional, com 10 ou 11 dígitos no total. São aceitos formatos como `(83) 3333-4444`, `(83) 99999-9999` e `83999999999`. O campo rejeita prefixos internacionais, números sem DDD e caracteres fora da máscara aceita. O CNPJ é armazenado como texto fornecido no cadastro, sem verificação fiscal.
 
+A tela de envio de PDF identifica cada fornecedor pelo par código e nome, inclusive quando existem homônimos. Ver [envio de PDFs](importacoes.md).
+
 Ao sair do campo de telefone, o formulário formata um número nacional válido com parênteses no DDD e hífen no número. O detalhe também exibe nesse formato números que foram cadastrados apenas com dígitos.
 
 Fornecedores com o mesmo nome aparecem com códigos diferentes. O código, como `FOR-000001`, é derivado do ID interno com pelo menos seis dígitos. A seleção de fornecedores será ligada à tela de importação de PDFs na US-06.
