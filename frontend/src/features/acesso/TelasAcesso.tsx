@@ -1,3 +1,4 @@
+import { podeAcessarFornecedores } from '../fornecedores/api';
 import { Link, useFetcher, useOutletContext, useSearchParams } from 'react-router';
 import type { Identidade } from './api';
 import styles from './acesso.module.css';
@@ -53,6 +54,7 @@ export function Inicio() {
     <h2>Olá, {usuario.nome}</h2>
     <p>Perfil: {perfis[usuario.perfil]}</p>
     <p><Link to="/produtos">Consultar produtos</Link></p>
+    {podeAcessarFornecedores(usuario.perfil) && <p><Link to="/fornecedores">Consultar fornecedores</Link></p>}
     {usuario.perfil === 'ADMINISTRADOR'  && <Link to="/usuarios">Administrar usuários</Link>}
     <Sair />
   </section>;

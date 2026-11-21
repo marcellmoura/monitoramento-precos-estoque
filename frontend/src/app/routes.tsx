@@ -10,6 +10,9 @@ import { carregarUsuarios, carregarUsuario, cadastrarUsuario, administrarUsuario
 import { Produtos, NovoProduto, DetalheProduto } from '../features/produtos/Produtos';
 import { carregarProdutos, carregarProduto, cadastrarProduto } from '../features/produtos/api';
 
+import { Fornecedores, NovoFornecedor, DetalheFornecedor } from '../features/fornecedores/Fornecedores';
+import { carregarFornecedores, carregarFornecedor, cadastrarFornecedor } from '../features/fornecedores/api';
+
 export const routes: RouteObject[] = [{
   path: '/', element: <App />, loader: carregarIdentidade, errorElement: <FalhaDeConexao />,
   children: [
@@ -17,6 +20,9 @@ export const routes: RouteObject[] = [{
     { path: 'produtos', element: <Produtos />, loader: carregarProdutos },
     { path: 'produtos/novo', element: <NovoProduto />, action: cadastrarProduto },
     { path: 'produtos/:id', element: <DetalheProduto />, loader: carregarProduto },
+    { path: 'fornecedores', element: <Fornecedores />, loader: carregarFornecedores },
+    { path: 'fornecedores/novo', element: <NovoFornecedor />, action: cadastrarFornecedor },
+    { path: 'fornecedores/:id', element: <DetalheFornecedor />, loader: carregarFornecedor },
     { path: 'login', element: <Login />, action: entrar },
     { path: 'alterar-senha', element: <AlterarSenha />, action: trocarSenha },
     { path: 'sair', action: sair },

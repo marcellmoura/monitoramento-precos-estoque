@@ -269,3 +269,7 @@ Inicialização local somente com base sem usuários; troca de senha encerra tod
 ### Primeiro incremento de produtos — 2026-11-16
 
 US-01/US-02: cadastro, lista paginada e detalhe; compra opcional, estados iniciais definidos pelo servidor e campos filtrados conforme perfil. Sem preços para Estoque e sem compra para Consulta. Valores decimais preservados em texto na API. Contratos e evidências em [produtos](produtos.md). Fornecedores (US-04/US-05) e edição/estoque (US-03) seguem em incrementos próprios.
+
+### Fornecedores — 2026-11-21
+
+US-04/US-05 implementam cadastro, lista e detalhe para Administrador e Compras. O telefone opcional recebe DDD e número nacional. A API fornece a identidade que será usada na seleção da origem do PDF. Ver [contratos e validação](fornecedores.md).
