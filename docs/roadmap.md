@@ -127,6 +127,8 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P5 / alinhamento de fornecedores | Telefone definido como DDD + número nacional, sem código internacional | Campo continua opcional; aceitar formatos usuais de fixo/celular com DDD. Proposta de US-04/US-05 atualizada; implementação ainda não iniciada. |
 
-| 2026-11-21 | P5 / fornecedores | Cadastro, lista e detalhe implementados para Administrador e Compras | Testes locais de API, frontend, lint, build e Chromium aprovados. Fluxo no navegador com API e PostgreSQL reais aprovado. CI remota e revisão pendentes. |
+| 2026-11-21 | P5 / fornecedores | Cadastro, lista e detalhe implementados para Administrador e Compras | Testes locais de API, frontend, lint, build e Chromium aprovados. Fluxo no navegador com API e PostgreSQL reais aprovado. [CI 44878315733](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44878315733) e ambos os Quality Gates aprovados no [PR #64](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/64). US-04/US-05 em revisão. A seleção na tela de upload será verificada na US-06. |
+
+| 2026-11-21 | P5 / revisão de fornecedores | Formatação de telefone nacional ao sair do campo e no detalhe, inclusive para cadastros anteriores | 72 testes do frontend, lint e build aprovados localmente. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

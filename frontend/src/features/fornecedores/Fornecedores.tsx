@@ -4,6 +4,15 @@ import { podeAcessarFornecedores } from './api';
 import type { FalhaFornecedor, Fornecedor, PaginaFornecedores } from './api';
 import styles from '../../shared/gestao.module.css';
 
+const formatoTelefone = String.raw`(?:\([0-9]{2}\)|[0-9]{2}) *[0-9]{4,5}(?:-| )?[0-9]{4}`;
+const telefoneNacional = new RegExp(`^${formatoTelefone}$`);
+
+function formatarTelefone(valor: string) {
+  if (!telefoneNacional.test(valor)) return valor;
+  const digitos = valor.replace(/\D/g, '');
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, -4)}-${digitos.slice(-4)}`;
+}
+
 function Falha({ mensagem }: { mensagem: string }) {
   return <p role="alert" className={styles.erro}>{mensagem}</p>;
 }
@@ -45,7 +54,9 @@ export function NovoFornecedor() {
       <label>CNPJ (opcional)<input name="cnpj" maxLength={32} /></label>
       <label>Telefone (opcional)
         <input name="telefone" type="tel" maxLength={40} aria-describedby="ajuda-telefone"
-          pattern="(?:\([0-9]{2}\)|[0-9]{2}) *[0-9]{4,5}(?:-| )?[0-9]{4}" />
+          pattern={formatoTelefone} onBlur={({ currentTarget }) => {
+            currentTarget.value = formatarTelefone(currentTarget.value.trim());
+          }} />
       </label>
       <small id="ajuda-telefone">Informe DDD e número, como (83) 99999-9999.</small>
       <label>E-mail (opcional)<input name="email" type="email" maxLength={254} /></label>
@@ -68,7 +79,7 @@ export function DetalheFornecedor() {
     <dl className={styles.dados}>
       <dt>Código</dt><dd>{fornecedor.codigo}</dd>
       <dt>CNPJ</dt><dd>{fornecedor.cnpj ?? 'Não informado'}</dd>
-      <dt>Telefone</dt><dd>{fornecedor.telefone ?? 'Não informado'}</dd>
+      <dt>Telefone</dt><dd>{fornecedor.telefone ? formatarTelefone(fornecedor.telefone) : 'Não informado'}</dd>
       <dt>E-mail</dt><dd>{fornecedor.email ?? 'Não informado'}</dd>
     </dl>
     <Link to="/fornecedores">Voltar aos fornecedores</Link>

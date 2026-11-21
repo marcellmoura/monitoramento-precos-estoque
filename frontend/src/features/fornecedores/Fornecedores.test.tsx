@@ -8,10 +8,12 @@ const fornecedor = { id: 1, codigo: 'FOR-000001', nome: 'Distribuidora Teste', c
 let perfil: Identidade['perfil'];
 const salvar = vi.fn<(corpo: unknown, csrf: string | null) => void>();
 let status: number;
+let telefoneSalvo: string | null;
 
 beforeEach(() => {
   perfil = 'COMPRAS';
   status = 200;
+  telefoneSalvo = null;
   salvar.mockClear();
   vi.stubGlobal('fetch', async (url: string, options?: RequestInit) => {
     if (url.endsWith('/auth/me')) return Response.json({ id: 1, nome: 'Marina', perfil, trocaSenhaObrigatoria: false });
@@ -26,7 +28,7 @@ beforeEach(() => {
       const itens = pagina === 0 ? [fornecedor] : [];
       return Response.json({ itens, pagina, tamanho: 20, total: 1, paginas: 2 });
     }
-    return Response.json(fornecedor);
+    return Response.json({ ...fornecedor, telefone: telefoneSalvo });
   });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -58,10 +60,28 @@ describe('Fornecedores', () => {
     expect(salvar).toHaveBeenCalledWith({ nome: 'Distribuidora Teste', cnpj: null, telefone: null, email: null }, 'teste');
   });
 
+  it.each([
+    ['8333334444', '(83) 3333-4444'],
+    ['83999999999', '(83) 99999-9999'],
+  ])('formata %s ao sair do campo e no detalhe de um cadastro existente', async (digitos, formatado) => {
+    telefoneSalvo = digitos;
+    abrir('/fornecedores/novo');
+    fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: fornecedor.nome } });
+    const telefone = screen.getByLabelText('Telefone (opcional)');
+    fireEvent.change(telefone, { target: { value: digitos } });
+    fireEvent.blur(telefone);
+    expect(telefone).toHaveValue(formatado);
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar fornecedor' }));
+    expect(await screen.findByText(formatado)).toBeVisible();
+    expect(salvar).toHaveBeenCalledWith({ nome: fornecedor.nome, cnpj: null, telefone: formatado, email: null }, 'teste');
+  });
+
   it('valida o formato nacional do telefone no formulário', async () => {
     abrir('/fornecedores/novo');
     const telefone = await screen.findByLabelText<HTMLInputElement>('Telefone (opcional)');
     fireEvent.change(telefone, { target: { value: '+55 (83) 99999-9999' } });
+    fireEvent.blur(telefone);
+    expect(telefone).toHaveValue('+55 (83) 99999-9999');
     expect(telefone.validity.patternMismatch).toBe(true);
     fireEvent.change(telefone, { target: { value: '(83) 3333-4444' } });
     expect(telefone.validity.patternMismatch).toBe(false);
