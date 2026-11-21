@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
 import type { Identidade } from '../acesso/api';
-import type { ConferenciaCotacao, TentativaImportacao } from './api';
+import type { ConferenciaCotacao, RevisaoItem, TentativaImportacao } from './api';
 
 const base = {
   id: 1, fornecedorCodigo: 'FOR-000001', fornecedorNome: 'Distribuidora Teste', atorId: 1,
@@ -16,6 +16,7 @@ let fornecedores: boolean;
 let tentativas: TentativaImportacao[];
 let falha: number | undefined;
 let conferencia: ConferenciaCotacao;
+let revisoes: RevisaoItem[];
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
@@ -23,6 +24,7 @@ beforeEach(() => {
   fornecedores = true;
   tentativas = [];
   falha = undefined;
+  revisoes = [];
   conferencia = { colunas: ['ATACADO', 'VAREJO'], dataSugerida: '2026-11-21', confirmada: null, sugestao: null, pendenciasComerciais: [] };
   fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     const url = new URL(input, 'http://localhost');
@@ -47,6 +49,17 @@ beforeEach(() => {
           pendenciasComerciais: [['Confirme a unidade deste item.'], []] };
       }
       return Response.json(conferencia);
+    }
+    if (url.pathname.endsWith('/itens')) return Response.json(revisoes);
+    if (url.pathname.endsWith('/itens/1') && options?.method === 'PUT') {
+      const dados = JSON.parse(String(options.body));
+      if (dados.preco === '1.00') {
+        return Response.json({ mensagem: 'Os dados mudaram. Reabra o formulário antes de salvar.' }, { status: 409 });
+      }
+      const revisao = { id: 2, linha: 1, atorId: 1, revisadaEm: base.enviadaEm,
+        dados: { ...dados, preco: Number(dados.preco) }, pendencias: [] };
+      revisoes = [revisao];
+      return Response.json(revisao);
     }
     if (url.pathname.endsWith('/previa')) return Response.json({
       layout: 'ATACADO_VAREJO', dataReferencia: null,
@@ -169,6 +182,32 @@ describe('Importações', () => {
       revisao: 0, coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg', dataComercial: '2026-11-20',
     });
     expect(screen.getByLabelText('Data comercial')).toHaveValue('2026-11-20');
+  });
+
+  it('corrige uma linha e preserva os valores originais na prévia', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.confirmada = { id: 5, base: { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco' },
+      dataComercial: '2026-11-21' };
+    abrir('/importacoes/1');
+    fireEvent.click(await screen.findByRole('button', { name: 'Corrigir item Açúcar' }));
+    const form = within(screen.getByRole('form', { name: 'Correção da linha 1' }));
+    expect(form.getByLabelText('Preço conferido (R$)')).toHaveValue(null);
+    fireEvent.change(form.getByLabelText('Unidade conferida'), { target: { value: 'KG' } });
+    fireEvent.change(form.getByLabelText('Embalagem conferida'), { target: { value: 'Saco' } });
+    fireEvent.change(form.getByLabelText('Origem do preço conferido'), { target: { value: 'manual' } });
+    fireEvent.change(form.getByLabelText('Motivo da correção'), { target: { value: 'Cotação conferida' } });
+    fireEvent.change(form.getByLabelText('Preço conferido (R$)'), { target: { value: '1.00' } });
+    fireEvent.click(form.getByRole('button', { name: 'Salvar correção' }));
+    expect(await form.findByRole('alert')).toHaveTextContent('Os dados mudaram.');
+    fireEvent.change(form.getByLabelText('Preço conferido (R$)'), { target: { value: '33.25' } });
+    fireEvent.click(form.getByRole('button', { name: 'Salvar correção' }));
+    expect(await screen.findByText('Dados conferidos. Pendente de associação.')).toBeVisible();
+    expect(screen.getByText('32', { exact: true })).toBeVisible();
+    expect(screen.getByText(/33,25/)).toBeVisible();
+    const chamada = fetchMock.mock.calls.filter(([url]) => url.endsWith('/itens/1')).at(-1);
+    expect(JSON.parse(chamada?.[1].body)).toMatchObject({
+      conferencia: 5, revisao: 0, unidade: 'KG', coluna: null, preco: '33.25', embalagem: 'Saco',
+    });
   });
 
   it('reprocessa a mesma tentativa em caso de falha', async () => {

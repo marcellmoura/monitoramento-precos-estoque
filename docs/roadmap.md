@@ -153,4 +153,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P7 / conferência comercial | US-37 implementada. A V9 registra base comercial, data, ator e revisões da tentativa. | Conferidos reaproveitamento por fornecedor/layout, proteção contra revisão desatualizada e preservação da prévia. Correções por item e associação seguem como próximos recortes. |
 
+| 2026-11-21 | P7 / conferência em revisão | [PR #68](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/68), commit `f0ffc9b`. US-37 em revisão. | [CI 44904549309](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44904549309) e ambos os Quality Gates aprovados. PR disponível para revisão e integração pelo responsável. |
+
+| 2026-11-21 | P7 / conferência integrada | [PR #68](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/68) integrado no commit `8555be2`. US-37 encerrada. | Revisão manual confirmou que, após recarregar, a configuração ficou salva e a prévia preservou as colunas e pendências por item. [CI pós-merge 44905638701](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44905638701) aprovada. |
+
+| 2026-11-21 | P7 / correção individual de itens | A V10 preserva a prévia e grava revisões por linha com unidade, embalagem, origem do preço, motivo e ator. | Fluxo real verificou a correção com dados completos e pendentes. US-10 segue aberta até validar a edição dos itens restantes após confirmação parcial. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

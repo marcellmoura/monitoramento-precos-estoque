@@ -74,6 +74,7 @@ class ImportacaoIT {
     }
 
     @BeforeEach void preparar() throws Exception {
+        jdbc.update("DELETE FROM revisoes_itens_cotacao");
         jdbc.update("DELETE FROM conferencias_cotacao");
         jdbc.update("UPDATE tentativas_importacao SET execucao_atual = NULL");
         jdbc.update("DELETE FROM execucoes_extracao");
@@ -377,6 +378,69 @@ class ImportacaoIT {
         for (var tentativa : java.util.List.of(outroLayout, outrosItens, outroFornecedor)) {
             assertThat(json(admin.enviar("GET", tentativa + "/conferencia", null, false)).get("sugestao").isNull()).isTrue();
         }
+    }
+
+    @Test void revisaItensDaPreviaPreservandoOrigemEHistorico() throws Exception {
+        var rota = processar(fornecedor, ORIGINAL, ler(ORIGINAL));
+        var previa = json(admin.enviar("GET", rota + "/previa", null, false));
+        var revisoes = rota + "/itens";
+        var primeira = revisoes + "/1";
+        var segunda = revisoes + "/2";
+        assertThat(json(admin.enviar("GET", revisoes, null, false)).size()).isZero();
+        var incompleta = correcao(0, 1, "KG", "Preço KG", null, null);
+        assertThat(admin.enviar("PUT", primeira, incompleta, true).statusCode()).isEqualTo(409);
+
+        var base = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Preço KG", "KG", "A granel", "2026-11-21"), true));
+        long conferencia = base.get("confirmada").get("id").asLong();
+        incompleta = correcao(0, conferencia, "KG", "Preço KG", null, null);
+        assertThat(entrar(Perfil.CONSULTA).enviar("PUT", primeira, incompleta, true).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("PUT", primeira, incompleta, false).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("PUT", revisoes + "/3", incompleta, true).statusCode()).isEqualTo(404);
+        var parcial = json(entrar(Perfil.COMPRAS).enviar("PUT", primeira, incompleta, true));
+        assertThat(parcial.get("pendencias").size()).isEqualTo(2);
+        long versao = parcial.get("id").asLong();
+
+        var corrigida = correcao(versao, conferencia, "KG", "Preço KG", "A granel", "32.00");
+        var finalizada = json(admin.enviar("PUT", primeira, corrigida, true));
+        assertThat(finalizada.get("pendencias").size()).isZero();
+        assertThat(finalizada.get("dados").get("embalagem").asText()).isEqualTo("A granel");
+        assertThat(finalizada.get("revisadaEm").asText()).isNotBlank();
+        assertThat(finalizada.get("atorId").asLong()).isNotEqualTo(parcial.get("atorId").asLong());
+        assertThat(json(admin.enviar("PUT", primeira, corrigida, true))).isEqualTo(finalizada);
+        assertThat(admin.enviar("PUT", primeira, incompleta, true).statusCode()).isEqualTo(409);
+
+        assertThat(admin.enviar("PUT", segunda, correcao(0, conferencia, "UN", "Preço KG", "Pote", "78"), true)
+                .statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PUT", segunda, correcao(0, conferencia, "UN", "Outra", "Pote", "78"), true)
+                .statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PUT", segunda, correcao(0, conferencia, "UN", null, "Pote", "0"), true)
+                .statusCode()).isEqualTo(400);
+        var manual = json(admin.enviar("PUT", segunda, correcao(0, conferencia, "UN", null, "Pote", "78"), true));
+        assertThat(manual.get("pendencias").size()).isZero();
+        assertThat(manual.get("dados").get("coluna").isNull()).isTrue();
+        assertThat(json(admin.enviar("GET", revisoes, null, false)).size()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM revisoes_itens_cotacao", Integer.class)).isEqualTo(3);
+        assertThat(json(admin.enviar("GET", rota + "/previa", null, false))).isEqualTo(previa);
+
+        assertThat(admin.enviar("PUT", rota + "/conferencia",
+                escolha(conferencia, "Preço Fardo", "KG", "Saco", "2026-11-22"), true).statusCode()).isEqualTo(200);
+        assertThat(admin.enviar("PUT", primeira, corrigida, true).statusCode()).isEqualTo(409);
+    }
+
+    private Map<String, Object> correcao(long revisao, long conferencia, String unidade, String coluna, String embalagem, String preco) {
+        var dados = new java.util.HashMap<String, Object>();
+        dados.put("revisao", revisao);
+        dados.put("conferencia", conferencia);
+        dados.put("descricao", "Item conferido");
+        dados.put("referencia", "1076");
+        dados.put("quantidade", "1.5");
+        dados.put("unidade", unidade);
+        dados.put("coluna", coluna);
+        dados.put("embalagem", embalagem);
+        dados.put("preco", preco);
+        dados.put("motivo", "Conferência com a cotação");
+        return dados;
     }
 
     private String processar(Fornecedor origem, String nome, byte[] pdf) throws Exception {

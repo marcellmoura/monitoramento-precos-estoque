@@ -1,2 +1,12 @@
 .dadosItem { grid-template-columns: minmax(7.25rem, 1fr) minmax(0, 2fr); }
 .dadosItem dt { overflow-wrap: normal; }
+.botaoCorrecao {
+  padding: .5rem .85rem;
+  font: inherit;
+  font-weight: 600;
+  color: #244b38;
+  background: white;
+  border: 1px solid currentColor;
+  border-radius: .4rem;
+  cursor: pointer;
+}

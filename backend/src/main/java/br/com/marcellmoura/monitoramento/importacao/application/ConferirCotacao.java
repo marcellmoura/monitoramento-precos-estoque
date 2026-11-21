@@ -18,7 +18,6 @@ import br.com.marcellmoura.monitoramento.importacao.domain.PrecoCotado;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ConferenciaRepository;
-import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 
 @Service
 @Transactional(readOnly = true)
@@ -76,7 +75,7 @@ public class ConferirCotacao {
         if (!colunas.contains(escolha.base().coluna())) {
             throw new ImportacaoException(400, "COLUNA_INDISPONIVEL", "Selecione uma coluna da prévia.");
         }
-        if ("KG_FARDO".equals(layout) && "Preço KG".equals(escolha.base().coluna()) && escolha.base().unidade() != Unidade.KG) {
+        if (!ConferenciaCotacao.unidadeCompativel(layout, escolha.base().coluna(), escolha.base().unidade())) {
             throw new ImportacaoException(400, "UNIDADE_INCOMPATIVEL", "A coluna Preço KG exige a unidade KG.");
         }
         if ("Não informada".equalsIgnoreCase(escolha.base().embalagem())) {
