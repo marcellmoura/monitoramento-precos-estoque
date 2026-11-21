@@ -17,7 +17,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Administração de usuários](docs/administracao-usuarios.md)
 - [Cadastro, consulta e edição de produtos](docs/produtos.md)
 - [Cadastro e consulta de fornecedores](docs/fornecedores.md)
-- [Envio e prévia de PDFs de fornecedores](docs/importacoes.md)
+- [Envio, prévia e conferência de PDFs de fornecedores](docs/importacoes.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)

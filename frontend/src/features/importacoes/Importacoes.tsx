@@ -1,6 +1,7 @@
 import { Link, useFetcher, useLoaderData, useRevalidator } from 'react-router';
 import { Fragment, useEffect } from 'react';
 import type { Fornecedor } from '../fornecedores/api';
+import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
 import type { DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
@@ -100,11 +101,14 @@ export function DetalheImportacao() {
       <input type="hidden" name="operacao" value="reprocessar" />
       <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
     </fetcher.Form>}
-    {tentativa.previa && <Previa previa={tentativa.previa} />}
+    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia}
+      key={`${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
+    {tentativa.previa && <Previa previa={tentativa.previa}
+      pendenciasComerciais={tentativa.conferencia?.pendenciasComerciais ?? []} />}
   </section>;
 }
 
-function Previa({ previa }: { previa: PreviaImportacao }) {
+function Previa({ previa, pendenciasComerciais }: { previa: PreviaImportacao; pendenciasComerciais: string[][] }) {
   const leituraParcial = previa.itens.some(item => item.dados === null);
   return <section aria-labelledby="previa-itens">
     <h3 id="previa-itens">Prévia dos itens</h3>
@@ -124,6 +128,7 @@ function Previa({ previa }: { previa: PreviaImportacao }) {
         </dl>}
         {!dados && <p>{textoOriginal}</p>}
         <p>{pendencias.length ? pendencias.join(' ') : 'Pendente de associação.'}</p>
+        {pendenciasComerciais[indice]?.map(pendencia => <p key={pendencia}>{pendencia}</p>)}
       </li>)}
     </ol>
   </section>;

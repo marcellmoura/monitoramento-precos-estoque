@@ -1,6 +1,5 @@
 package br.com.marcellmoura.monitoramento.importacao.extracao;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -8,13 +7,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import br.com.marcellmoura.monitoramento.importacao.domain.PrecoCotado;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Dados;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 
 final class InterpretadorCotacao {
     private static final Pattern DATA = Pattern.compile("data de referência:\\s*(\\d{2}/\\d{2}/\\d{4})", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-    private static final Pattern VALOR = Pattern.compile("[+-]?(?:[0-9]{1,3}(?:\\.[0-9]{3})+|[0-9]+)(?:,[0-9]{1,2})?");
     private static final String VALOR_FICHA = "Valor de compra:";
     private static final String APRESENTACAO_FICHA = "Apresentação:";
 
@@ -94,15 +93,9 @@ final class InterpretadorCotacao {
         if (dados.unidade() == null || dados.unidade().isBlank()) pendencias.add("Unidade não informada no PDF.");
         if ("Não informada".equalsIgnoreCase(dados.apresentacao())) pendencias.add("Apresentação não informada no PDF.");
         precos.forEach((coluna, valor) -> {
-            if (!precoPositivo(valor)) pendencias.add("Preço ausente ou inválido em " + coluna + ".");
+            if (!PrecoCotado.positivo(valor)) pendencias.add("Preço ausente ou inválido em " + coluna + ".");
         });
         return new Item(dados, precos, bruto.replace('\t', ' '), pendencias);
-    }
-
-    private boolean precoPositivo(String valor) {
-        String numero = valor.replace("R$", "").strip();
-        return VALOR.matcher(numero).matches()
-                && new BigDecimal(numero.replace(".", "").replace(',', '.')).signum() > 0;
     }
 
     private Item ilegivel(String linha) {

@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
 import type { Identidade } from '../acesso/api';
-import type { TentativaImportacao } from './api';
+import type { ConferenciaCotacao, TentativaImportacao } from './api';
 
 const base = {
   id: 1, fornecedorCodigo: 'FOR-000001', fornecedorNome: 'Distribuidora Teste', atorId: 1,
@@ -15,6 +15,7 @@ let perfil: Identidade['perfil'];
 let fornecedores: boolean;
 let tentativas: TentativaImportacao[];
 let falha: number | undefined;
+let conferencia: ConferenciaCotacao;
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
@@ -22,6 +23,7 @@ beforeEach(() => {
   fornecedores = true;
   tentativas = [];
   falha = undefined;
+  conferencia = { colunas: ['ATACADO', 'VAREJO'], dataSugerida: '2026-11-21', confirmada: null, sugestao: null, pendenciasComerciais: [] };
   fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     const url = new URL(input, 'http://localhost');
     if (url.pathname === '/api/auth/me') return Response.json({ id: 1, nome: 'Usuário', perfil, trocaSenhaObrigatoria: false });
@@ -37,6 +39,14 @@ beforeEach(() => {
     if (url.pathname === '/api/importacoes') {
       if (options?.method === 'POST') return Response.json(base, { status: 201 });
       return Response.json({ itens: tentativas.slice(pagina, pagina + 1), pagina, total: tentativas.length, paginas: tentativas.length });
+    }
+    if (url.pathname.endsWith('/conferencia')) {
+      if (options?.method === 'PUT') {
+        const { coluna, unidade, embalagem, dataComercial } = JSON.parse(String(options.body));
+        conferencia = { ...conferencia, confirmada: { id: 1, base: { coluna, unidade, embalagem }, dataComercial },
+          pendenciasComerciais: [['Confirme a unidade deste item.'], []] };
+      }
+      return Response.json(conferencia);
     }
     if (url.pathname.endsWith('/previa')) return Response.json({
       layout: 'ATACADO_VAREJO', dataReferencia: null,
@@ -130,13 +140,35 @@ describe('Importações', () => {
     tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
     abrir('/importacoes/1');
     expect(await screen.findByRole('heading', { name: 'Prévia dos itens' })).toBeVisible();
-    expect(screen.getByText('ATACADO', { exact: true })).toBeVisible();
+    const previa = within(screen.getByRole('region', { name: 'Prévia dos itens' }));
+    expect(previa.getByText('ATACADO', { exact: true })).toBeVisible();
     expect(screen.getByText('32', { exact: true })).toBeVisible();
-    expect(screen.getByText('VAREJO', { exact: true })).toBeVisible();
+    expect(previa.getByText('VAREJO', { exact: true })).toBeVisible();
     expect(screen.getByText('35', { exact: true })).toBeVisible();
     expect(screen.getByText('Data no PDF: Não informada')).toBeVisible();
     expect(screen.getByText('Linha incompleta')).toBeVisible();
     expect(screen.getByRole('alert')).toHaveTextContent('Leitura parcial');
+  });
+
+  it('apresenta a configuração sugerida e salva apenas após ação explícita', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg' };
+    abrir('/importacoes/1');
+    const salvar = await screen.findByRole('button', { name: 'Salvar conferência' });
+    expect(screen.getByLabelText('Coluna de preço de compra')).toHaveValue('ATACADO');
+    expect(screen.getByLabelText('Unidade de compra')).toHaveValue('KG');
+    expect(screen.getByLabelText('Embalagem de compra')).toBeRequired();
+    expect(screen.getByLabelText('Data comercial')).toHaveValue('2026-11-21');
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
+    fireEvent.change(screen.getByLabelText('Data comercial'), { target: { value: '2026-11-20' } });
+    fireEvent.click(salvar);
+    expect(await screen.findByText('Conferência comercial salva.')).toBeVisible();
+    expect(screen.getByText('Confirme a unidade deste item.')).toBeVisible();
+    const requisicao = fetchMock.mock.calls.find(([rota, init]) => rota.endsWith('/conferencia') && init?.method === 'PUT');
+    expect(JSON.parse(requisicao?.[1].body)).toEqual({
+      revisao: 0, coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg', dataComercial: '2026-11-20',
+    });
+    expect(screen.getByLabelText('Data comercial')).toHaveValue('2026-11-20');
   });
 
   it('reprocessa a mesma tentativa em caso de falha', async () => {
