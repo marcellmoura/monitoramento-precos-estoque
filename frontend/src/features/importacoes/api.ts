@@ -2,6 +2,7 @@ import { redirect } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { enviarFormulario, HttpError, mutateJson, requestJson } from '../../shared/http';
 import { mensagemErro } from '../acesso/api';
+import type { Unidade } from '../produtos/api';
 import type { Identidade } from '../acesso/api';
 import type { Fornecedor, PaginaFornecedores } from '../fornecedores/api';
 
@@ -44,7 +45,24 @@ export interface PreviaImportacao {
   itens: ItemPrevia[];
 }
 
-export interface DetalheTentativa extends TentativaImportacao { previa?: PreviaImportacao }
+export interface BaseComercial {
+  coluna: string;
+  unidade: Unidade;
+  embalagem: string;
+}
+
+export interface ConferenciaCotacao {
+  colunas: string[];
+  dataSugerida: string;
+  confirmada: { id: number; base: BaseComercial; dataComercial: string } | null;
+  sugestao: BaseComercial | null;
+  pendenciasComerciais: string[][];
+}
+
+export interface DetalheTentativa extends TentativaImportacao {
+  previa?: PreviaImportacao;
+  conferencia?: ConferenciaCotacao;
+}
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
 export interface FalhaImportacao { erro: string }
@@ -57,6 +75,9 @@ function tratarFalha(error: unknown) {
   if (error instanceof HttpError) {
     if (error.status === 401) return redirect('/login');
     if (error.status === 403) return { erro: 'Acesso disponível para Administrador e Compras.' };
+    if (error.code && ['COLUNA_INDISPONIVEL', 'UNIDADE_INCOMPATIVEL', 'DATA_COMERCIAL_INVALIDA', 'EMBALAGEM_INVALIDA'].includes(error.code)) {
+      return { erro: error.detail ?? 'Confira os dados comerciais.' };
+    }
     if (error.status === 404 || error.status === 409 || error.status === 413) {
       return { erro: error.detail ?? 'Não foi possível concluir a operação.' };
     }
@@ -82,8 +103,11 @@ export async function carregarTentativa({ params, request }: LoaderFunctionArgs)
     const rota = `/importacoes/${encodeURIComponent(params.id ?? '')}`;
     const tentativa = await consultar<TentativaImportacao>(rota, request.signal);
     if (tentativa.status !== 'AGUARDANDO_CONFERENCIA') return tentativa;
-    const previa = await consultar<PreviaImportacao>(rota + '/previa', request.signal);
-    return { ...tentativa, previa };
+    const [previa, conferencia] = await Promise.all([
+      consultar<PreviaImportacao>(rota + '/previa', request.signal),
+      consultar<ConferenciaCotacao>(rota + '/conferencia', request.signal),
+    ]);
+    return { ...tentativa, previa, conferencia };
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -114,9 +138,20 @@ export async function enviarPdf({ request }: ActionFunctionArgs) {
 export async function atualizarTentativa({ params, request }: ActionFunctionArgs) {
   const id = encodeURIComponent(params.id ?? '');
   const form = await request.formData();
-  const operacao = form.get('operacao') === 'reprocessar' ? 'reprocessamento' : 'confirmacao';
+  const operacao = form.get('operacao');
   try {
-    await mutateJson<TentativaImportacao>(`/importacoes/${id}/${operacao}`, 'POST');
+    if (operacao === 'conferir') {
+      await mutateJson<ConferenciaCotacao>(`/importacoes/${id}/conferencia`, 'PUT', {
+        revisao: Number(form.get('revisao')),
+        coluna: form.get('coluna'),
+        unidade: form.get('unidade'),
+        embalagem: form.get('embalagem'),
+        dataComercial: form.get('dataComercial'),
+      });
+    } else {
+      const destino = operacao === 'reprocessar' ? 'reprocessamento' : 'confirmacao';
+      await mutateJson<TentativaImportacao>(`/importacoes/${id}/${destino}`, 'POST');
+    }
     return redirect(`/importacoes/${id}`);
   } catch (error) { return tratarFalha(error); }
 }

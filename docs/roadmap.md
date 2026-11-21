@@ -147,4 +147,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P6/P7 / extração e prévia | Fila PostgreSQL gera prévia dos originais e sintéticos, com status e retentativa | 19 testes unitários e 102 de integração, 90 testes frontend, lint, build e Chromium aprovados. Verificação real de prévia automática dos três formatos testados no navegador. Conferência de coluna, correção e associação aguardam recortes próprios. |
 
+| 2026-11-21 | P6/P7 / prévia validada em PR | [PR #67](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/67), commit `d0e19c4`; US-08 e US-09 em revisão | [CI 44902894759](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44902894759) aprovada com ambos os Quality Gates após correção de Unicode na leitura de datas. PR aguarda integração pelo responsável. |
+
+| 2026-11-21 | P6/P7 / prévia integrada | PR #67 integrado pelo responsável; merge `be42a38`; main local sincronizada | US-06 encerrada. A conferência de coluna, apresentação e data comercial é o próximo recorte a alinhar. [CI pós-merge 44903731464](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44903731464) aprovada. |
+
+| 2026-11-21 | P7 / conferência comercial | US-37 implementada. A V9 registra base comercial, data, ator e revisões da tentativa. | Conferidos reaproveitamento por fornecedor/layout, proteção contra revisão desatualizada e preservação da prévia. Correções por item e associação seguem como próximos recortes. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

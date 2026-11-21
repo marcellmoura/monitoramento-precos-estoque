@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
@@ -73,6 +74,7 @@ class ImportacaoIT {
     }
 
     @BeforeEach void preparar() throws Exception {
+        jdbc.update("DELETE FROM conferencias_cotacao");
         jdbc.update("UPDATE tentativas_importacao SET execucao_atual = NULL");
         jdbc.update("DELETE FROM execucoes_extracao");
         jdbc.update("DELETE FROM tentativas_importacao");
@@ -312,6 +314,80 @@ class ImportacaoIT {
                 }
             }
         }
+    }
+
+    @Test void confirmaBaseComercialSemAlterarPreviaEProtegeContraRevisaoDesatualizada() throws Exception {
+        var rota = processar(fornecedor, ORIGINAL, ler(ORIGINAL));
+        var previa = json(admin.enviar("GET", rota + "/previa", null, false));
+        var inicial = json(admin.enviar("GET", rota + "/conferencia", null, false));
+        assertThat(inicial.get("colunas").toString()).isEqualTo("[\"Preço Fardo\",\"Preço KG\"]");
+        assertThat(inicial.get("confirmada").isNull()).isTrue();
+        var envio = java.time.Instant.parse(json(admin.enviar("GET", rota, null, false)).get("enviadaEm").asText());
+        assertThat(inicial.get("dataSugerida").asText())
+                .isEqualTo(envio.atZone(java.time.ZoneId.of("America/Fortaleza")).toLocalDate().toString());
+
+        var invalida = escolha(0, "Preço KG", "UN", "A granel", "2026-11-20");
+        assertThat(admin.enviar("PUT", rota + "/conferencia", invalida, true).statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Outra coluna", "KG", "A granel", "2026-11-20"), true).statusCode()).isEqualTo(400);
+        var dados = escolha(0, "Preço KG", "KG", "A granel", "2026-11-20");
+        assertThat(admin.enviar("PUT", rota + "/conferencia", dados, false).statusCode()).isEqualTo(403);
+        assertThat(entrar(Perfil.CONSULTA).enviar("PUT", rota + "/conferencia", dados, true).statusCode()).isEqualTo(403);
+        var salva = json(admin.enviar("PUT", rota + "/conferencia", dados, true));
+        long revisao = salva.get("confirmada").get("id").asLong();
+        assertThat(revisao).isPositive();
+        assertThat(salva.get("pendenciasComerciais").get(0).size()).isEqualTo(1);
+        assertThat(salva.get("pendenciasComerciais").get(1).toString()).contains("unidade", "embalagem");
+        assertThat(json(admin.enviar("PUT", rota + "/conferencia", dados, true))).isEqualTo(salva);
+        assertThat(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Preço Fardo", "KG", "Fardo", "2026-11-21"), true).statusCode()).isEqualTo(409);
+        var alterada = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(revisao, "Preço Fardo", "KG", "Fardo", "2026-11-21"), true));
+        assertThat(alterada.get("confirmada").get("id").asLong()).isGreaterThan(revisao);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM conferencias_cotacao", Integer.class)).isEqualTo(2);
+        assertThat(json(admin.enviar("GET", rota + "/previa", null, false))).isEqualTo(previa);
+        assertThat(json(admin.enviar("GET", rota, null, false)).get("status").asText()).isEqualTo("AGUARDANDO_CONFERENCIA");
+    }
+
+    @Test void sugereBaseSomenteComMesmoFornecedorLayoutEItensCompativeis() throws Exception {
+        var arquivo = "sinteticos/tabela-v1.pdf";
+        var original = ler(arquivo);
+        var rota = processar(fornecedor, "tabela.pdf", original);
+        var leitura = json(admin.enviar("GET", rota + "/conferencia", null, false));
+        assertThat(leitura.get("dataSugerida").asText()).isEqualTo("2026-11-01");
+        var dados = escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-03");
+        var salva = json(admin.enviar("PUT", rota + "/conferencia", dados, true));
+        assertThat(salva.get("pendenciasComerciais").get(0).size()).isZero();
+        byte[] variacao;
+        try (var documento = Loader.loadPDF(original); var saida = new ByteArrayOutputStream()) {
+            documento.getDocumentInformation().setTitle("Nova cotação");
+            documento.save(saida);
+            variacao = saida.toByteArray();
+        }
+        var compativel = processar(fornecedor, "nova-cotacao.pdf", variacao);
+        var sugerida = json(admin.enviar("GET", compativel + "/conferencia", null, false));
+        assertThat(sugerida.get("sugestao")).isEqualTo(salva.get("confirmada").get("base"));
+        assertThat(sugerida.get("confirmada").isNull()).isTrue();
+        assertThat(sugerida.get("dataSugerida").asText()).isEqualTo("2026-11-01");
+        var outroLayout = processar(fornecedor, "fichas.pdf", ler("sinteticos/fichas-v1.pdf"));
+        var outrosItens = processar(fornecedor, "tabela-v2.pdf", ler("sinteticos/tabela-v2.pdf"));
+        var outroFornecedor = processar(salvarFornecedor(), "nova-cotacao.pdf", variacao);
+        assertThat(admin.enviar("POST", outroFornecedor + "/confirmacao", null, true).statusCode()).isEqualTo(200);
+        processamento.executarFila();
+        for (var tentativa : java.util.List.of(outroLayout, outrosItens, outroFornecedor)) {
+            assertThat(json(admin.enviar("GET", tentativa + "/conferencia", null, false)).get("sugestao").isNull()).isTrue();
+        }
+    }
+
+    private String processar(Fornecedor origem, String nome, byte[] pdf) throws Exception {
+        long id = json(upload(admin, origem, nome, pdf)).get("id").asLong();
+        processamento.executarFila();
+        return ROTA + "/" + id;
+    }
+
+    private Map<String, Object> escolha(long revisao, String coluna, String unidade, String embalagem, String data) {
+        return Map.of("revisao", revisao, "coluna", coluna, "unidade", unidade,
+                "embalagem", embalagem, "dataComercial", data);
     }
 
     @Test void reprocessaFalhaDeLeituraSemNovoEnvioNemDuplicacao() throws Exception {
