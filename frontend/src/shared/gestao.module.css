@@ -22,3 +22,4 @@
 .dados dt { font-weight: 600; }
 .dados dd { margin: 0; overflow-wrap: anywhere; }
 .painel h2 { overflow-wrap: anywhere; }
+.lista { display: grid; gap: .75rem; padding-inline-start: 1.5rem; overflow-wrap: anywhere; }

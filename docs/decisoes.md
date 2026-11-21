@@ -21,6 +21,7 @@ Versão: 2026-11-13. Especificação das regras funcionais, escolhas técnicas e
 
 - Código interno gerado, nome obrigatório; CNPJ, telefone e e-mail opcionais. Nome pode se repetir; identidade interna não depende dele.
 - Validar formato de telefone/e-mail se preenchidos; não obrigar CNPJ. Validação fiscal especial não foi estabelecida.
+- Telefone de fornecedor: somente DDD e número nacional, sem código internacional do país. Aceitar fixo/celular com DDD e máscaras usuais; campo continua opcional. Detalhamento registrado em 21/11/2026.
 
 ## AP03 — Unidade e estoque
 

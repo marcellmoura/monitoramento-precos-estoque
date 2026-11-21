@@ -2,7 +2,7 @@
 
 Projeto da disciplina de DevOps para organizar produtos, fornecedores, estoque e preços a partir da importação de tabelas e orçamentos em PDF.
 
-**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência PostgreSQL/usuários integrada. Login, troca obrigatória de senha e logout integrados. Administração de usuários/perfis/reset integrada; cadastro e consulta de produtos implementados para revisão. Fornecedores, edição/estoque e importação de PDFs pendentes.
+**Estado atual:** backlog publicado com 37 histórias e 16 tarefas técnicas; estrutura React/Spring Boot com builds e testes locais verificados. CI/Sonar integrados e validados; persistência PostgreSQL/usuários integrada. Login, troca obrigatória de senha e logout integrados. Administração de usuários/perfis/reset integrada; cadastro e consulta de produtos integrados. Cadastro e consulta de fornecedores implementados para revisão. Edição de produtos, estoque e importação de PDFs pendentes.
 
 Repositório: [marcellmoura/monitoramento-precos-estoque](https://github.com/marcellmoura/monitoramento-precos-estoque).
 
@@ -16,6 +16,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Login e criação do primeiro administrador](docs/acesso.md)
 - [Administração de usuários](docs/administracao-usuarios.md)
 - [Cadastro e consulta de produtos](docs/produtos.md)
+- [Cadastro e consulta de fornecedores](docs/fornecedores.md)
 - [Product Backlog](docs/backlog.md)
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
