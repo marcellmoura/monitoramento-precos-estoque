@@ -64,6 +64,8 @@ public class SegurancaConfiguration {
                     .requestMatchers(HttpMethod.PATCH, "/api/produtos/{id}").hasAnyRole("ADMINISTRADOR", "COMPRAS", "ESTOQUE")
                     .requestMatchers("/api/fornecedores", "/api/fornecedores/**")
                             .hasAnyRole("ADMINISTRADOR", "COMPRAS")
+                    .requestMatchers("/api/importacoes", "/api/importacoes/**")
+                            .hasAnyRole("ADMINISTRADOR", "COMPRAS")
                     .anyRequest().authenticated())
                 .addFilterBefore(new ValidacaoSessaoFilter(usuarios), AuthorizationFilter.class)
                 .build();

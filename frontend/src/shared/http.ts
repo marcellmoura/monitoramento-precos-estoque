@@ -33,12 +33,18 @@ export async function requestJson<T>(
   return response.json() as Promise<T>;
 }
 
-export async function mutateJson<T>(path: string, method: string, body?: object) {
+async function mutate<T>(path: string, method: string, headers: Headers, body?: BodyInit) {
   const csrf = await requestJson<{ token: string; headerName: string }>('/auth/csrf');
   if (!csrf) throw new Error('Não foi possível iniciar a operação.');
-  return requestJson<T>(path, {
-    method,
-    headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  headers.set(csrf.headerName, csrf.token);
+  return requestJson<T>(path, { method, headers, body });
+}
+
+export function mutateJson<T>(path: string, method: string, body?: object) {
+  return mutate<T>(path, method, new Headers({ 'Content-Type': 'application/json' }),
+    body === undefined ? undefined : JSON.stringify(body));
+}
+
+export function enviarFormulario<T>(path: string, form: FormData) {
+  return mutate<T>(path, 'POST', new Headers(), form);
 }
