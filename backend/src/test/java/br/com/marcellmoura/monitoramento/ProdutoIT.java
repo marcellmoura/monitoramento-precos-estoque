@@ -3,7 +3,11 @@ package br.com.marcellmoura.monitoramento;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -40,6 +44,7 @@ class ProdutoIT {
         jdbc.update("DELETE FROM historico_acesso_usuario");jdbc.update("DELETE FROM spring_session");
         produtos.deleteAll();usuarios.deleteAll();hash=encoder.encode(SENHA);admin=entrar(Perfil.ADMINISTRADOR);
     }
+    @AfterEach void limparAjustes() { jdbc.update("DELETE FROM historico_ajustes_estoque"); }
     private ClienteHttpTeste entrar(Perfil perfil) throws Exception {
         var usuario = new Usuario(perfil.name(),perfil.name().toLowerCase()+"@example.com",hash,perfil);
         usuario.trocarSenha(hash);usuarios.saveAndFlush(usuario);
@@ -157,14 +162,142 @@ class ProdutoIT {
             assertThat(admin.enviar("GET","/api/produtos?"+query,null,false).statusCode()).isEqualTo(400);
         }
     }
-    @Test void retorna404EValidaIdSemOferecerEdicao() throws Exception {
+    @Test void retorna404EValidaIdentificador() throws Exception {
         assertThat(admin.enviar("GET","/api/produtos/999999",null,false).statusCode()).isEqualTo(404);
         assertThat(admin.enviar("GET","/api/produtos/-1",null,false).statusCode()).isEqualTo(400);
         assertThat(admin.enviar("GET","/api/produtos/abc",null,false).statusCode()).isEqualTo(400);
-        var p=produto();
-        assertThat(admin.enviar("PATCH","/api/produtos/"+p.getId(),Map.of("precoVenda","3.00"),true).statusCode()).isEqualTo(405);
-        assertThat(produtos.findById(p.getId()).orElseThrow().getPrecoVenda()).isEqualByComparingTo("4.99");
+        assertThat(admin.enviar("PATCH", "/api/produtos/999999", Map.of("versao", 0, "nome", "Novo"), true)
+                .statusCode()).isEqualTo(404);
     }
+
+    @Test void administradorEditaCadastroVendaEstadoEEstoqueComHistorico() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        var resposta = admin.enviar("PATCH", caminho, Map.of("versao", 0, "nome", "  Arroz novo  ", "categoria", " ",
+                "unidade", "KG", "precoVenda", "0", "ativo", false, "estoqueAtual", "8.125", "estoqueMinimo", "1.25"), true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        var dados = json(resposta);
+        assertThat(dados.get("nome").asText()).isEqualTo("Arroz novo");
+        assertThat(dados.get("categoria").isNull()).isTrue();
+        assertThat(dados.get("ativo").asBoolean()).isFalse();
+        assertThat(dados.get("codigo").asText()).isEqualTo(p.getCodigo());
+        assertThat(dados.get("unidade").asText()).isEqualTo("KG");
+        assertThat(dados.get("precoVenda").asText()).isEqualTo("0.00");
+        assertThat(dados.get("precoCompra").asText()).isEqualTo("2.50");
+        assertThat(dados.get("estoqueAtual").asText()).isEqualTo("8.125");
+        assertThat(dados.get("estoqueMinimo").asText()).isEqualTo("1.250");
+        assertThat(dados.get("versao").asLong()).isEqualTo(1);
+        assertThat(dados.get("unidadeEditavel").asBoolean()).isFalse();
+        assertThat(json(admin.enviar("GET", caminho, null, false))).isEqualTo(dados);
+        var ajuste = jdbc.queryForMap("SELECT * FROM historico_ajustes_estoque WHERE produto_id = ?", p.getId());
+        assertThat(ajuste).containsEntry("unidade", "KG")
+                .containsEntry("ator_id", usuarios.findByEmailIgnoreCase("administrador@example.com").orElseThrow().getId())
+                .containsEntry("atual_anterior", new BigDecimal("0.000")).containsEntry("atual_novo", new BigDecimal("8.125"))
+                .containsEntry("minimo_anterior", new BigDecimal("0.000")).containsEntry("minimo_novo", new BigDecimal("1.250"));
+        assertThat(ajuste.get("ocorrido_em")).isNotNull();
+    }
+
+    @Test void aplicaPermissoesPorCampoNaApiSemAlteracaoParcial() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        var compras = entrar(Perfil.COMPRAS);
+        var estoque = entrar(Perfil.ESTOQUE);
+        var consulta = entrar(Perfil.CONSULTA);
+        var proibidos = Map.of("precoVenda", "1", "unidade", "KG", "ativo", false, "estoqueAtual", "5", "estoqueMinimo", "1");
+        for (var entrada : proibidos.entrySet()) {
+            assertThat(compras.enviar("PATCH", caminho, Map.of("versao", 0, "nome", "Tentativa", entrada.getKey(), entrada.getValue()), true)
+                    .statusCode()).isEqualTo(403);
+        }
+        assertThat(estoque.enviar("PATCH", caminho, Map.of("versao", 0, "estoqueAtual", "6", "nome", "Tentativa"), true)
+                .statusCode()).isEqualTo(403);
+        assertThat(consulta.enviar("PATCH", caminho, Map.of("versao", 0, "nome", "Tentativa"), true).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 0, "precoCompra", "1"), true).statusCode()).isEqualTo(400);
+        assertThat(produtos.findById(p.getId()).orElseThrow().getNome()).isEqualTo("Produto existente");
+        assertThat(compras.enviar("PATCH", caminho, Map.of("versao", 0, "nome", "Novo nome", "categoria", "Nova categoria"), true)
+                .statusCode()).isEqualTo(200);
+        var resposta = estoque.enviar("PATCH", caminho, Map.of("versao", 1, "estoqueAtual", "6"), true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        var dados = json(resposta);
+        assertThat(dados.get("estoqueAtual").asText()).isEqualTo("6.000");
+        assertThat(dados.get("nome").asText()).isEqualTo("Novo nome");
+        assertThat(dados.has("precoCompra")).isFalse();
+        assertThat(dados.has("precoVenda")).isFalse();
+        assertThat(jdbc.queryForObject("SELECT ator_id FROM historico_ajustes_estoque WHERE produto_id = ?", Long.class, p.getId()))
+                .isEqualTo(usuarios.findByEmailIgnoreCase("estoque@example.com").orElseThrow().getId());
+        assertThat(estoque.enviar("PATCH", caminho, Map.of("versao", 2, "estoqueAtual", "6.000"), true).statusCode()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_ajustes_estoque WHERE produto_id = ?", Long.class, p.getId())).isEqualTo(1L);
+    }
+
+    @Test void impedeTrocaDeUnidadeComEstoqueOuHistoricoMesmoAposZerar() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        jdbc.update("UPDATE produtos SET estoque_atual = 5 WHERE id = ?", p.getId());
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 0, "unidade", "KG"), true).statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 0, "estoqueMinimo", "2"), true).statusCode()).isEqualTo(200);
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 1, "unidade", "KG", "estoqueMinimo", "0"), true)
+                .statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 1, "estoqueMinimo", "0", "estoqueAtual", "0"), true)
+                .statusCode()).isEqualTo(200);
+        var resposta = admin.enviar("PATCH", caminho, Map.of("versao", 2, "unidade", "KG"), true);
+        assertThat(resposta.statusCode()).isEqualTo(400);
+        assertThat(json(resposta).get("mensagem").asText()).contains("sem histórico ou vínculos");
+        assertThat(produtos.findById(p.getId()).orElseThrow().getUnidade()).isEqualTo(Unidade.UN);
+    }
+
+    @Test void rejeitaEdicaoInvalidaSemPersistirNemRegistrarAjuste() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        for (var entrada : java.util.List.of(Map.entry("nome", " "), Map.entry("categoria", "x".repeat(101)),
+                Map.entry("precoVenda", "1.001"), Map.entry("unidade", "CAIXA"), Map.entry("estoqueAtual", "-1"),
+                Map.entry("estoqueAtual", "0.1"), Map.entry("estoqueMinimo", "1.0001"),
+                Map.entry("estoqueMinimo", "10000000000000000"), Map.entry("ativo", "false"))) {
+            assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 0, entrada.getKey(), entrada.getValue()), true)
+                    .statusCode()).isEqualTo(400);
+        }
+        assertThat(admin.enviar("PATCH", caminho, Map.of("nome", "Sem versão"), true).statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("PATCH", caminho, Map.of("versao", 0, "nome", "Não salvar", "estoqueAtual", "0.1"), true)
+                .statusCode()).isEqualTo(400);
+        var dados = produtos.findById(p.getId()).orElseThrow();
+        assertThat(dados.getNome()).isEqualTo(p.getNome());
+        assertThat(dados.getVersao()).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_ajustes_estoque", Long.class)).isZero();
+    }
+
+    @Test void exigeSessaoCsrfERejeitaFormularioDesatualizado() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        var primeira = Map.of("versao", 0, "estoqueAtual", "4");
+        assertThat(new ClienteHttpTeste(porta).enviar("PATCH", caminho, primeira, true).statusCode()).isEqualTo(401);
+        assertThat(admin.enviar("PATCH", caminho, primeira, false).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("PATCH", caminho, primeira, true).statusCode()).isEqualTo(200);
+        var conflito = admin.enviar("PATCH", caminho, Map.of("versao", 0, "estoqueAtual", "8"), true);
+        assertThat(conflito.statusCode()).isEqualTo(409);
+        assertThat(json(conflito).get("codigo").asText()).isEqualTo("PRODUTO_DESATUALIZADO");
+        assertThat(produtos.findById(p.getId()).orElseThrow().getEstoqueAtual()).isEqualByComparingTo("4");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_ajustes_estoque WHERE produto_id = ?", Long.class, p.getId())).isEqualTo(1L);
+    }
+    @Test void edicoesConcorrentesRegistramSomenteOAjusteQueFoiSalvo() throws Exception {
+        var p = produto();
+        var caminho = "/api/produtos/" + p.getId();
+        var estoque = entrar(Perfil.ESTOQUE);
+        var inicio = new CyclicBarrier(2);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var primeira = executor.submit(() -> {
+                inicio.await(5, TimeUnit.SECONDS);
+                return admin.enviar("PATCH", caminho, Map.of("versao", 0, "estoqueAtual", "4"), true).statusCode();
+            });
+            var segunda = executor.submit(() -> {
+                inicio.await(5, TimeUnit.SECONDS);
+                return estoque.enviar("PATCH", caminho, Map.of("versao", 0, "estoqueAtual", "8"), true).statusCode();
+            });
+            assertThat(java.util.List.of(primeira.get(15, TimeUnit.SECONDS), segunda.get(15, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(200, 409);
+        }
+        var atual = produtos.findById(p.getId()).orElseThrow().getEstoqueAtual();
+        assertThat(jdbc.queryForObject("SELECT atual_novo FROM historico_ajustes_estoque WHERE produto_id = ?", BigDecimal.class, p.getId()))
+                .isEqualByComparingTo(atual);
+    }
+
     @Test void bancoImpedeNegativosEFracaoParaUnidadeInteira() {
         var p=produto();
         for(var sql:java.util.List.of("UPDATE produtos SET preco_compra=-1 WHERE id=?","UPDATE produtos SET estoque_atual=-1 WHERE id=?",

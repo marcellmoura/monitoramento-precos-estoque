@@ -7,8 +7,8 @@ import { AlterarSenha, Inicio, Login } from '../features/acesso/TelasAcesso';
 import { Usuarios, NovoUsuario, AdministrarUsuario } from '../features/usuarios/Usuarios';
 import { carregarUsuarios, carregarUsuario, cadastrarUsuario, administrarUsuario } from '../features/usuarios/api';
 
-import { Produtos, NovoProduto, DetalheProduto } from '../features/produtos/Produtos';
-import { carregarProdutos, carregarProduto, cadastrarProduto } from '../features/produtos/api';
+import { Produtos, NovoProduto, DetalheProduto, EditarProduto } from '../features/produtos/Produtos';
+import { carregarProdutos, carregarProduto, cadastrarProduto, editarProduto } from '../features/produtos/api';
 
 import { Fornecedores, NovoFornecedor, DetalheFornecedor } from '../features/fornecedores/Fornecedores';
 import { carregarFornecedores, carregarFornecedor, cadastrarFornecedor } from '../features/fornecedores/api';
@@ -20,6 +20,7 @@ export const routes: RouteObject[] = [{
     { path: 'produtos', element: <Produtos />, loader: carregarProdutos },
     { path: 'produtos/novo', element: <NovoProduto />, action: cadastrarProduto },
     { path: 'produtos/:id', element: <DetalheProduto />, loader: carregarProduto },
+    { path: 'produtos/:id/editar', element: <EditarProduto />, loader: carregarProduto, action: editarProduto },
     { path: 'fornecedores', element: <Fornecedores />, loader: carregarFornecedores },
     { path: 'fornecedores/novo', element: <NovoFornecedor />, action: cadastrarFornecedor },
     { path: 'fornecedores/:id', element: <DetalheFornecedor />, loader: carregarFornecedor },

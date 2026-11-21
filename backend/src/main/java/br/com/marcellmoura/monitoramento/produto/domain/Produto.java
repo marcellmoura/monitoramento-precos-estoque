@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "produtos")
@@ -34,13 +35,15 @@ public class Produto {
     private BigDecimal estoqueMinimo;
     @Column(nullable = false)
     private boolean ativo;
+    @Version
+    private long versao;
+    @Column(name = "unidade_bloqueada", nullable = false)
+    private boolean unidadeBloqueada;
 
     protected Produto() {}
     public Produto(String nome, String categoria, Unidade unidade, BigDecimal compra, BigDecimal venda) {
-        this.nome = Objects.requireNonNull(nome).strip();
-        if (this.nome.isEmpty() || this.nome.length() > 255) { throw new IllegalArgumentException("Nome inválido."); }
-        this.categoria = categoria == null || categoria.isBlank() ? null : categoria.strip();
-        if (this.categoria != null && this.categoria.length() > 100) { throw new IllegalArgumentException("Categoria inválida."); }
+        alterarNome(nome);
+        alterarCategoria(categoria);
         this.unidade = Objects.requireNonNull(unidade);
         this.precoCompra = compra == null ? null : validarPreco(compra);
         this.precoVenda = validarPreco(Objects.requireNonNull(venda));
@@ -48,9 +51,56 @@ public class Produto {
         estoqueMinimo = BigDecimal.ZERO.setScale(3);
         ativo = true;
     }
+
+    public void alterarNome(String nome) {
+        String texto = Objects.requireNonNull(nome).strip();
+        if (texto.isEmpty() || texto.length() > 255) throw new ProdutoEdicaoInvalidaException("Informe um nome de até 255 caracteres.");
+        this.nome = texto;
+    }
+
+    public void alterarCategoria(String categoria) {
+        String texto = categoria == null || categoria.isBlank() ? null : categoria.strip();
+        if (texto != null && texto.length() > 100) throw new ProdutoEdicaoInvalidaException("Informe uma categoria de até 100 caracteres.");
+        this.categoria = texto;
+    }
+
+    public void alterarVenda(BigDecimal venda) { precoVenda = validarPreco(venda); }
+
+    public void alterarEstado(boolean ativo) { this.ativo = ativo; }
+
+    public boolean podeTrocarUnidade() {
+        return !unidadeBloqueada && estoqueAtual.signum() == 0 && estoqueMinimo.signum() == 0;
+    }
+
+    public void alterarUnidade(Unidade novaUnidade) {
+        if (unidade == novaUnidade) return;
+        if (!podeTrocarUnidade()) throw new ProdutoEdicaoInvalidaException("A troca de unidade exige estoque zerado e produto sem histórico ou vínculos.");
+        unidade = novaUnidade;
+    }
+
+    public boolean ajustarEstoque(BigDecimal atual, BigDecimal minimo) {
+        BigDecimal novoAtual = atual == null ? estoqueAtual : validarQuantidade(atual);
+        BigDecimal novoMinimo = minimo == null ? estoqueMinimo : validarQuantidade(minimo);
+        if (novoAtual.compareTo(estoqueAtual) == 0 && novoMinimo.compareTo(estoqueMinimo) == 0) return false;
+        estoqueAtual = novoAtual;
+        estoqueMinimo = novoMinimo;
+        unidadeBloqueada = true;
+        return true;
+    }
+
+    private BigDecimal validarQuantidade(BigDecimal valor) {
+        if (valor.signum() < 0 || valor.scale() > 3 || valor.precision() - valor.scale() > 16) {
+            throw new ProdutoEdicaoInvalidaException("Informe estoques não negativos, com até três casas decimais.");
+        }
+        if (unidade == Unidade.UN && valor.stripTrailingZeros().scale() > 0) {
+            throw new ProdutoEdicaoInvalidaException("Produtos em UN exigem estoques inteiros.");
+        }
+        return valor.setScale(3, RoundingMode.UNNECESSARY);
+    }
+
     private BigDecimal validarPreco(BigDecimal valor) {
         if (valor.signum() < 0 || valor.scale() > 2 || valor.precision() - valor.scale() > 17) {
-            throw new IllegalArgumentException("Preço inválido.");
+            throw new ProdutoEdicaoInvalidaException("Preço inválido.");
         }
         return valor.setScale(2, RoundingMode.UNNECESSARY);
     }
@@ -64,4 +114,5 @@ public class Produto {
     public BigDecimal getEstoqueAtual() { return estoqueAtual; }
     public BigDecimal getEstoqueMinimo() { return estoqueMinimo; }
     public boolean isAtivo() { return ativo; }
+    public long getVersao() { return versao; }
 }

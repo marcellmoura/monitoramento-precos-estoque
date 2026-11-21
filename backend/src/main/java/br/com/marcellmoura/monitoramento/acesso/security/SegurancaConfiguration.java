@@ -61,6 +61,7 @@ public class SegurancaConfiguration {
                     .requestMatchers("/api/auth/csrf", "/api/auth/login").permitAll()
                     .requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("ADMINISTRADOR")
                     .requestMatchers(HttpMethod.POST, "/api/produtos").hasAnyRole("ADMINISTRADOR", "COMPRAS")
+                    .requestMatchers(HttpMethod.PATCH, "/api/produtos/{id}").hasAnyRole("ADMINISTRADOR", "COMPRAS", "ESTOQUE")
                     .requestMatchers("/api/fornecedores", "/api/fornecedores/**")
                             .hasAnyRole("ADMINISTRADOR", "COMPRAS")
                     .anyRequest().authenticated())

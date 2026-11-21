@@ -7,7 +7,7 @@ import { mensagemErro } from '../acesso/api';
 export type Unidade = 'KG' | 'G' | 'L' | 'ML' | 'UN';
 export interface Produto {
   id: number; codigo: string; nome: string; categoria: string | null; unidade: Unidade;
-  estoqueAtual: string; estoqueMinimo: string; ativo: boolean;
+  estoqueAtual: string; estoqueMinimo: string; ativo: boolean; versao: number; unidadeEditavel: boolean;
   precoVenda?: string; precoCompra?: string | null;
 }
 export interface PaginaProdutos { itens: Produto[]; pagina: number; tamanho: number; total: number; paginas: number }
@@ -19,6 +19,8 @@ function tratarFalha(error: unknown) {
     if (error.status === 401) return redirect('/login');
     if (error.status === 403) return { erro: 'Seu perfil não permite esta operação.' };
     if (error.status === 404) return { erro: 'Produto não encontrado.' };
+    if (error.status === 409) return { erro: 'O produto mudou. Volte aos detalhes e reabra a edição antes de salvar.' };
+    if (error.code === 'PRODUTO_EDICAO_INVALIDA' && error.detail) return { erro: error.detail };
   }
   return { erro: mensagemErro(error) };
 }
@@ -55,4 +57,40 @@ export async function cadastrarProduto({ request }: ActionFunctionArgs) {
     if (!result) throw new Error('Resposta ausente.');
     return redirect(`/produtos/${result.id}?criado=1`);
   } catch (error) { return tratarFalha(error); }
+}
+
+export async function editarProduto({ request, params }: ActionFunctionArgs) {
+  const form = await request.formData();
+  const versao = Number(form.get('versao'));
+  if (!form.has('versao') || !Number.isSafeInteger(versao) || versao < 0) {
+    return { erro: 'Volte aos detalhes e reabra a edição antes de salvar.' };
+  }
+  const alteracao: Record<string, unknown> = { versao };
+  for (const campo of ['nome', 'categoria', 'unidade']) {
+    if (form.has(campo)) alteracao[campo] = String(form.get(campo)).trim();
+  }
+  if (form.has('ativo')) alteracao.ativo = form.get('ativo') === 'true';
+  if (alteracao.nome === '') return { erro: 'Informe o nome do produto.' };
+  if (form.has('precoVenda')) {
+    try {
+      alteracao.precoVenda = precoParaApi(String(form.get('precoVenda')));
+    } catch {
+      return { erro: 'Informe um preço de venda não negativo com até duas casas decimais.' };
+    }
+  }
+  for (const campo of ['estoqueAtual', 'estoqueMinimo']) {
+    if (!form.has(campo)) continue;
+    const valor = String(form.get(campo)).trim();
+    if (!/^[0-9]{1,16}([.,][0-9]{1,3})?$/.test(valor)) {
+      return { erro: 'Informe estoques não negativos, com até três casas decimais e sem separador de milhar.' };
+    }
+    alteracao[campo] = valor.replace(',', '.');
+  }
+  try {
+    const produto = await mutateJson<Produto>(`/produtos/${encodeURIComponent(params.id ?? '')}`, 'PATCH', alteracao);
+    if (!produto) throw new Error('Resposta ausente.');
+    return redirect(`/produtos/${produto.id}?editado=1`);
+  } catch (error) {
+    return tratarFalha(error);
+  }
 }
