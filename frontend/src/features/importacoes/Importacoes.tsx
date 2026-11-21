@@ -1,8 +1,10 @@
-import { Link, useFetcher, useLoaderData } from 'react-router';
+import { Link, useFetcher, useLoaderData, useRevalidator } from 'react-router';
+import { Fragment, useEffect } from 'react';
 import type { Fornecedor } from '../fornecedores/api';
 import { estados } from './api';
-import type { FalhaImportacao, PaginaImportacoes, TentativaImportacao } from './api';
+import type { DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
+import importacoes from './Importacoes.module.css';
 
 const dataHora = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -62,8 +64,15 @@ function FormularioEnvio({ fornecedores }: { fornecedores: Fornecedor[] }) {
 }
 
 export function DetalheImportacao() {
-  const tentativa = useLoaderData<TentativaImportacao | FalhaImportacao>();
+  const tentativa = useLoaderData<DetalheTentativa | FalhaImportacao>();
   const fetcher = useFetcher<FalhaImportacao>();
+  const { revalidate, state } = useRevalidator();
+  const aguardando = !('erro' in tentativa) && (tentativa.status === 'PENDENTE' || tentativa.status === 'PROCESSANDO');
+  useEffect(() => {
+    if (!aguardando || state !== 'idle') return;
+    const timer = window.setTimeout(() => void revalidate(), 2000);
+    return () => window.clearTimeout(timer);
+  }, [aguardando, revalidate, state]);
   if ('erro' in tentativa) {
     return <section><h2>Tentativa de importação</h2><Falha mensagem={tentativa.erro} />
       <Link to="/importacoes">Voltar às importações</Link></section>;
@@ -83,9 +92,39 @@ export function DetalheImportacao() {
       {tentativa.importacaoExistenteId != null && <Link to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
       <Link to="/importacoes">Voltar às importações</Link>
     </nav>
+    {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
     {tentativa.status === 'AGUARDANDO_CONFIRMACAO' && <fetcher.Form method="post" className={styles.formulario}>
-      {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
       <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar para este fornecedor</button>
     </fetcher.Form>}
+    {tentativa.status === 'FALHA_EXTRACAO' && <fetcher.Form method="post" className={styles.formulario}>
+      <input type="hidden" name="operacao" value="reprocessar" />
+      <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
+    </fetcher.Form>}
+    {tentativa.previa && <Previa previa={tentativa.previa} />}
+  </section>;
+}
+
+function Previa({ previa }: { previa: PreviaImportacao }) {
+  const leituraParcial = previa.itens.some(item => item.dados === null);
+  return <section aria-labelledby="previa-itens">
+    <h3 id="previa-itens">Prévia dos itens</h3>
+    <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
+    {leituraParcial && <p role="alert">Leitura parcial. Confira as linhas não reconhecidas no PDF.</p>}
+    <ol className={styles.lista}>
+      {previa.itens.map(({ dados, precos, textoOriginal, pendencias }, indice) => <li key={indice}>
+        <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
+        {dados && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
+          <dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd>
+          <dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd>
+          <dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd>
+          <dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd>
+          {Object.entries(precos).map(([coluna, valor]) => <Fragment key={coluna}>
+            <dt>{coluna}</dt><dd>{valor || 'Não informado'}</dd>
+          </Fragment>)}
+        </dl>}
+        {!dados && <p>{textoOriginal}</p>}
+        <p>{pendencias.length ? pendencias.join(' ') : 'Pendente de associação.'}</p>
+      </li>)}
+    </ol>
   </section>;
 }

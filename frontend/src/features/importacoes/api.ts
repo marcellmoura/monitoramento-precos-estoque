@@ -7,6 +7,9 @@ import type { Fornecedor, PaginaFornecedores } from '../fornecedores/api';
 
 export const estados = {
   PENDENTE: 'Aguardando processamento',
+  PROCESSANDO: 'Processando PDF',
+  AGUARDANDO_CONFERENCIA: 'Aguardando conferência',
+  FALHA_EXTRACAO: 'Falha na extração',
   REJEITADA: 'PDF rejeitado',
   FALHA_ENVIO: 'Falha no envio',
   DUPLICADA: 'Envio duplicado',
@@ -26,6 +29,22 @@ export interface TentativaImportacao {
   quantidadeItens: number | null;
   importacaoExistenteId: number | null;
 }
+
+interface ItemPrevia {
+  dados: { referencia: string | null; descricao: string; unidade: string | null;
+    apresentacao: string | null; quantidade: string | null } | null;
+  precos: Record<string, string>;
+  textoOriginal: string;
+  pendencias: string[];
+}
+
+export interface PreviaImportacao {
+  layout: string;
+  dataReferencia: string | null;
+  itens: ItemPrevia[];
+}
+
+export interface DetalheTentativa extends TentativaImportacao { previa?: PreviaImportacao }
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
 export interface FalhaImportacao { erro: string }
@@ -60,7 +79,11 @@ export async function carregarImportacoes({ request }: LoaderFunctionArgs) {
 
 export async function carregarTentativa({ params, request }: LoaderFunctionArgs) {
   try {
-    return await consultar<TentativaImportacao>(`/importacoes/${encodeURIComponent(params.id ?? '')}`, request.signal);
+    const rota = `/importacoes/${encodeURIComponent(params.id ?? '')}`;
+    const tentativa = await consultar<TentativaImportacao>(rota, request.signal);
+    if (tentativa.status !== 'AGUARDANDO_CONFERENCIA') return tentativa;
+    const previa = await consultar<PreviaImportacao>(rota + '/previa', request.signal);
+    return { ...tentativa, previa };
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -88,10 +111,12 @@ export async function enviarPdf({ request }: ActionFunctionArgs) {
   } catch (error) { return tratarFalha(error); }
 }
 
-export async function confirmarImportacao({ params }: ActionFunctionArgs) {
+export async function atualizarTentativa({ params, request }: ActionFunctionArgs) {
   const id = encodeURIComponent(params.id ?? '');
+  const form = await request.formData();
+  const operacao = form.get('operacao') === 'reprocessar' ? 'reprocessamento' : 'confirmacao';
   try {
-    await mutateJson<TentativaImportacao>(`/importacoes/${id}/confirmacao`, 'POST');
+    await mutateJson<TentativaImportacao>(`/importacoes/${id}/${operacao}`, 'POST');
     return redirect(`/importacoes/${id}`);
   } catch (error) { return tratarFalha(error); }
 }

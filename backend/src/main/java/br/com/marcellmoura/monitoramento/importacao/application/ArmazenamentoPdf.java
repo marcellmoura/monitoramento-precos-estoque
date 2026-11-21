@@ -38,7 +38,7 @@ class ArmazenamentoPdf {
 
     UUID guardar(Temporario temporario) throws IOException {
         UUID id = UUID.randomUUID();
-        Path destino = pasta.resolve(id + ".pdf");
+        Path destino = caminhoOriginal(id);
         Files.move(temporario.caminho(), destino, StandardCopyOption.ATOMIC_MOVE);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override public void afterCompletion(int status) {
@@ -47,6 +47,8 @@ class ArmazenamentoPdf {
         });
         return id;
     }
+
+    Path caminhoOriginal(UUID id) { return pasta.resolve(id + ".pdf"); }
 
     private MessageDigest sha256() {
         try {
