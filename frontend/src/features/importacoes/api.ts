@@ -31,7 +31,7 @@ export interface TentativaImportacao {
   importacaoExistenteId: number | null;
 }
 
-interface ItemPrevia {
+export interface ItemPrevia {
   dados: { referencia: string | null; descricao: string; unidade: string | null;
     apresentacao: string | null; quantidade: string | null } | null;
   precos: Record<string, string>;
@@ -59,9 +59,28 @@ export interface ConferenciaCotacao {
   pendenciasComerciais: string[][];
 }
 
+export interface RevisaoItem {
+  id: number;
+  linha: number;
+  atorId: number;
+  revisadaEm: string;
+  dados: {
+    referencia: string | null;
+    descricao: string;
+    unidade: Unidade | null;
+    embalagem: string | null;
+    quantidade: number | null;
+    coluna: string | null;
+    preco: number | null;
+    motivo: string;
+  };
+  pendencias: string[];
+}
+
 export interface DetalheTentativa extends TentativaImportacao {
   previa?: PreviaImportacao;
   conferencia?: ConferenciaCotacao;
+  revisoes?: RevisaoItem[];
 }
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
@@ -103,11 +122,12 @@ export async function carregarTentativa({ params, request }: LoaderFunctionArgs)
     const rota = `/importacoes/${encodeURIComponent(params.id ?? '')}`;
     const tentativa = await consultar<TentativaImportacao>(rota, request.signal);
     if (tentativa.status !== 'AGUARDANDO_CONFERENCIA') return tentativa;
-    const [previa, conferencia] = await Promise.all([
+    const [previa, conferencia, revisoes] = await Promise.all([
       consultar<PreviaImportacao>(rota + '/previa', request.signal),
       consultar<ConferenciaCotacao>(rota + '/conferencia', request.signal),
+      consultar<RevisaoItem[]>(rota + '/itens', request.signal),
     ]);
-    return { ...tentativa, previa, conferencia };
+    return { ...tentativa, previa, conferencia, revisoes };
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -140,6 +160,7 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
   const form = await request.formData();
   const operacao = form.get('operacao');
   try {
+    if (operacao === 'corrigir-item') return salvarCorrecao(id, form);
     if (operacao === 'conferir') {
       await mutateJson<ConferenciaCotacao>(`/importacoes/${id}/conferencia`, 'PUT', {
         revisao: Number(form.get('revisao')),
@@ -153,5 +174,24 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
       await mutateJson<TentativaImportacao>(`/importacoes/${id}/${destino}`, 'POST');
     }
     return redirect(`/importacoes/${id}`);
+  } catch (error) { return tratarFalha(error); }
+}
+
+async function salvarCorrecao(id: string, form: FormData) {
+  const campo = (nome: string) => String(form.get(nome) ?? '').trim() || null;
+  try {
+    const revisao = await mutateJson<RevisaoItem>(`/importacoes/${id}/itens/${Number(campo('linha'))}`, 'PUT', {
+      revisao: Number(campo('revisao')),
+      conferencia: Number(campo('conferencia')),
+      referencia: campo('referencia'),
+      descricao: campo('descricao'),
+      unidade: campo('unidade'),
+      embalagem: campo('embalagem'),
+      quantidade: campo('quantidade'),
+      coluna: campo('coluna') === 'manual' ? null : campo('coluna'),
+      preco: campo('preco'),
+      motivo: campo('motivo'),
+    });
+    return revisao ? { salvo: true } : { erro: 'Consulte a prévia para verificar a correção.' };
   } catch (error) { return tratarFalha(error); }
 }

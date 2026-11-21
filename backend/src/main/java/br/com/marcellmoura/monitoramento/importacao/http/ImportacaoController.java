@@ -3,9 +3,11 @@ package br.com.marcellmoura.monitoramento.importacao.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +36,8 @@ import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
 import br.com.marcellmoura.monitoramento.importacao.application.RegistroImportacoes;
+import br.com.marcellmoura.monitoramento.importacao.application.RevisarItemCotacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.RevisaoItem;
 import br.com.marcellmoura.monitoramento.importacao.domain.TentativaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 
@@ -44,11 +48,14 @@ public class ImportacaoController {
     private final RecepcaoPdf recepcao;
     private final RegistroImportacoes registro;
     private final ConferirCotacao conferencia;
+    private final RevisarItemCotacao revisaoItem;
 
-    public ImportacaoController(RecepcaoPdf recepcao, RegistroImportacoes registro, ConferirCotacao conferencia) {
+    public ImportacaoController(RecepcaoPdf recepcao, RegistroImportacoes registro, ConferirCotacao conferencia,
+            RevisarItemCotacao revisaoItem) {
         this.recepcao = recepcao;
         this.registro = registro;
         this.conferencia = conferencia;
+        this.revisaoItem = revisaoItem;
     }
 
     public record Pagina(List<TentativaImportacao> itens, int pagina, int tamanho, long total, int paginas) {}
@@ -100,6 +107,33 @@ public class ImportacaoController {
             @PathVariable @Positive long id, @Valid @RequestBody ConfirmacaoComercial dados) {
         var base = new ConferenciaCotacao.Base(dados.coluna(), dados.unidade(), dados.embalagem());
         return conferencia.confirmar(id, ator.getId(), new ConferirCotacao.Escolha(dados.revisao(), base, dados.dataComercial()));
+    }
+
+    @GetMapping("/{id}/itens")
+    public List<RevisaoItem> listarRevisoes(@PathVariable @Positive long id) { return revisaoItem.listar(id); }
+
+    public record CorrecaoItem(@NotNull @Min(0) Long revisao, @NotNull @Positive Long conferencia,
+            @Size(max = 120) String referencia, @NotBlank @Size(max = 255) String descricao, Unidade unidade,
+            @Size(max = 120) String embalagem, @Positive @Digits(integer = 12, fraction = 3) BigDecimal quantidade,
+            @Size(max = 100) String coluna, @Positive @Digits(integer = 12, fraction = 2) BigDecimal preco,
+            @NotBlank @Size(max = 300) String motivo) {
+
+        RevisaoItem.Dados dados() {
+            return new RevisaoItem.Dados(texto(referencia), descricao.strip(), unidade, texto(embalagem),
+                    quantidade == null ? null : quantidade.setScale(3), texto(coluna),
+                    preco == null ? null : preco.setScale(2), motivo.strip());
+        }
+
+        private static String texto(String valor) {
+            return valor == null || valor.isBlank() || "Não informada".equalsIgnoreCase(valor.strip()) ? null : valor.strip();
+        }
+    }
+
+    @PutMapping("/{id}/itens/{linha}")
+    public RevisaoItem salvarCorrecao(@AuthenticationPrincipal UsuarioAutenticado ator, @PathVariable @Positive long id,
+            @PathVariable @Positive int linha, @Valid @RequestBody CorrecaoItem dados) {
+        return revisaoItem.salvar(id, linha, ator.getId(),
+                new RevisarItemCotacao.Correcao(dados.revisao(), dados.conferencia(), dados.dados()));
     }
 
     @ExceptionHandler(ImportacaoException.class)

@@ -1,9 +1,10 @@
 import { Link, useFetcher, useLoaderData, useRevalidator } from 'react-router';
 import { Fragment, useEffect } from 'react';
 import type { Fornecedor } from '../fornecedores/api';
+import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
-import type { DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -104,32 +105,47 @@ export function DetalheImportacao() {
     {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia}
       key={`${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
     {tentativa.previa && <Previa previa={tentativa.previa}
-      pendenciasComerciais={tentativa.conferencia?.pendenciasComerciais ?? []} />}
+      conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} key={tentativa.id} />}
   </section>;
 }
 
-function Previa({ previa, pendenciasComerciais }: { previa: PreviaImportacao; pendenciasComerciais: string[][] }) {
+function Previa({ previa, conferencia, revisoes }: {
+  previa: PreviaImportacao; conferencia?: ConferenciaCotacao; revisoes: RevisaoItem[];
+}) {
+  const porLinha = new Map(revisoes.map(revisao => [revisao.linha, revisao]));
+  const base = conferencia?.confirmada;
   const leituraParcial = previa.itens.some(item => item.dados === null);
   return <section aria-labelledby="previa-itens">
     <h3 id="previa-itens">Prévia dos itens</h3>
+    {!base && <p>Salve a conferência comercial para habilitar a correção dos itens.</p>}
     <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
     {leituraParcial && <p role="alert">Leitura parcial. Confira as linhas não reconhecidas no PDF.</p>}
     <ol className={styles.lista}>
-      {previa.itens.map(({ dados, precos, textoOriginal, pendencias }, indice) => <li key={indice}>
-        <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
-        {dados && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
-          <dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd>
-          <dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd>
-          <dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd>
-          <dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd>
-          {Object.entries(precos).map(([coluna, valor]) => <Fragment key={coluna}>
-            <dt>{coluna}</dt><dd>{valor || 'Não informado'}</dd>
-          </Fragment>)}
-        </dl>}
-        {!dados && <p>{textoOriginal}</p>}
-        <p>{pendencias.length ? pendencias.join(' ') : 'Pendente de associação.'}</p>
-        {pendenciasComerciais[indice]?.map(pendencia => <p key={pendencia}>{pendencia}</p>)}
-      </li>)}
+      {previa.itens.map((item, indice) => {
+        const { dados, precos, textoOriginal, pendencias } = item;
+        const linha = indice + 1;
+        const revisao = porLinha.get(linha);
+        return <li key={linha}>
+          <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
+          {revisao && <h4>Dados extraídos do PDF</h4>}
+          {dados && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
+            <dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd>
+            <dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd>
+            <dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd>
+            <dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd>
+            {Object.entries(precos).map(([coluna, valor]) => <Fragment key={coluna}>
+              <dt>{coluna}</dt><dd>{valor || 'Não informado'}</dd>
+            </Fragment>)}
+          </dl>}
+          {!dados && <p>{textoOriginal}</p>}
+          {pendencias.length > 0 && <p>{pendencias.join(' ')}</p>}
+          {!revisao && <>
+            {pendencias.length === 0 && <p>Pendente de associação.</p>}
+            {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p key={aviso}>{aviso}</p>)}
+          </>}
+          {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []} revisao={revisao} />}
+        </li>;
+      })}
     </ol>
   </section>;
 }

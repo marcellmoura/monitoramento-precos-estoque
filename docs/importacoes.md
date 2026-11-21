@@ -27,6 +27,12 @@ A V9 preserva as revisões por tentativa, com ator e momento de gravação. Repe
 
 Itens com unidade ou embalagem ausentes ou divergentes, preço escolhido inválido ou leitura incompleta ficam pendentes para conferência individual. A tentativa permanece em **Aguardando conferência**. A escolha da base comercial não converte unidades, não associa produtos e não atualiza preços do catálogo ou estoque.
 
+## Correção por item
+
+Salve a conferência comercial e clique em **Corrigir item** na linha desejada. Confira descrição, referência, unidade, embalagem e quantidade ao lado da prévia. Escolha a coluna de origem ou **Verificação manual** para um valor confirmado fora das colunas do PDF. Digite o preço para a unidade e a embalagem escolhidas e registre o motivo. Um campo comercial sem confirmação pode ficar em branco, e a revisão fica pendente. Preços e quantidades informados devem ser positivos.
+
+A coluna **Preço KG** exige KG também na correção individual. Um item cotado em UN pode receber um preço por unidade verificado manualmente. Cada revisão da V10 guarda ator, data, linha e versão da conferência usada. A aplicação mantém os dados extraídos e as revisões anteriores. Dados comerciais completos ficam pendentes de associação ao produto interno.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |
@@ -54,6 +60,8 @@ Mantenha o limite de transporte do arquivo acima do funcional e reserve espaço 
 | GET | `/api/importacoes/{id}/previa` | Prévia do último processamento concluído, com layout, data, dados, preços e pendências por linha |
 | GET | `/api/importacoes/{id}/conferencia` | Colunas disponíveis, data sugerida, revisão atual, sugestão compatível e pendências comerciais por linha |
 | PUT | `/api/importacoes/{id}/conferencia` | Confirma `revisao` (0 na primeira gravação), `coluna`, `unidade`, `embalagem` e `dataComercial` (AAAA-MM-DD); `409` para revisão desatualizada |
+| GET | `/api/importacoes/{id}/itens` | Revisões atuais por linha com dados conferidos, ator, data e pendências |
+| PUT | `/api/importacoes/{id}/itens/{linha}` | Registra uma revisão para a linha numerada a partir de 1. Envia `revisao` (0 se inédita), `conferencia` (ID atual), campos corrigidos e `motivo`. `coluna: null` representa verificação manual. Alterações concorrentes retornam `409`. |
 | POST | `/api/importacoes/{id}/reprocessamento` | Reagenda a mesma tentativa com falha de extração e mantém o histórico de execuções |
 
 As alterações exigem sessão, perfil autorizado e CSRF. Sem fornecedor identificado, o envio retorna `400` ou `404`. A validação verifica o formato e a presença de texto com Apache PDFBox, sem guardar o texto. Arquivos corrompidos, protegidos ou sem texto recebem motivo explícito. Os logs registram identificador e status, sem nomes de arquivos ou conteúdo. [Apache PDFBox 3.0.8](https://pdfbox.apache.org/3.0/getting-started.html)
@@ -77,3 +85,5 @@ No frontend passaram 88 testes, lint, build e smoke Chromium. O fluxo real com C
 No recorte de prévia passaram 19 testes unitários e 102 de integração no backend, além de 90 testes frontend, lint, build e smoke Chromium. Os testes conferiram referência, preços, unidade, apresentação e quantidade dos seis arquivos, bem como layout desconhecido, leitura parcial, expiração, retentativa e descarte de execução atrasada. O fluxo Chromium com API e PostgreSQL verificou a atualização automática da prévia em três layouts.
 
 A conferência comercial foi validada com 19 testes unitários, 104 de integração, 91 testes de frontend, lint, build e Chromium. O teste real em Chromium, API e PostgreSQL verificou a rejeição de unidade incompatível com **Preço KG**, o salvamento da base e da data e a persistência da prévia e das pendências após recarregar a página.
+
+A correção individual passou em 19 testes unitários e 105 de integração no backend, além de 92 testes de frontend, lint, build e smoke Chromium. O fluxo real em Chromium, API e PostgreSQL verificou o salvamento, a persistência após recarregar, a preservação dos valores originais e a pendência de um preço cuja unidade ainda precisava de verificação.
