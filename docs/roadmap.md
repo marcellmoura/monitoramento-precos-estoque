@@ -177,4 +177,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P8 / confirmação parcial | A V13 registra preços por linha, com vínculo de origem, apresentação, modalidade, data comercial, envio, confirmação e ator. | O teste real concluiu uma tentativa em duas confirmações. Conflitos na mesma data permanecem pendentes até a escolha explícita de ordem ou substituição na US-13. |
 
+| 2026-11-22 | P8 / confirmação parcial em revisão | [PR #72](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/72), commit `8fe5020`. US-13 em revisão. | [CI 44981874984](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44981874984) e ambos os Quality Gates aprovados. |
+
+| 2026-11-22 | P8 / confirmação parcial integrada | [PR #72](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/72) integrado no commit `2a1a243`. US-10 encerrada. | O teste manual concluiu a tentativa após confirmar o açúcar e depois o adoçante. US-13 segue aberta para a resolução de conflitos na mesma data. [CI pós-merge 44982773708](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44982773708) aprovada. |
+
+| 2026-11-22 | P8 / resolução de conflitos na mesma data | A V14 registra a ordem comercial e a substituição auditável de preços. As opções ficam disponíveis por item na prévia. | Validação de ordem, substituição, concorrência, repetição, revisão desatualizada e permissões. US-13 em revisão. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

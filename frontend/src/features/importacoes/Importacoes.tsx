@@ -1,11 +1,11 @@
 import { Link, useFetcher, useLoaderData, useRevalidator, useSearchParams } from 'react-router';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useId, useState } from 'react';
 import type { Fornecedor } from '../fornecedores/api';
 import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
-import type { LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ConflitoPreco, LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -180,9 +180,73 @@ const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
   if (linha.preco !== null) {
     const rotulo = linha.estado === 'CONFIRMADO' ? 'Preço confirmado no histórico' : 'Preço pronto para confirmar';
-    return <p>{rotulo} · {moeda.format(linha.preco)}</p>;
+    return <p>{linha.confirmado?.substituido ? 'Preço substituído no histórico' : rotulo} · {moeda.format(linha.preco)}</p>;
   }
-  return <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>;
+  return <>
+    <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>
+    {linha.conflito && <ResolverConflito linha={linha.linha} conflito={linha.conflito} />}
+  </>;
+}
+
+function ResolverConflito({ linha, conflito }: { linha: number; conflito: ConflitoPreco }) {
+  const fetcher = useFetcher<FalhaImportacao>();
+  const titulo = useId();
+  const data = conflito.dataComercial.split('-').reverse().join('/');
+  return <section aria-labelledby={titulo}>
+    <h4 id={titulo}>Resolver conflito de preço</h4>
+    <p>Data comercial · {data}</p>
+    <dl className={styles.dados}>
+      <dt>Preço desta cotação</dt><dd>{moeda.format(conflito.preco)}</dd>
+      {conflito.anteriores.map(preco => <Fragment key={preco.id}>
+        <dt>Preço confirmado · posição {preco.ordem}</dt>
+        <dd>{moeda.format(preco.preco)} · <Link to={`/importacoes/${preco.tentativa}`}>Tentativa #{preco.tentativa}</Link></dd>
+      </Fragment>)}
+    </dl>
+    {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
+    <FormularioConflito key={conflito.revisao} linha={linha} conflito={conflito} fetcher={fetcher} />
+  </section>;
+}
+
+function FormularioConflito({ linha, conflito, fetcher }: {
+  linha: number;
+  conflito: ConflitoPreco;
+  fetcher: ReturnType<typeof useFetcher<FalhaImportacao>>;
+}) {
+  const id = useId();
+  const [decisao, decidir] = useState('');
+  return <fetcher.Form method="post" className={styles.formulario}>
+    <input type="hidden" name="operacao" value="resolver-conflito-preco" />
+    <input type="hidden" name="linha" value={linha} />
+    <input type="hidden" name="revisao" value={conflito.revisao} />
+    <label htmlFor={`${id}-decisao`}>Resolução do conflito</label>
+    <select id={`${id}-decisao`} name="decisao" required value={decisao} onChange={evento => decidir(evento.target.value)}>
+      <option value="">Selecione</option>
+      <option value="MANTER">Manter os dois preços</option>
+      <option value="SUBSTITUIR">Substituir preço confirmado</option>
+    </select>
+    {decisao && <>
+      <label htmlFor={`${id}-preco`}>Preço confirmado de referência</label>
+      <select id={`${id}-preco`} name="precoReferencia" required>
+        <option value="">Selecione</option>
+        {conflito.anteriores.map(preco => <option key={preco.id} value={preco.id}>
+          {moeda.format(preco.preco)} · Tentativa #{preco.tentativa} · Posição {preco.ordem}
+        </option>)}
+      </select>
+    </>}
+    {decisao === 'MANTER' && <>
+      <label htmlFor={`${id}-ordem`}>Posição do novo preço</label>
+      <select id={`${id}-ordem`} name="ordem" required>
+        <option value="">Selecione</option>
+        <option value="ANTES">Antes do preço selecionado</option>
+        <option value="DEPOIS">Depois do preço selecionado</option>
+      </select>
+    </>}
+    {decisao === 'SUBSTITUIR' && <>
+      <label htmlFor={`${id}-motivo`}>Motivo da substituição</label>
+      <input id={`${id}-motivo`} name="motivo" required maxLength={500} />
+    </>}
+    <button type="submit" disabled={!decisao || fetcher.state !== 'idle'}>Confirmar resolução</button>
+  </fetcher.Form>;
 }
 
 function ConfirmacaoItens({ linhas }: { linhas: LinhaConfirmacao[] }) {

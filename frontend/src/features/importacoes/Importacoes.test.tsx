@@ -60,6 +60,13 @@ beforeEach(() => {
       return Response.json(conferencia);
     }
     if (url.pathname.endsWith('/precos')) return Response.json(precos);
+    if (url.pathname.endsWith('/resolver-conflito-preco') && options?.method === 'POST') {
+      if (falharConfirmacao) return Response.json({ mensagem: 'O conflito mudou. Confira novamente os preços.' }, { status: 409 });
+      const item = precos.itens[0];
+      precos = { itens: [{ ...item, estado: 'CONFIRMADO', conflito: null, preco: item.conflito!.preco,
+        confirmado: { id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm } }] };
+      return new Response(null, { status: 204 });
+    }
     if (url.pathname.endsWith('/confirmar-itens') && options?.method === 'POST') {
       if (falharConfirmacao) return Response.json({}, { status: 500 });
       precos = { itens: precos.itens.map(item => item.estado === 'PRONTO'
@@ -317,6 +324,37 @@ describe('Importações', () => {
     expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Corrigir item linha 2' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Confirmar itens válidos' })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['MANTER', 'ANTES', null],
+    ['MANTER', 'DEPOIS', null],
+    ['SUBSTITUIR', 'SUBSTITUIR', 'Cotação corrigida pelo fornecedor'],
+  ])('envia a escolha explícita de conflito (%s %s)', async (decisao, operacao, motivo) => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    precos.itens = [{ linha: 1, estado: 'PENDENTE', preco: null, motivos: ['Já há outro preço.'], confirmado: null,
+      conflito: { preco: 35, dataComercial: '2026-11-21', revisao: 'revisao-teste',
+        anteriores: [{ id: 42, tentativa: 7, preco: 32, ordem: 1 }] } }];
+    abrir('/importacoes/1');
+    const secao = await screen.findByRole('region', { name: 'Resolver conflito de preço' });
+    const formulario = within(secao);
+    expect(formulario.getByText('Data comercial · 21/11/2026')).toBeVisible();
+    expect(formulario.getByRole('link', { name: 'Tentativa #7' })).toHaveAttribute('href', '/importacoes/7');
+    expect(formulario.getByRole('button', { name: 'Confirmar resolução' })).toBeDisabled();
+
+    fireEvent.change(formulario.getByLabelText('Resolução do conflito'), { target: { value: decisao } });
+    fireEvent.change(formulario.getByLabelText('Preço confirmado de referência'), { target: { value: '42' } });
+    if (motivo) {
+      fireEvent.change(formulario.getByLabelText('Motivo da substituição'), { target: { value: motivo } });
+    } else {
+      fireEvent.change(formulario.getByLabelText('Posição do novo preço'), { target: { value: operacao } });
+    }
+    fireEvent.click(formulario.getByRole('button', { name: 'Confirmar resolução' }));
+
+    expect(await screen.findByText(/Preço confirmado no histórico/)).toBeVisible();
+    const envio = fetchMock.mock.calls.find(([url]) => url.endsWith('/resolver-conflito-preco'));
+    expect(envio?.[0]).toBe('/api/importacoes/1/itens/1/resolver-conflito-preco');
+    expect(JSON.parse(envio?.[1].body)).toEqual({ operacao, precoReferencia: 42, motivo, revisao: 'revisao-teste' });
   });
 
   it('reprocessa a mesma tentativa em caso de falha', async () => {

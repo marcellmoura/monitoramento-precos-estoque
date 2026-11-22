@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import tools.jackson.databind.JsonNode;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -648,6 +649,100 @@ class ImportacaoIT {
         assertThat(retroativo.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
         assertThat(retroativo.get("dataComercial").asText()).isEqualTo("2026-10-31");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
+    }
+
+    @Test void ordenaESubstituiPrecosDaMesmaDataPreservandoAuditoria() throws Exception {
+        var origem = processar(fornecedor, "origem.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(origem);
+        gravarVinculo(origem, cadastrarProduto("Hibisco", "KG"), base, 0);
+        var registroOriginal = json(admin.enviar("POST", origem + "/confirmar-itens", null, true))
+                .get("itens").get(0).get("confirmado");
+        long original = registroOriginal.get("id").asLong();
+
+        var antes = cotacaoConflitante("Antes");
+        var depois = cotacaoConflitante("Depois");
+        var alterar = cotacaoConflitante("Preço a substituir");
+        var conflito = conflitoPreco(antes);
+        assertThat(conflito.get("anteriores").get(0).get("id").asLong()).isEqualTo(original);
+        assertThat(conflito.get("dataComercial").asText()).isEqualTo(registroOriginal.get("dataComercial").asText());
+
+        var primeira = Map.of("operacao", "ANTES", "precoReferencia", original, "revisao", conflito.get("revisao").asText());
+        var obsoleta = Map.of("operacao", "DEPOIS", "precoReferencia", original, "revisao", conflitoPreco(depois).get("revisao").asText());
+        var compras = entrar(Perfil.COMPRAS);
+        var partida = new CyclicBarrier(2);
+        try (var executores = Executors.newFixedThreadPool(2)) {
+            var inserirAntes = executores.submit(() -> {
+                partida.await(5, TimeUnit.SECONDS);
+                return resolverPreco(admin, antes, primeira);
+            });
+            var inserirDepois = executores.submit(() -> {
+                partida.await(5, TimeUnit.SECONDS);
+                return resolverPreco(compras, depois, obsoleta);
+            });
+            int statusAntes = inserirAntes.get(10, TimeUnit.SECONDS);
+            int statusDepois = inserirDepois.get(10, TimeUnit.SECONDS);
+            assertThat(new Integer[]{statusAntes, statusDepois}).containsExactlyInAnyOrder(204, 409);
+            if (statusAntes == 409) {
+                assertThat(resolverPreco(admin, antes, Map.of("operacao", "ANTES", "precoReferencia", original,
+                        "revisao", conflitoPreco(antes).get("revisao").asText()))).isEqualTo(204);
+            } else {
+                assertThat(resolverPreco(compras, depois, Map.of("operacao", "DEPOIS", "precoReferencia", original,
+                        "revisao", conflitoPreco(depois).get("revisao").asText()))).isEqualTo(204);
+            }
+        }
+        assertThat(statusDaTentativa(antes)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+        assertThat(conflitoPreco(alterar).get("anteriores").get(1).get("id").asLong()).isEqualTo(original);
+
+        var revisao = conflitoPreco(alterar).get("revisao").asText();
+        var semMotivo = Map.of("operacao", "SUBSTITUIR", "precoReferencia", original, "revisao", revisao);
+        assertThat(resolverPreco(admin, alterar, semMotivo)).isEqualTo(400);
+        var comMotivo = Map.of("operacao", "SUBSTITUIR", "precoReferencia", original,
+                "revisao", revisao, "motivo", "Fornecedor corrigiu a cotação");
+        assertThat(resolverPreco(entrar(Perfil.ESTOQUE), alterar, comMotivo)).isEqualTo(403);
+        assertThat(resolverPreco(admin, alterar, comMotivo)).isEqualTo(204);
+        assertThat(resolverPreco(admin, alterar, comMotivo)).isEqualTo(204);
+
+        var anterior = json(admin.enviar("GET", origem + "/precos", null, false)).get("itens").get(0).get("confirmado");
+        assertThat(anterior.get("substituido").asBoolean()).isTrue();
+        assertThat(anterior.get("preco").asText()).isEqualTo(registroOriginal.get("preco").asText());
+        assertThat(jdbc.queryForList("""
+                SELECT ordem FROM precos_confirmados WHERE ordem IS NOT NULL ORDER BY ordem
+                """, Integer.class)).containsExactly(1, 2, 3);
+        assertThat(jdbc.queryForMap("""
+                SELECT ordem, motivo_resolucao FROM precos_confirmados WHERE preco_referencia_id = ? AND resolucao = 'SUBSTITUIR'
+                """, original)).containsEntry("ordem", 2).containsEntry("motivo_resolucao", "Fornecedor corrigiu a cotação");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(4);
+    }
+
+    @Test void exigeNovaEscolhaSeConferenciaMudaAntesDaResolucao() throws Exception {
+        var origem = processar(fornecedor, "origem.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(origem);
+        gravarVinculo(origem, cadastrarProduto("Hibisco", "KG"), base, 0);
+        assertThat(admin.enviar("POST", origem + "/confirmar-itens", null, true).statusCode()).isEqualTo(200);
+        var nova = cotacaoConflitante("Cotação alterada");
+        var conflito = conflitoPreco(nova);
+        long anterior = conflito.get("anteriores").get(0).get("id").asLong();
+        long baseNova = json(admin.enviar("GET", nova + "/conferencia", null, false))
+                .get("confirmada").get("id").asLong();
+        assertThat(admin.enviar("PUT", nova + "/conferencia",
+                escolha(baseNova, "Preço", "KG", "Saco de 1 kg", "2026-10-31"), true).statusCode()).isEqualTo(200);
+        assertThat(resolverPreco(admin, nova, Map.of("operacao", "ANTES", "precoReferencia", anterior,
+                "revisao", conflito.get("revisao").asText()))).isEqualTo(409);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(1);
+    }
+
+    private String cotacaoConflitante(String titulo) throws Exception {
+        var rota = processar(fornecedor, titulo + ".pdf", varianteTabela(titulo));
+        selecionarBaseTabela(rota);
+        return rota;
+    }
+
+    private JsonNode conflitoPreco(String rota) throws Exception {
+        return json(admin.enviar("GET", rota + "/precos", null, false)).get("itens").get(0).get("conflito");
+    }
+
+    private int resolverPreco(ClienteHttpTeste cliente, String rota, Map<String, ?> dados) throws Exception {
+        return cliente.enviar("POST", rota + "/itens/1/resolver-conflito-preco", dados, true).statusCode();
     }
 
     @Test void desfazTudoNaFalhaEConfirmaSemDuplicacaoEmSolicitacoesSimultaneas() throws Exception {

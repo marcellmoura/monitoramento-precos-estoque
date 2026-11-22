@@ -34,6 +34,8 @@ import br.com.marcellmoura.monitoramento.importacao.application.ImportacaoExcept
 import br.com.marcellmoura.monitoramento.importacao.application.ConferirCotacao;
 import br.com.marcellmoura.monitoramento.importacao.application.ConfirmarPrecos;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Operacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Resolucao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
@@ -146,6 +148,17 @@ public class ImportacaoController {
     @PostMapping("/{id}/confirmar-itens")
     public ConfirmacaoImportacao confirmarItens(@PathVariable @Positive long id, @AuthenticationPrincipal UsuarioAutenticado ator) {
         return precos.confirmar(id, ator.getId());
+    }
+
+    public record ResolucaoPreco(@NotNull Operacao operacao, @NotNull @Positive Long precoReferencia,
+            @Size(max = 500) String motivo, @NotBlank @Size(max = 36) String revisao) {}
+
+    @PostMapping("/{id}/itens/{linha}/resolver-conflito-preco")
+    public ResponseEntity<Void> resolverConflitoPreco(@PathVariable @Positive long id, @PathVariable @Positive int linha,
+            @AuthenticationPrincipal UsuarioAutenticado ator, @Valid @RequestBody ResolucaoPreco dados) {
+        var motivo = dados.motivo() == null || dados.motivo().isBlank() ? null : dados.motivo().strip();
+        precos.resolver(id, linha, ator.getId(), new Resolucao(dados.operacao(), dados.precoReferencia(), motivo, dados.revisao()));
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(ImportacaoException.class)

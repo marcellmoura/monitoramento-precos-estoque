@@ -1,16 +1,22 @@
 package br.com.marcellmoura.monitoramento.importacao.application;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Conflito;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Linha;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Operacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PrecoAnterior;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Resolucao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao.Revisao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PrecoCotado;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
@@ -60,11 +66,55 @@ public class ConfirmarPrecos {
         precos.bloquearFornecedor(tentativa);
         var avaliadas = avaliar(tentativa, this::bloquearProdutos);
         var resultado = avaliadas.stream().map(avaliacao -> gravar(tentativa, ator, avaliacao)).toList();
-        if (avaliadas.stream().anyMatch(avaliacao -> avaliacao.registro() != null)) {
-            var concluida = resultado.stream().allMatch(linha -> linha.confirmado() != null);
-            precos.atualizarEstado(tentativa, concluida ? Status.CONCLUIDA : Status.CONCLUIDA_COM_PENDENCIAS);
+        if (avaliadas.stream().anyMatch(avaliacao -> avaliacao.linha().estado() == ConfirmacaoImportacao.Estado.PRONTO)) {
+            atualizarEstado(tentativa, resultado);
         }
         return new ConfirmacaoImportacao(resultado);
+    }
+
+    @Transactional
+    public void resolver(long tentativa, int linha, long ator, Resolucao resolucao) {
+        validarMotivo(resolucao);
+        conferencias.bloquearTentativa(tentativa);
+        precos.bloquearFornecedor(tentativa);
+
+        var avaliadas = avaliar(tentativa, this::bloquearProdutos);
+        var avaliada = avaliadas.stream().filter(item -> item.linha().linha() == linha).findFirst()
+                .orElseThrow(() -> new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da cotação não encontrado."));
+        var confirmado = avaliada.linha().confirmado();
+        if (confirmado != null && precos.resolucaoRegistrada(confirmado.id(), resolucao)) return;
+
+        var conflito = avaliada.linha().conflito();
+        if (conflito == null || !conflito.revisao().equals(resolucao.revisao())) throw conflitoAlterado();
+        var anterior = conflito.anteriores().stream().filter(preco -> preco.id() == resolucao.precoReferencia()).findFirst()
+                .orElseThrow(ConfirmarPrecos::conflitoAlterado);
+
+        var novo = avaliada.registro();
+        int ordem = anterior.ordem() + (resolucao.operacao() == Operacao.DEPOIS ? 1 : 0);
+        if (resolucao.operacao() == Operacao.SUBSTITUIR) precos.liberarOrdem(anterior.id());
+        else precos.abrirPosicao(tentativa, novo, ordem);
+        var salvo = precos.inserir(tentativa, ator, novo, ordem, resolucao);
+        atualizarEstado(tentativa, avaliadas.stream()
+                .map(item -> item.linha().linha() == linha ? Linha.confirmado(salvo) : item.linha()).toList());
+    }
+
+    private static void validarMotivo(Resolucao resolucao) {
+        if (resolucao.operacao() == Operacao.SUBSTITUIR && resolucao.motivo() == null) {
+            throw new ImportacaoException(400, "MOTIVO_OBRIGATORIO", "Informe o motivo da substituição.");
+        }
+        if (resolucao.operacao() != Operacao.SUBSTITUIR && resolucao.motivo() != null) {
+            throw new ImportacaoException(400, "MOTIVO_INDEVIDO", "O motivo se aplica à substituição do preço.");
+        }
+    }
+
+    private static ImportacaoException conflitoAlterado() {
+        return new ImportacaoException(409, "CONFLITO_PRECO_ALTERADO",
+                "O conflito mudou. Confira novamente os preços e confirme uma nova escolha.");
+    }
+
+    private void atualizarEstado(long tentativa, List<Linha> resultado) {
+        var concluida = resultado.stream().allMatch(linha -> linha.confirmado() != null);
+        precos.atualizarEstado(tentativa, concluida ? Status.CONCLUIDA : Status.CONCLUIDA_COM_PENDENCIAS);
     }
 
     private List<Produto> bloquearProdutos(List<Long> ids) {
@@ -72,8 +122,8 @@ public class ConfirmarPrecos {
     }
 
     private Linha gravar(long tentativa, long ator, Avaliacao avaliacao) {
-        if (avaliacao.registro() == null) return avaliacao.linha();
-        return Linha.confirmado(precos.inserir(tentativa, ator, avaliacao.registro()));
+        if (avaliacao.linha().estado() != ConfirmacaoImportacao.Estado.PRONTO) return avaliacao.linha();
+        return Linha.confirmado(precos.inserir(tentativa, ator, avaliacao.registro(), 1, null));
     }
 
     private record Avaliacao(Linha linha, NovoPreco registro) {
@@ -101,16 +151,25 @@ public class ConfirmarPrecos {
     }
 
     private List<Avaliacao> verificarConflitos(long tentativa, Revisao base, List<Avaliacao> avaliadas) {
-        var ocupadas = precos.ocupadas(tentativa, base.dataComercial());
+        var vigentes = precos.vigentes(tentativa, base.dataComercial());
         var repeticoes = avaliadas.stream().map(Avaliacao::registro).filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(NovoPreco::chave, Collectors.counting()));
         return avaliadas.stream().map(avaliacao -> {
             var registro = avaliacao.registro();
             if (registro == null) return avaliacao;
-            if (ocupadas.contains(registro.chave())) return Avaliacao.pendente(registro.linha(), List.of(CONFLITO));
             if (repeticoes.get(registro.chave()) > 1) return Avaliacao.pendente(registro.linha(), List.of(CONFLITO_NO_PDF));
-            return avaliacao;
+            var anteriores = vigentes.get(registro.chave());
+            if (anteriores == null) return avaliacao;
+            var conflito = new Conflito(registro.preco(), registro.data(), anteriores, revisaoConflito(registro, anteriores));
+            return new Avaliacao(Linha.emConflito(registro.linha(), CONFLITO, conflito), registro);
         }).toList();
+    }
+
+    private static String revisaoConflito(NovoPreco registro, List<PrecoAnterior> anteriores) {
+        var ids = anteriores.stream().map(PrecoAnterior::id).toList();
+        var revisao = "%d/%d/%s/%d/%d/%s".formatted(registro.linha(), registro.conferencia(), registro.revisao(),
+                registro.vinculo(), registro.produto(), ids);
+        return UUID.nameUUIDFromBytes(revisao.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     private Avaliacao avaliarLinha(Situacao situacao, Item bruto, RevisaoItem corrigido, Revisao base, Map<Long, Produto> catalogo) {
