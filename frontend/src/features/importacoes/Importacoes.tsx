@@ -1,10 +1,11 @@
-import { Link, useFetcher, useLoaderData, useRevalidator } from 'react-router';
+import { Link, useFetcher, useLoaderData, useRevalidator, useSearchParams } from 'react-router';
 import { Fragment, useEffect } from 'react';
 import type { Fornecedor } from '../fornecedores/api';
+import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
-import type { ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -67,8 +68,16 @@ function FormularioEnvio({ fornecedores }: { fornecedores: Fornecedor[] }) {
 
 export function DetalheImportacao() {
   const tentativa = useLoaderData<DetalheTentativa | FalhaImportacao>();
+  const [params] = useSearchParams();
   const fetcher = useFetcher<FalhaImportacao>();
   const { revalidate, state } = useRevalidator();
+  const linhaRetorno = Number(params.get('linha'));
+  const idTentativa = 'erro' in tentativa ? null : tentativa.id;
+  useEffect(() => {
+    if (linhaRetorno > 0 && idTentativa !== null) {
+      document.getElementById(`item-${linhaRetorno}`)?.scrollIntoView?.({ block: 'start' });
+    }
+  }, [idTentativa, linhaRetorno]);
   const aguardando = !('erro' in tentativa) && (tentativa.status === 'PENDENTE' || tentativa.status === 'PROCESSANDO');
   useEffect(() => {
     if (!aguardando || state !== 'idle') return;
@@ -105,13 +114,17 @@ export function DetalheImportacao() {
     {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia}
       key={`${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
     {tentativa.previa && <Previa previa={tentativa.previa}
-      conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} key={tentativa.id} />}
+      conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
+      tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
+      key={`${tentativa.id}-${params.get('produto') ?? ''}`} />}
   </section>;
 }
 
-function Previa({ previa, conferencia, revisoes }: {
+function Previa({ previa, conferencia, revisoes, vinculos, tentativa, linhaRetorno, produtoCriado }: {
   previa: PreviaImportacao; conferencia?: ConferenciaCotacao; revisoes: RevisaoItem[];
+  vinculos: SituacaoVinculo[]; tentativa: number; linhaRetorno: number; produtoCriado?: ProdutoCatalogo;
 }) {
+  const vinculosPorLinha = new Map(vinculos.map(vinculo => [vinculo.linha, vinculo]));
   const porLinha = new Map(revisoes.map(revisao => [revisao.linha, revisao]));
   const base = conferencia?.confirmada;
   const leituraParcial = previa.itens.some(item => item.dados === null);
@@ -125,7 +138,9 @@ function Previa({ previa, conferencia, revisoes }: {
         const { dados, precos, textoOriginal, pendencias } = item;
         const linha = indice + 1;
         const revisao = porLinha.get(linha);
-        return <li key={linha}>
+        const situacao = vinculosPorLinha.get(linha);
+        const associado = Boolean(situacao?.vinculo && !situacao.revalidar);
+        return <li key={linha} id={`item-${linha}`}>
           <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
           {revisao && <h4>Dados extraídos do PDF</h4>}
           {dados && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
@@ -140,10 +155,13 @@ function Previa({ previa, conferencia, revisoes }: {
           {!dados && <p>{textoOriginal}</p>}
           {pendencias.length > 0 && <p>{pendencias.join(' ')}</p>}
           {!revisao && <>
-            {pendencias.length === 0 && <p>Pendente de associação.</p>}
+            {pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
             {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p key={aviso}>{aviso}</p>)}
           </>}
-          {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []} revisao={revisao} />}
+          {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
+            revisao={revisao} associado={associado} />}
+          {situacao && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
+            produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
         </li>;
       })}
     </ol>

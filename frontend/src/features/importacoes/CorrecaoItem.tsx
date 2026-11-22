@@ -14,6 +14,7 @@ interface Props {
   base: BaseConfirmada;
   colunas: string[];
   revisao?: RevisaoItem;
+  associado?: boolean;
 }
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -23,7 +24,7 @@ export function CorrecaoItem(props: Props) {
   const [editando, setEditando] = useState(false);
   const rotulo = props.item.dados?.descricao ?? `linha ${linha}`;
   return <>
-    {revisao && <DadosConferidos revisao={revisao} />}
+    {revisao && <DadosConferidos revisao={revisao} associado={props.associado} />}
     {editando
       ? <FormularioCorrecao {...props} fechar={() => setEditando(false)} />
       : <button className={importacoes.botaoCorrecao} type="button" aria-label={`Corrigir item ${rotulo}`}
@@ -31,7 +32,7 @@ export function CorrecaoItem(props: Props) {
   </>;
 }
 
-function DadosConferidos({ revisao }: { revisao: RevisaoItem }) {
+function DadosConferidos({ revisao, associado }: { revisao: RevisaoItem; associado?: boolean }) {
   const { dados, pendencias } = revisao;
   return <div>
     <h4>Dados conferidos</h4>
@@ -46,7 +47,8 @@ function DadosConferidos({ revisao }: { revisao: RevisaoItem }) {
       <dt>Motivo</dt><dd>{dados.motivo}</dd>
     </dl>
     {pendencias.map(aviso => <p key={aviso}>{aviso}</p>)}
-    <p>{pendencias.length === 0 ? 'Dados conferidos. Pendente de associação.' : 'Correção salva com pendências.'}</p>
+    {pendencias.length > 0 && <p>Correção salva com pendências.</p>}
+    {pendencias.length === 0 && <p>{associado ? 'Dados conferidos.' : 'Dados conferidos. Pendente de associação.'}</p>}
   </div>;
 }
 

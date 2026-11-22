@@ -39,6 +39,13 @@ export async function carregarProduto({ params }: LoaderFunctionArgs): Promise<P
     return result;
   } catch (error) { return tratarFalha(error); }
 }
+export function destinoImportacao(params: URLSearchParams) {
+  const tentativa = params.get('tentativa');
+  const linha = params.get('linha');
+  return tentativa && linha && /^[1-9][0-9]{0,15}$/.test(tentativa) && /^[1-9][0-9]{0,8}$/.test(linha)
+    ? `/importacoes/${tentativa}?linha=${linha}` : null;
+}
+
 export async function cadastrarProduto({ request }: ActionFunctionArgs) {
   const data = await request.formData();
   const nome = String(data.get('nome') ?? '').trim();
@@ -55,7 +62,8 @@ export async function cadastrarProduto({ request }: ActionFunctionArgs) {
       unidade: data.get('unidade'), precoCompra, precoVenda,
     });
     if (!result) throw new Error('Resposta ausente.');
-    return redirect(`/produtos/${result.id}?criado=1`);
+    const destino = destinoImportacao(new URL(request.url).searchParams);
+    return redirect(destino ? `${destino}&produto=${result.id}` : `/produtos/${result.id}?criado=1`);
   } catch (error) { return tratarFalha(error); }
 }
 

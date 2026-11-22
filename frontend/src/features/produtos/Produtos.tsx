@@ -2,7 +2,7 @@ import { Link, useFetcher, useLoaderData, useOutletContext, useSearchParams } fr
 import { useState } from 'react';
 import type { Identidade } from '../acesso/api';
 import { formatarMoeda } from '../../shared/decimal';
-import { unidades } from './api';
+import { destinoImportacao, unidades } from './api';
 import type { FalhaProduto, PaginaProdutos, Produto } from './api';
 import styles from '../../shared/gestao.module.css';
 
@@ -58,6 +58,8 @@ export function Produtos() {
   </section>;
 }
 export function NovoProduto() {
+  const [params] = useSearchParams();
+  const retorno = destinoImportacao(params);
   const usuario = useOutletContext<Identidade>();
   const fetcher = useFetcher<FalhaProduto>();
   if (!podeCadastrar(usuario)) return <section><h2>Acesso restrito</h2><Falha mensagem="Cadastro disponível para Administrador e Compras." /><Link to="/produtos">Voltar aos produtos</Link></section>;
@@ -72,7 +74,7 @@ export function NovoProduto() {
       <label>Preço de compra (opcional)<input name="precoCompra" type="text" inputMode="decimal" maxLength={20} pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-precos" /></label>
       {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
       <button type="submit" disabled={fetcher.state !== 'idle'}>{fetcher.state === 'idle' ? 'Cadastrar produto' : 'Salvando…'}</button>
-    </fetcher.Form><Link to="/produtos">Voltar aos produtos</Link>
+    </fetcher.Form><Link to={retorno ?? "/produtos"}>{retorno ? "Voltar à importação" : "Voltar aos produtos"}</Link>
   </section>;
 }
 export function DetalheProduto() {

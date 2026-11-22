@@ -68,6 +68,8 @@ public class Produto {
 
     public void alterarEstado(boolean ativo) { this.ativo = ativo; }
 
+    public void bloquearUnidade() { unidadeBloqueada = true; }
+
     public boolean podeTrocarUnidade() {
         return !unidadeBloqueada && estoqueAtual.signum() == 0 && estoqueMinimo.signum() == 0;
     }
@@ -84,7 +86,7 @@ public class Produto {
         if (novoAtual.compareTo(estoqueAtual) == 0 && novoMinimo.compareTo(estoqueMinimo) == 0) return false;
         estoqueAtual = novoAtual;
         estoqueMinimo = novoMinimo;
-        unidadeBloqueada = true;
+        bloquearUnidade();
         return true;
     }
 
