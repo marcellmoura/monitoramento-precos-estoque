@@ -51,7 +51,18 @@ Em **Confirmação de preços**, consulte o total de itens prontos, confirmados 
 
 Após a confirmação parcial, a tentativa fica **Concluída com pendências**. Corrija ou associe as linhas ainda pendentes e confirme novamente. O botão grava apenas as novas linhas válidas. Quando todas estiverem confirmadas, a tentativa fica **Concluída**. A primeira gravação bloqueia a conferência comercial e cada linha confirmada. O catálogo e o estoque não são alterados.
 
-A V13 guarda os dados do preço e sua origem, o ator e as datas comercial, de envio e de confirmação. Uma transação grava os preços e o status. A mesma apresentação e modalidade na mesma data comercial ficam pendentes quando já há preço confirmado ou quando mais de uma linha pronta disputa a mesma posição. A interface mostra a causa. A escolha explícita de ordem ou substituição terá um recorte próprio.
+A V13 guarda os dados do preço e sua origem, o ator e as datas comercial, de envio e de confirmação. Uma transação grava os preços e o status. Quando mais de uma linha da mesma cotação está pronta para a mesma apresentação e modalidade, as linhas ficam pendentes para revisão.
+
+### Conflitos na mesma data comercial
+
+Quando já existe preço para o mesmo fornecedor, item, apresentação e modalidade naquela data, a linha mostra **Resolver conflito de preço**, com o novo valor e os valores confirmados em ordem, cada um com sua tentativa de origem.
+
+- **Resolução do conflito** · **Manter os dois preços**. Em **Preço confirmado de referência**, selecione o registro. Em **Posição do novo preço**, escolha **Antes do preço selecionado** ou **Depois do preço selecionado**.
+- **Resolução do conflito** · **Substituir preço confirmado**. Em **Preço confirmado de referência**, selecione o registro. Em **Motivo da substituição**, informe a razão. O novo preço ocupa a posição do registro substituído, que permanece disponível na tentativa de origem.
+
+Clique em **Confirmar resolução** para gravar a linha. As demais pendências continuam visíveis. Se outro usuário alterar os valores ou a ordem durante a revisão, confira os dados atualizados e escolha novamente.
+
+A V14 preserva preços existentes na primeira posição do dia. A ordem dos preços vigentes é definida por data comercial e posição dentro da mesma identidade e modalidade. A resolução é registrada com a operação, o preço de referência, o motivo da substituição quando aplicável e o ator. A validação da revisão, a atualização da ordem, a gravação do preço e o estado da tentativa são transacionais.
 
 ## Configuração local
 

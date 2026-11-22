@@ -92,12 +92,20 @@ export interface SituacaoVinculo {
   reaproveitado?: { tentativaOrigem: number; vinculoOrigem: number; produto: ProdutoCatalogo } | null;
 }
 
+export interface ConflitoPreco {
+  preco: number;
+  dataComercial: string;
+  anteriores: { id: number; tentativa: number; preco: number; ordem: number }[];
+  revisao: string;
+}
+
 export interface LinhaConfirmacao {
   linha: number;
   estado: 'PENDENTE' | 'PRONTO' | 'CONFIRMADO';
   motivos: string[];
   preco: number | null;
-  confirmado: { id: number; produtoId: number; dataComercial: string; confirmadaEm: string } | null;
+  confirmado: { id: number; produtoId: number; dataComercial: string; confirmadaEm: string; substituido?: boolean } | null;
+  conflito?: ConflitoPreco | null;
 }
 
 export interface ConfirmacaoImportacao { itens: LinhaConfirmacao[] }
@@ -195,6 +203,7 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
   const form = await request.formData();
   const operacao = form.get('operacao');
   try {
+    if (operacao === 'resolver-conflito-preco') return resolverConflitoPreco(id, form);
     if (operacao === 'confirmar-itens') return gravarPrecos(id);
     if (operacao === 'associar-item') return salvarVinculo(id, form);
     if (operacao === 'corrigir-item') return salvarCorrecao(id, form);
@@ -263,4 +272,18 @@ async function gravarPrecos(id: string) {
     }
     return tratarFalha(error);
   }
+}
+
+async function resolverConflitoPreco(id: string, form: FormData) {
+  const linha = encodeURIComponent(String(form.get('linha') ?? ''));
+  const substituir = form.get('decisao') === 'SUBSTITUIR';
+  try {
+    await mutateJson<void>(`/importacoes/${id}/itens/${linha}/resolver-conflito-preco`, 'POST', {
+      operacao: substituir ? 'SUBSTITUIR' : form.get('ordem'),
+      precoReferencia: Number(form.get('precoReferencia')),
+      motivo: substituir ? form.get('motivo') : null,
+      revisao: form.get('revisao'),
+    });
+    return redirect(`/importacoes/${id}#item-${linha}`);
+  } catch (error) { return tratarFalha(error); }
 }

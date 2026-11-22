@@ -7,12 +7,14 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Confirmado;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PrecoAnterior;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Resolucao;
 import br.com.marcellmoura.monitoramento.importacao.domain.TentativaImportacao.Status;
 import br.com.marcellmoura.monitoramento.importacao.domain.VinculoItem.Identidade;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
@@ -58,26 +60,59 @@ public class PrecoConfirmadoRepository {
                 """, Boolean.class, tentativa, linha));
     }
 
-    public Set<Chave> ocupadas(long tentativa, LocalDate data) {
-        return Set.copyOf(jdbc.query("""
-                SELECT chave_item, unidade, embalagem_chave, modalidade FROM precos_confirmados
+    public Map<Chave, List<PrecoAnterior>> vigentes(long tentativa, LocalDate data) {
+        return jdbc.query("""
+                SELECT chave_item, unidade, embalagem_chave, modalidade, id, tentativa_id, preco, ordem
+                FROM precos_confirmados
                 WHERE fornecedor_id = (SELECT fornecedor_id FROM tentativas_importacao WHERE id = ?)
-                  AND data_comercial = ?
-                """, (rs, linha) -> new Chave(rs.getString("chave_item"), Unidade.valueOf(rs.getString("unidade")),
-                        rs.getString("embalagem_chave"), rs.getString("modalidade")), tentativa, data));
+                  AND data_comercial = ? AND ordem IS NOT NULL
+                ORDER BY ordem
+                """, (rs, linha) -> Map.entry(new Chave(rs.getString("chave_item"), Unidade.valueOf(rs.getString("unidade")),
+                        rs.getString("embalagem_chave"), rs.getString("modalidade")),
+                        new PrecoAnterior(rs.getLong("id"), rs.getLong("tentativa_id"),
+                                rs.getBigDecimal("preco"), rs.getInt("ordem"))), tentativa, data).stream()
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
-    public Confirmado inserir(long tentativa, long ator, NovoPreco reg) {
+    public boolean resolucaoRegistrada(long id, Resolucao resolucao) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (SELECT 1 FROM precos_confirmados
+                    WHERE id = ? AND resolucao = ? AND preco_referencia_id = ?
+                      AND motivo_resolucao IS NOT DISTINCT FROM ? AND revisao_conflito = ?)
+                """, Boolean.class, id, resolucao.operacao().name(), resolucao.precoReferencia(),
+                resolucao.motivo(), resolucao.revisao()));
+    }
+
+    public void liberarOrdem(long id) {
+        jdbc.update("UPDATE precos_confirmados SET ordem = NULL WHERE id = ?", id);
+    }
+
+    public void abrirPosicao(long tentativa, NovoPreco novo, int ordem) {
+        var chave = novo.chave();
+        jdbc.update("""
+                UPDATE precos_confirmados SET ordem = ordem + 1
+                WHERE fornecedor_id = (SELECT fornecedor_id FROM tentativas_importacao WHERE id = ?)
+                  AND data_comercial = ? AND chave_item = ? AND unidade = ?
+                  AND embalagem_chave = ? AND modalidade = ? AND ordem >= ?
+                """, tentativa, novo.data(), chave.item(), chave.unidade().name(), chave.embalagem(), chave.modalidade(), ordem);
+    }
+
+    public Confirmado inserir(long tentativa, long ator, NovoPreco reg, int ordem, Resolucao resolucao) {
         var item = reg.identidade();
         return jdbc.queryForObject("""
                 INSERT INTO precos_confirmados (tentativa_id, linha, fornecedor_id, produto_id, conferencia_id,
                     revisao_item_id, vinculo_origem_id, ator_id, chave_item, referencia, descricao, unidade,
-                    embalagem, embalagem_chave, modalidade, preco, data_comercial, enviada_em)
-                SELECT t.id, ?, t.fornecedor_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, t.enviada_em
+                    embalagem, embalagem_chave, modalidade, preco, data_comercial, enviada_em, ordem,
+                    resolucao, preco_referencia_id, motivo_resolucao, revisao_conflito)
+                SELECT t.id, ?, t.fornecedor_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, t.enviada_em, ?, ?, ?, ?, ?
                 FROM tentativas_importacao t WHERE t.id = ? RETURNING *
                 """, this::mapear, reg.linha(), reg.produto(), reg.conferencia(), reg.revisao(), reg.vinculo(), ator,
                 reg.chave().item(), item.referencia(), item.descricao(), item.unidade().name(), item.embalagem(),
-                reg.chave().embalagem(), reg.chave().modalidade(), reg.preco(), reg.data(), tentativa);
+                reg.chave().embalagem(), reg.chave().modalidade(), reg.preco(), reg.data(), ordem,
+                resolucao == null ? null : resolucao.operacao().name(),
+                resolucao == null ? null : resolucao.precoReferencia(),
+                resolucao == null ? null : resolucao.motivo(),
+                resolucao == null ? null : resolucao.revisao(), tentativa);
     }
 
     public void atualizarEstado(long tentativa, Status estado) {
@@ -87,6 +122,6 @@ public class PrecoConfirmadoRepository {
     private Confirmado mapear(ResultSet rs, int posicao) throws SQLException {
         return new Confirmado(rs.getLong("id"), rs.getInt("linha"), rs.getLong("produto_id"), rs.getLong("vinculo_origem_id"),
                 rs.getBigDecimal("preco"), rs.getObject("data_comercial", LocalDate.class),
-                rs.getObject("confirmada_em", OffsetDateTime.class).toInstant());
+                rs.getObject("confirmada_em", OffsetDateTime.class).toInstant(), rs.getObject("ordem") == null);
     }
 }
