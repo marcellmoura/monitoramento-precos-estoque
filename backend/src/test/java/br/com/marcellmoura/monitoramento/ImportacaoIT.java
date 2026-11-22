@@ -606,7 +606,9 @@ class ImportacaoIT {
         assertThat(entrar(Perfil.ESTOQUE).enviar("POST", confirmar, null, true).statusCode()).isEqualTo(403);
         var resultado = json(entrar(Perfil.COMPRAS).enviar("POST", confirmar, null, true)).get("itens");
         assertThat(resultado.get(0).get("classificacao").asText()).isEqualTo("NOVO");
+        assertThat(resultado.get(0).get("variacao").isNull()).isTrue();
         assertThat(resultado.get(1).get("classificacao").asText()).isEqualTo("PENDENTE");
+        assertThat(resultado.get(1).get("variacao").isNull()).isTrue();
         var confirmado = resultado.get(0).get("confirmado");
         long precoId = confirmado.get("id").asLong();
         assertThat(confirmado.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
@@ -763,7 +765,9 @@ class ImportacaoIT {
         assertThat(statusDaTentativa(antes)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
         assertThat(conflitoPreco(alterar).get("anteriores").get(1).get("id").asLong()).isEqualTo(original);
         assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(original);
-        assertThat(consultarPrimeiraLinha(depois).get("classificacao").asText()).isEqualTo("SEM_ALTERACAO");
+        var igualdade = consultarPrimeiraLinha(depois);
+        assertThat(igualdade.get("classificacao").asText()).isEqualTo("SEM_ALTERACAO");
+        assertThat(igualdade.get("variacao").get("percentual").asText()).isEqualTo("0.00");
         assertThat(consultarPrimeiroPreco(antes).get("anterior").isNull()).isTrue();
 
         long baseSubstituicao = json(admin.enviar("GET", alterar + "/conferencia", null, false))
@@ -789,9 +793,14 @@ class ImportacaoIT {
         assertThat(anterior.get("anterior").isNull()).isTrue();
         long substituto = consultarPrimeiroPreco(alterar).get("id").asLong();
         assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(substituto);
-        assertThat(consultarPrimeiraLinha(depois).get("classificacao").asText()).isEqualTo("DIMINUIU");
+        var reducao = consultarPrimeiraLinha(depois);
+        assertThat(reducao.get("classificacao").asText()).isEqualTo("DIMINUIU");
+        assertThat(reducao.get("variacao").get("diferencaAbsoluta").decimalValue()).isEqualByComparingTo("1.00");
+        assertThat(reducao.get("variacao").get("percentual").asText()).startsWith("-");
         assertThat(consultarPrimeiraLinha(alterar).get("classificacao").asText()).isEqualTo("AUMENTOU");
-        assertThat(consultarPrimeiraLinha(origem).get("classificacao").isNull()).isTrue();
+        var substituida = consultarPrimeiraLinha(origem);
+        assertThat(substituida.get("classificacao").isNull()).isTrue();
+        assertThat(substituida.get("variacao").isNull()).isTrue();
         assertThat(anterior.get("preco").asText()).isEqualTo(registroOriginal.get("preco").asText());
         assertThat(jdbc.queryForList("""
                 SELECT ordem FROM precos_confirmados WHERE ordem IS NOT NULL ORDER BY ordem
