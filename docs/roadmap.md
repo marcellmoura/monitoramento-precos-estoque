@@ -183,4 +183,8 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P8 / resolução de conflitos na mesma data | A V14 registra a ordem comercial e a substituição auditável de preços. As opções ficam disponíveis por item na prévia. | Validação de ordem, substituição, concorrência, repetição, revisão desatualizada e permissões. US-13 em revisão. |
 
+| 2026-11-22 | P8 / resolução de conflitos integrada | [PR #73](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/73) integrado no commit `f065cca`. US-13 encerrada. | O teste manual verificou a ordem de R$ 32,00 e R$ 34,00, a substituição do primeiro por R$ 36,00 e a preservação do original. [CI pós-merge 44985204728](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44985204728) aprovada. |
+
+| 2026-11-22 | P9 / último preço válido | A V15 indexa a busca do preço vigente imediatamente anterior pela identidade e cronologia comerciais. A prévia de cada preço vigente mostra valor, data e tentativa de origem. | US-16 em revisão. Testes de identidade, cronologia, retroativo e substituição aprovados. A validação no navegador conferiu a atualização do preço anterior e o link de origem. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

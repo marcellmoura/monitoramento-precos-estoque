@@ -178,23 +178,34 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
-  if (linha.preco !== null) {
-    const rotulo = linha.estado === 'CONFIRMADO' ? 'Preço confirmado no histórico' : 'Preço pronto para confirmar';
-    return <p>{linha.confirmado?.substituido ? 'Preço substituído no histórico' : rotulo} · {moeda.format(linha.preco)}</p>;
-  }
-  return <>
+  const { confirmado, preco } = linha;
+  if (preco === null) return <>
     <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>
     {linha.conflito && <ResolverConflito linha={linha.linha} conflito={linha.conflito} />}
   </>;
+
+  if (!confirmado) return <p>Preço pronto para confirmar · {moeda.format(preco)}</p>;
+  if (confirmado.substituido) return <p>Preço substituído no histórico · {moeda.format(preco)}</p>;
+  const anterior = confirmado.anterior;
+  return <>
+    <p>Preço confirmado no histórico · {moeda.format(preco)}</p>
+    {anterior ? <p>
+      Último preço válido anterior · {moeda.format(anterior.preco)} · {formatarDataComercial(anterior.dataComercial)} ·{' '}
+      <Link to={`/importacoes/${anterior.tentativa}`}>Tentativa #{anterior.tentativa}</Link>
+    </p> : <p>Sem preço válido anterior.</p>}
+  </>;
+}
+
+function formatarDataComercial(data: string) {
+  return data.split('-').reverse().join('/');
 }
 
 function ResolverConflito({ linha, conflito }: { linha: number; conflito: ConflitoPreco }) {
   const fetcher = useFetcher<FalhaImportacao>();
   const titulo = useId();
-  const data = conflito.dataComercial.split('-').reverse().join('/');
   return <section aria-labelledby={titulo}>
     <h4 id={titulo}>Resolver conflito de preço</h4>
-    <p>Data comercial · {data}</p>
+    <p>Data comercial · {formatarDataComercial(conflito.dataComercial)}</p>
     <dl className={styles.dados}>
       <dt>Preço desta cotação</dt><dd>{moeda.format(conflito.preco)}</dd>
       {conflito.anteriores.map(preco => <Fragment key={preco.id}>

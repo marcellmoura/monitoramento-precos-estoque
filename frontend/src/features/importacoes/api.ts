@@ -104,7 +104,14 @@ export interface LinhaConfirmacao {
   estado: 'PENDENTE' | 'PRONTO' | 'CONFIRMADO';
   motivos: string[];
   preco: number | null;
-  confirmado: { id: number; produtoId: number; dataComercial: string; confirmadaEm: string; substituido?: boolean } | null;
+  confirmado: {
+    id: number;
+    produtoId: number;
+    dataComercial: string;
+    confirmadaEm: string;
+    substituido?: boolean;
+    anterior?: { id: number; tentativa: number; preco: number; dataComercial: string } | null;
+  } | null;
   conflito?: ConflitoPreco | null;
 }
 

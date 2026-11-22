@@ -16,8 +16,10 @@ public record ConfirmacaoImportacao(List<Linha> itens) {
 
     public record Conflito(BigDecimal preco, LocalDate dataComercial, List<PrecoAnterior> anteriores, String revisao) {}
 
+    public record BaseComparacao(long id, long tentativa, BigDecimal preco, LocalDate dataComercial) {}
+
     public record Confirmado(long id, int linha, long produtoId, long vinculoOrigem, BigDecimal preco, LocalDate dataComercial,
-            Instant confirmadaEm, boolean substituido) {}
+            Instant confirmadaEm, boolean substituido, BaseComparacao anterior) {}
 
     public record Linha(int linha, Estado estado, List<String> motivos, BigDecimal preco, Confirmado confirmado, Conflito conflito) {
         public static Linha pendente(int linha, List<String> motivos) {

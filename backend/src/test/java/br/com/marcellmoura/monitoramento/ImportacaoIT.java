@@ -630,6 +630,62 @@ class ImportacaoIT {
                 .isEqualByComparingTo("42.00");
     }
 
+    @Test void comparaPelaIdentidadeComercialMesmoAposCotacoesIncompativeisOuPendentes() throws Exception {
+        long hibisco = cadastrarProduto("Hibisco", "KG");
+        long hibiscoUnidade = cadastrarProduto("Hibisco unidade", "UN");
+        var origem = processar(fornecedor, "origem.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(origem, "2026-11-15");
+        gravarVinculo(origem, hibisco, base, 0);
+        var primeiro = confirmarPrimeiraLinha(origem);
+        assertThat(primeiro.get("anterior").isNull()).isTrue();
+
+        var fornecedorDiferente = processar(salvarFornecedor(), "outro-fornecedor.pdf", varianteTabela("Outro fornecedor"));
+        long baseOutro = selecionarBaseTabela(fornecedorDiferente, "2026-11-16");
+        gravarVinculo(fornecedorDiferente, hibisco, baseOutro, 0);
+        assertThat(confirmarPrimeiraLinha(fornecedorDiferente).get("anterior").isNull()).isTrue();
+
+        confirmarHibiscoComRevisao("Outra embalagem", hibisco, "H01", "KG", "Saco de 5 kg", "Preço");
+        confirmarHibiscoComRevisao("Outra unidade", hibiscoUnidade, "H01", "UN", "Saco de 1 kg", "Preço");
+        confirmarHibiscoComRevisao("Outra modalidade", hibisco, "H01", "KG", "Saco de 1 kg", null);
+        confirmarHibiscoComRevisao("Outro item", hibisco, "H02", "KG", "Saco de 1 kg", "Preço");
+
+        var pendente = processar(fornecedor, "pendente.pdf", varianteTabela("Preço não informado"));
+        long basePendente = selecionarBaseTabela(pendente, "2026-11-20");
+        var dadosPendentes = correcao(0, basePendente, "KG", "Preço", "Saco de 1 kg", null);
+        dadosPendentes.put("referencia", "H01");
+        dadosPendentes.put("descricao", "Hibisco");
+        assertThat(admin.enviar("PUT", pendente + "/itens/1", dadosPendentes, true).statusCode()).isEqualTo(200);
+        assertThat(confirmarPrimeiraLinha(pendente).isNull()).isTrue();
+
+        var atual = processar(fornecedor, "atual.pdf", ler("sinteticos/tabela-v2.pdf"));
+        selecionarBaseTabela(atual);
+        var comparacao = confirmarPrimeiraLinha(atual).get("anterior");
+        assertThat(comparacao.get("id").asLong()).isEqualTo(primeiro.get("id").asLong());
+        assertThat(comparacao.get("tentativa").asLong()).isEqualTo(Long.parseLong(origem.substring(ROTA.length() + 1)));
+        assertThat(comparacao.get("preco").decimalValue()).isEqualByComparingTo(primeiro.get("preco").decimalValue());
+        assertThat(comparacao.get("dataComercial").asText()).isEqualTo("2026-11-15");
+        assertThat(entrar(Perfil.CONSULTA).enviar("GET", atual + "/precos", null, false).statusCode()).isEqualTo(403);
+    }
+
+    private void confirmarHibiscoComRevisao(String titulo, long produto, String referencia, String unidade,
+            String embalagem, String coluna) throws Exception {
+        var rota = processar(fornecedor, titulo + ".pdf", varianteTabela(titulo));
+        long base = selecionarBaseTabela(rota, "2026-11-19");
+        long revisao = revisarHibisco(rota, base, 0, referencia, "Hibisco", unidade, embalagem, coluna);
+        gravarVinculo(rota, produto, base, revisao);
+        assertThat(confirmarPrimeiraLinha(rota).get("anterior").isNull()).isTrue();
+    }
+
+    private JsonNode confirmarPrimeiraLinha(String rota) throws Exception {
+        var resposta = admin.enviar("POST", rota + "/confirmar-itens", null, true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        return json(resposta).get("itens").get(0).get("confirmado");
+    }
+
+    private JsonNode consultarPrimeiroPreco(String rota) throws Exception {
+        return json(admin.enviar("GET", rota + "/precos", null, false)).get("itens").get(0).get("confirmado");
+    }
+
     @Test void preservaAOrigemReaproveitadaEDeixaConflitoNaMesmaDataPendente() throws Exception {
         long produto = cadastrarProduto("Hibisco", "KG");
         var origem = processar(fornecedor, "antiga.pdf", ler("sinteticos/tabela-v1.pdf"));
@@ -648,6 +704,8 @@ class ImportacaoIT {
         var retroativo = json(admin.enviar("POST", conflito + "/confirmar-itens", null, true)).get("itens").get(0).get("confirmado");
         assertThat(retroativo.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
         assertThat(retroativo.get("dataComercial").asText()).isEqualTo("2026-10-31");
+        assertThat(retroativo.get("anterior").isNull()).isTrue();
+        assertThat(consultarPrimeiroPreco(origem).get("anterior").get("id").asLong()).isEqualTo(retroativo.get("id").asLong());
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
     }
 
@@ -692,6 +750,8 @@ class ImportacaoIT {
         }
         assertThat(statusDaTentativa(antes)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
         assertThat(conflitoPreco(alterar).get("anteriores").get(1).get("id").asLong()).isEqualTo(original);
+        assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(original);
+        assertThat(consultarPrimeiroPreco(antes).get("anterior").isNull()).isTrue();
 
         var revisao = conflitoPreco(alterar).get("revisao").asText();
         var semMotivo = Map.of("operacao", "SUBSTITUIR", "precoReferencia", original, "revisao", revisao);
@@ -702,8 +762,11 @@ class ImportacaoIT {
         assertThat(resolverPreco(admin, alterar, comMotivo)).isEqualTo(204);
         assertThat(resolverPreco(admin, alterar, comMotivo)).isEqualTo(204);
 
-        var anterior = json(admin.enviar("GET", origem + "/precos", null, false)).get("itens").get(0).get("confirmado");
+        var anterior = consultarPrimeiroPreco(origem);
         assertThat(anterior.get("substituido").asBoolean()).isTrue();
+        assertThat(anterior.get("anterior").isNull()).isTrue();
+        long substituto = consultarPrimeiroPreco(alterar).get("id").asLong();
+        assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(substituto);
         assertThat(anterior.get("preco").asText()).isEqualTo(registroOriginal.get("preco").asText());
         assertThat(jdbc.queryForList("""
                 SELECT ordem FROM precos_confirmados WHERE ordem IS NOT NULL ORDER BY ordem
@@ -813,8 +876,12 @@ class ImportacaoIT {
     }
 
     private long selecionarBaseTabela(String rota) throws Exception {
+        return selecionarBaseTabela(rota, "2026-11-21");
+    }
+
+    private long selecionarBaseTabela(String rota, String data) throws Exception {
         var base = json(admin.enviar("PUT", rota + "/conferencia",
-                escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-21"), true));
+                escolha(0, "Preço", "KG", "Saco de 1 kg", data), true));
         return base.get("confirmada").get("id").asLong();
     }
 
