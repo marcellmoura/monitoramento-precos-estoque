@@ -165,4 +165,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P8 / associação manual de itens | US-11 implementada. A V11 registra o vínculo por fornecedor, referência, unidade e embalagem, com confirmação explícita e revalidação após mudança de apresentação. | Catálogo filtra candidatos pela unidade. Teste real validou o retorno do cadastro à linha, a confirmação e a persistência após recarregar. Reutilização e confirmação parcial seguem em US-12 e US-13. |
 
+| 2026-11-22 | P8 / associação manual em revisão | [PR #70](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/70), commit `8fd179a`. US-11 em revisão. | [CI 44978254916](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44978254916) e ambos os Quality Gates aprovados. |
+
+| 2026-11-22 | P8 / associação manual integrada | [PR #70](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/70) integrado no commit `9cf0bca`. US-11 encerrada. | Teste manual confirmou a associação e sua persistência após recarregar. Próximo recorte: reaproveitamento seguro em nova cotação (US-12). [CI pós-merge 44979243607](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44979243607) aprovada. |
+
+| 2026-11-22 | P8 / reaproveitamento de vínculos | US-12 implementada. A prévia resolve o vínculo por fornecedor e identidade comercial e mostra a confirmação manual de origem. | O fluxo real reaproveitou o vínculo em outro PDF, preservou a origem após recarregar e retirou o reaproveitamento após mudança de modalidade. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

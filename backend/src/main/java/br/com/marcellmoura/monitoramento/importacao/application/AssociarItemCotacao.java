@@ -1,6 +1,7 @@
 package br.com.marcellmoura.monitoramento.importacao.application;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao.Revisao;
+import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 import br.com.marcellmoura.monitoramento.importacao.domain.RevisaoItem;
 import br.com.marcellmoura.monitoramento.importacao.domain.VinculoItem;
@@ -30,24 +32,42 @@ public class AssociarItemCotacao {
     private final RevisaoItemRepository revisoes;
     private final VinculoItemRepository vinculos;
     private final ProdutoRepository produtos;
+    private final ReaproveitarVinculos reaproveitamento;
 
     public AssociarItemCotacao(RegistroImportacoes importacoes, ConferenciaRepository conferencias,
-            RevisaoItemRepository revisoes, VinculoItemRepository vinculos, ProdutoRepository produtos) {
+            RevisaoItemRepository revisoes, VinculoItemRepository vinculos, ProdutoRepository produtos,
+            ReaproveitarVinculos reaproveitamento) {
         this.importacoes = importacoes;
         this.conferencias = conferencias;
         this.revisoes = revisoes;
         this.vinculos = vinculos;
         this.produtos = produtos;
+        this.reaproveitamento = reaproveitamento;
     }
 
     public List<Situacao> listar(long tentativa) {
-        var itens = importacoes.previa(tentativa).itens();
+        return listar(tentativa, true);
+    }
+
+    private List<Situacao> listar(long tentativa, boolean incluirReaproveitamento) {
+        var previa = importacoes.previa(tentativa);
         var base = conferencias.atual(tentativa).orElse(null);
-        var revisados = revisoes.listar(tentativa).stream().collect(Collectors.toMap(RevisaoItem::linha, Function.identity()));
+        var revisados = porLinha(revisoes.listar(tentativa));
         var associados = vinculos.listar(tentativa).stream().collect(Collectors.toMap(VinculoItem::linha, Function.identity()));
-        return IntStream.rangeClosed(1, itens.size())
-                .mapToObj(linha -> situacao(linha, base, revisados.get(linha), itens.get(linha - 1), associados.get(linha)))
-                .toList();
+        var linhas = linhas(previa, base, revisados);
+        Map<Integer, VinculoItem.Reaproveitamento> reutilizados = incluirReaproveitamento
+                ? reaproveitamento.resolver(tentativa, linhas, associados.keySet()) : Map.of();
+        return linhas.stream().map(linha -> situacao(linha, base, associados.get(linha.numero()),
+                reutilizados.get(linha.numero()))).toList();
+    }
+
+    static Map<Integer, RevisaoItem> porLinha(List<RevisaoItem> revisoes) {
+        return revisoes.stream().collect(Collectors.toMap(RevisaoItem::linha, Function.identity()));
+    }
+
+    static List<Linha> linhas(PreviaImportacao previa, Revisao base, Map<Integer, RevisaoItem> revisados) {
+        return IntStream.rangeClosed(1, previa.itens().size())
+                .mapToObj(linha -> Linha.de(linha, base, revisados.get(linha), previa.itens().get(linha - 1))).toList();
     }
 
     public Page<ProdutoCatalogo> pesquisar(Unidade unidade, String nome, int pagina) {
@@ -60,7 +80,7 @@ public class AssociarItemCotacao {
     @Transactional
     public VinculoItem associar(long tentativa, int linha, long ator, Escolha escolha) {
         conferencias.bloquearTentativa(tentativa);
-        var atual = listar(tentativa).stream().filter(item -> item.linha() == linha).findFirst().orElseThrow(() ->
+        var atual = listar(tentativa, false).stream().filter(item -> item.linha() == linha).findFirst().orElseThrow(() ->
                 new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da prévia não encontrado."));
         var identidade = atual.identidade();
         if (identidade == null) {
@@ -86,24 +106,36 @@ public class AssociarItemCotacao {
         return new ImportacaoException(409, "VINCULO_DESATUALIZADO", "O item ou o vínculo mudou. Atualize a página antes de associar.");
     }
 
-    private Situacao situacao(int linha, Revisao base, RevisaoItem revisado, Item bruto, VinculoItem vinculo) {
-        var identidade = base == null ? null : identidade(base, revisado, bruto);
+    private Situacao situacao(Linha linha, Revisao base, VinculoItem vinculo, VinculoItem.Reaproveitamento reaproveitado) {
+        var identidade = linha.identidade();
         boolean revalidar = vinculo != null && (identidade == null || !vinculo.identidade().mesmaApresentacao(identidade));
-        return new Situacao(linha, base == null ? null : base.id(), revisado == null ? 0 : revisado.id(),
-                identidade, vinculo, revalidar);
+        return new Situacao(linha.numero(), base == null ? null : base.id(), linha.revisao(), identidade, vinculo,
+                revalidar, reaproveitado);
     }
 
-    private Identidade identidade(Revisao base, RevisaoItem revisado, Item bruto) {
-        if (revisado != null) {
-            var dados = revisado.dados();
-            if (dados.unidade() == null || dados.embalagem() == null) return null;
-            return new Identidade(dados.referencia(), dados.descricao(), dados.unidade(), dados.embalagem());
+    record Linha(int numero, long revisao, Identidade identidade, String modalidade) {
+        static Linha de(int numero, Revisao base, RevisaoItem revisado, Item bruto) {
+            var modalidade = revisado != null ? revisado.dados().coluna() : base == null ? null : base.base().coluna();
+            return new Linha(numero, revisado == null ? 0 : revisado.id(), identidade(base, revisado, bruto), modalidade);
         }
-        var dados = bruto.dados();
-        var escolha = base.base();
-        if (dados == null || !escolha.unidade().name().equalsIgnoreCase(dados.unidade())
-                || !escolha.embalagem().equalsIgnoreCase(dados.apresentacao())) return null;
-        String referencia = dados.referencia() == null || dados.referencia().isBlank() ? null : dados.referencia().strip();
-        return new Identidade(referencia, dados.descricao(), escolha.unidade(), escolha.embalagem());
+
+        private static Identidade identidade(Revisao base, RevisaoItem revisado, Item bruto) {
+            if (base == null) return null;
+            if (revisado != null) {
+                var dados = revisado.dados();
+                if (dados.unidade() == null || dados.embalagem() == null) return null;
+                return new Identidade(dados.referencia(), dados.descricao(), dados.unidade(), dados.embalagem());
+            }
+            var dados = bruto.dados();
+            var escolha = base.base();
+            if (dados == null || !escolha.unidade().name().equalsIgnoreCase(dados.unidade())
+                    || !escolha.embalagem().equalsIgnoreCase(dados.apresentacao())) return null;
+            String referencia = dados.referencia() == null || dados.referencia().isBlank() ? null : dados.referencia().strip();
+            return new Identidade(referencia, dados.descricao(), escolha.unidade(), escolha.embalagem());
+        }
+
+        boolean reutilizavel() {
+            return modalidade != null && identidade != null && identidade.referencia() != null;
+        }
     }
 }

@@ -87,6 +87,7 @@ export interface SituacaoVinculo {
   identidade: { referencia: string | null; descricao: string; unidade: Unidade; embalagem: string } | null;
   vinculo: { id: number; produto: ProdutoCatalogo } | null;
   revalidar: boolean;
+  reaproveitado?: { tentativaOrigem: number; vinculoOrigem: number; produto: ProdutoCatalogo } | null;
 }
 
 export interface DetalheTentativa extends TentativaImportacao {

@@ -506,6 +506,108 @@ class ImportacaoIT {
                 Map.of("fornecedor_id", outroFornecedor.getId(), "embalagem", "Saco de 5 kg"));
     }
 
+    @Test void reaproveitaProdutoDaMesmaIdentidadeMesmoAposCotacaoSemOItem() throws Exception {
+        long produto = cadastrarProduto("Hibisco", "KG");
+        var origem = processar(fornecedor, "antiga.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(origem);
+        long vinculo = gravarVinculo(origem, produto, base, 0);
+        processar(fornecedor, "outro-layout.pdf", ler("sinteticos/fichas-v1.pdf"));
+
+        var nova = processar(fornecedor, "nova.pdf", ler("sinteticos/tabela-v2.pdf"));
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        long baseNova = selecionarBaseTabela(nova);
+        var primeira = vinculos(nova).get(0);
+        var reutilizado = primeira.get("reaproveitado");
+        assertThat(reutilizado.get("produto").get("id").asLong()).isEqualTo(produto);
+        assertThat(reutilizado.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
+        assertThat(reutilizado.get("tentativaOrigem").asLong()).isEqualTo(Long.parseLong(origem.substring(ROTA.length() + 1)));
+        assertThat(primeira.get("vinculo").isNull()).isTrue();
+        assertThat(vinculos(nova).get(1).get("reaproveitado").isNull()).isTrue();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM vinculos_itens_cotacao", Integer.class)).isEqualTo(1);
+
+        long revisao = revisarHibisco(nova, baseNova, 0, "H01", " HIBÍSCO ", "KG", "Saco de 1 KG", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").get("vinculoOrigem").asLong()).isEqualTo(vinculo);
+        long novo = gravarVinculo(nova, produto, baseNova, revisao);
+        assertThat(vinculos(nova).get(0).get("vinculo").get("id").asLong()).isEqualTo(novo);
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+    }
+
+    @Test void impedeReaproveitamentoIncertoERevalidaQuandoDadosMudam() throws Exception {
+        long produto = cadastrarProduto("Hibisco", "KG");
+        var origem = processar(fornecedor, "antiga.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long baseOrigem = selecionarBaseTabela(origem);
+        gravarVinculo(origem, produto, baseOrigem, 0);
+
+        var rotaOutra = processar(salvarFornecedor(), "outro.pdf", varianteTabela("Outro fornecedor"));
+        selecionarBaseTabela(rotaOutra);
+        assertThat(vinculos(rotaOutra).get(0).get("reaproveitado").isNull()).isTrue();
+
+        var nova = processar(fornecedor, "nova.pdf", ler("sinteticos/tabela-v2.pdf"));
+        long baseNova = selecionarBaseTabela(nova);
+        long revisao = revisarHibisco(nova, baseNova, 0, "H01", "Hibisco", "KG", "Saco de 5 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        revisao = revisarHibisco(nova, baseNova, revisao, "H01", "Hibisco", "UN", "Saco de 1 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        revisao = revisarHibisco(nova, baseNova, revisao, "H01", "Hibisco", "KG", "Saco de 1 kg", null);
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        revisao = revisarHibisco(nova, baseNova, revisao, null, "Hibisco", "KG", "Saco de 1 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        revisao = revisarHibisco(nova, baseNova, revisao, "H01", "Outro item", "KG", "Saco de 1 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        revisarHibisco(nova, baseNova, revisao, "H01", "Hibisco", "KG", "Saco de 1 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isObject()).isTrue();
+
+        revisarHibisco(origem, baseOrigem, 0, "H01", "Hibisco", "KG", "Saco de 10 kg", "Preço");
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+    }
+
+    @Test void bloqueiaConflitoDeProdutosEProdutoInativo() throws Exception {
+        long produto = cadastrarProduto("Hibisco", "KG");
+        long outro = cadastrarProduto("Hibisco", "KG");
+        var origem = processar(fornecedor, "antiga.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long baseOrigem = selecionarBaseTabela(origem);
+        gravarVinculo(origem, produto, baseOrigem, 0);
+        var intermediaria = processar(fornecedor, "intermediaria.pdf", varianteTabela("Segunda entrega"));
+        long baseInt = selecionarBaseTabela(intermediaria);
+        var nova = processar(fornecedor, "nova.pdf", ler("sinteticos/tabela-v2.pdf"));
+        selecionarBaseTabela(nova);
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isObject()).isTrue();
+        jdbc.update("UPDATE produtos SET ativo = false WHERE id = ?", produto);
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+        jdbc.update("UPDATE produtos SET ativo = true WHERE id = ?", produto);
+        gravarVinculo(intermediaria, outro, baseInt, 0);
+        assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+    }
+
+    private byte[] varianteTabela(String titulo) throws Exception {
+        try (var doc = Loader.loadPDF(ler("sinteticos/tabela-v1.pdf")); var saida = new ByteArrayOutputStream()) {
+            doc.getDocumentInformation().setTitle(titulo);
+            doc.save(saida);
+            return saida.toByteArray();
+        }
+    }
+
+    private tools.jackson.databind.JsonNode vinculos(String rota) throws Exception {
+        return json(admin.enviar("GET", rota + "/vinculos", null, false));
+    }
+
+    private long gravarVinculo(String rota, long produto, long conferencia, long revisao) throws Exception {
+        var resposta = admin.enviar("PUT", rota + "/itens/1/vinculo",
+                Map.of("produto", produto, "conferencia", conferencia, "revisaoItem", revisao, "vinculo", 0), true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        return json(resposta).get("id").asLong();
+    }
+
+    private long revisarHibisco(String rota, long base, long revisao, String referencia, String descricao,
+            String unidade, String embalagem, String coluna) throws Exception {
+        var dados = correcao(revisao, base, unidade, coluna, embalagem, "35");
+        dados.put("referencia", referencia);
+        dados.put("descricao", descricao);
+        var resposta = admin.enviar("PUT", rota + "/itens/1", dados, true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        return json(resposta).get("id").asLong();
+    }
+
     private long selecionarBaseTabela(String rota) throws Exception {
         var base = json(admin.enviar("PUT", rota + "/conferencia",
                 escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-21"), true));

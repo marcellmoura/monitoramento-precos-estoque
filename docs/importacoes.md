@@ -39,6 +39,12 @@ Salve a conferência comercial. Na linha com unidade e embalagem conferidas, cli
 
 **Cadastrar produto** abre o cadastro existente. Ao salvar, a aplicação volta à mesma linha e oferece o produto compatível para confirmação. A V11 grava fornecedor, referência, descrição, unidade, embalagem, produto, versão conferida, ator e data. A confirmação bloqueia mudanças diretas de unidade no produto. Se a identidade comercial da linha mudar, a tela passa a pedir nova confirmação. Uma linha sem referência pode receber vínculo manual quando a correspondência tiver sido verificada.
 
+## Reaproveitamento em novas cotações
+
+Na nova tentativa, salve a conferência comercial e confirme os dados que faltarem no item. Quando houver um vínculo manual vigente em uma tentativa anterior do mesmo fornecedor, a prévia reaproveita o produto se referência, unidade, embalagem, modalidade e descrição forem compatíveis. Diferenças de maiúsculas, acentos e espaços na descrição são normalizadas. A origem do vínculo aparece ao lado do produto reaproveitado.
+
+A prévia recalcula essa associação a partir das revisões atuais. A V12 indexa os vínculos manuais usados na consulta. A associação reaproveitada aponta para o vínculo manual de origem. A aplicação mantém a linha pendente quando há conflito entre produtos, uma apresentação incerta, referência ausente ou produto inativo. **Alterar associação** continua disponível para confirmar um vínculo manual na nova tentativa.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |
@@ -69,7 +75,7 @@ Mantenha o limite de transporte do arquivo acima do funcional e reserve espaço 
 | GET | `/api/importacoes/{id}/itens` | Revisões atuais por linha com dados conferidos, ator, data e pendências |
 | PUT | `/api/importacoes/{id}/itens/{linha}` | Registra uma revisão para a linha numerada a partir de 1. Envia `revisao` (0 se inédita), `conferencia` (ID atual), campos corrigidos e `motivo`. `coluna: null` representa verificação manual. Alterações concorrentes retornam `409`. |
 | GET | `/api/importacoes/catalogo?unidade=KG&nome=&pagina=0` | Lista paginada de candidatos ativos na unidade, com código, nome e unidade |
-| GET | `/api/importacoes/{id}/vinculos` | Identidade comercial e situação do vínculo de cada linha |
+| GET | `/api/importacoes/{id}/vinculos` | Identidade comercial, vínculo manual e, quando aplicável, vínculo reaproveitado com a tentativa e o vínculo manual de origem |
 | PUT | `/api/importacoes/{id}/itens/{linha}/vinculo` | Confirma `produto`, `conferencia`, `revisaoItem` e `vinculo`. Use 0 para revisão individual ou vínculo ainda ausente. Retorna `409` se a escolha ficou desatualizada. |
 | POST | `/api/importacoes/{id}/reprocessamento` | Reagenda a mesma tentativa com falha de extração e mantém o histórico de execuções |
 
@@ -98,3 +104,5 @@ A conferência comercial foi validada com 19 testes unitários, 104 de integraç
 A correção individual passou em 19 testes unitários e 105 de integração no backend, além de 92 testes de frontend, lint, build e smoke Chromium. O fluxo real em Chromium, API e PostgreSQL verificou o salvamento, a persistência após recarregar, a preservação dos valores originais e a pendência de um preço cuja unidade ainda precisava de verificação.
 
 Na associação manual passaram 19 testes unitários e 107 de integração no backend, 94 testes de frontend, lint, build e smoke Chromium. A validação integrada cobriu perfis, homônimos, referências repetidas, unidades incompatíveis e revalidação após mudança de embalagem. O fluxo real em Chromium, API e PostgreSQL cobriu o cadastro, o retorno à mesma linha e a persistência da associação.
+
+No reaproveitamento de vínculos passaram 19 testes unitários, 110 de integração e 95 de frontend, além de lint, build e Chromium. A validação integrada cobriu item que reaparece, fornecedores distintos, conflito de produtos, cadastro inativo e mudanças de unidade, apresentação ou identificação. O fluxo com navegador, API e PostgreSQL verificou a origem reaproveitada após recarregar e a volta à associação manual após mudar a modalidade.
