@@ -93,7 +93,8 @@ final class InterpretadorCotacao {
         if (dados.unidade() == null || dados.unidade().isBlank()) pendencias.add("Unidade não informada no PDF.");
         if ("Não informada".equalsIgnoreCase(dados.apresentacao())) pendencias.add("Apresentação não informada no PDF.");
         precos.forEach((coluna, valor) -> {
-            if (!PrecoCotado.positivo(valor)) pendencias.add("Preço ausente ou inválido em " + coluna + ".");
+            if (valor.isBlank()) pendencias.add("Preço ausente em " + coluna + ".");
+            else if (!PrecoCotado.positivo(valor)) pendencias.add("Preço inválido em " + coluna + ". Informe um valor positivo.");
         });
         return new Item(dados, precos, bruto.replace('\t', ' '), pendencias);
     }

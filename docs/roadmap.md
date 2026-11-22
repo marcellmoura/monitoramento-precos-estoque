@@ -203,4 +203,7 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P9 / item ausente em cotação posterior | A sequência de três PDFs verifica a permanência do produto e do último preço válido durante a ausência e a base correta após o retorno. | US-20 em revisão. O teste de integração e o fluxo no navegador validam a ausência, a permanência de R$ 22,00 e o retorno a R$ 24,00 com +9,09%. |
 
+| 2026-11-22 | P9 / item ausente validado | [PR #78](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/78) integrado no commit `f7a927f`. US-20 encerrada. | Integração e teste automatizado de ponta a ponta validaram a preservação e o reaparecimento. A política registra as linhas presentes no PDF. [CI pós-merge 45071205205](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45071205205) aprovada. |
+| 2026-11-22 | P7–P8 / preços inválidos e identificação insuficiente | A prévia distingue preço ausente de inválido, com o valor original preservado. | US-21 em revisão. A regressão de integração usa um PDF com valores zero, negativo e ausente, conferência parcial, associação explícita e nova confirmação sem duplicação. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

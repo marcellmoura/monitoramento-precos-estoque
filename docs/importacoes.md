@@ -13,7 +13,7 @@ Administrador e Compras podem enviar PDFs textuais e consultar as tentativas. Ab
 | Envio duplicado | O mesmo conteúdo já foi enviado para esse fornecedor. Abra a tentativa original pelo link. |
 | Aguardando confirmação | O mesmo conteúdo foi encontrado para outro fornecedor. Confira o fornecedor indicado e escolha **Confirmar para este fornecedor** se quiser prosseguir. |
 
-O número de páginas resulta da validação. Após a extração, a contagem inclui as linhas reconhecidas e as linhas preservadas para revisão. Os formatos disponíveis são KG/Fardo, Atacado/Varejo, tabela e fichas. A detecção usa cabeçalhos e rótulos do conteúdo. A prévia mostra todas as colunas de preço, valores originais, campos ausentes e motivos de pendência, incluindo preço zero e leitura parcial. A prévia mostra a data extraída do PDF quando encontrada.
+O número de páginas resulta da validação. Após a extração, a contagem inclui as linhas reconhecidas e as linhas preservadas para revisão. Os formatos disponíveis são KG/Fardo, Atacado/Varejo, tabela e fichas. A detecção usa cabeçalhos e rótulos do conteúdo. A prévia mostra a data extraída do PDF quando encontrada. Nas linhas reconhecidas, a prévia distingue preço ausente de preço inválido, como zero ou negativo, e preserva os valores originais. Quando faltam dados e a posição das colunas fica ambígua, a linha permanece na prévia para revisão com o texto extraído.
 
 O detalhe atualiza o status enquanto o processamento estiver pendente ou em curso. A prévia é gravada no registro de extração.
 
