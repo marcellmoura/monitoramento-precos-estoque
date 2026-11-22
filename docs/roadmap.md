@@ -171,4 +171,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P8 / reaproveitamento de vínculos | US-12 implementada. A prévia resolve o vínculo por fornecedor e identidade comercial e mostra a confirmação manual de origem. | O fluxo real reaproveitou o vínculo em outro PDF, preservou a origem após recarregar e retirou o reaproveitamento após mudança de modalidade. |
 
+| 2026-11-22 | P8 / reaproveitamento em revisão | [PR #71](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/71), commit `127c673`. US-12 em revisão. | [CI 44979887601](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44979887601) e os dois Quality Gates aprovados. |
+
+| 2026-11-22 | P8 / reaproveitamento integrado | [PR #71](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/71) integrado no commit `726e00b`. US-12 encerrada. | A revisão manual mostrou o produto reaproveitado com link para a tentativa de origem e a segunda linha pendente. Próximo recorte: confirmação parcial (US-13). [CI pós-merge 44981245676](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44981245676) aprovada. |
+
+| 2026-11-22 | P8 / confirmação parcial | A V13 registra preços por linha, com vínculo de origem, apresentação, modalidade, data comercial, envio, confirmação e ator. | O teste real concluiu uma tentativa em duas confirmações. Conflitos na mesma data permanecem pendentes até a escolha explícita de ordem ou substituição na US-13. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

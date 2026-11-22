@@ -9,9 +9,14 @@ public final class PrecoCotado {
     private PrecoCotado() {}
 
     public static boolean positivo(String valor) {
-        if (valor == null) return false;
+        return lerPositivo(valor) != null;
+    }
+
+    public static BigDecimal lerPositivo(String valor) {
+        if (valor == null) return null;
         String numero = valor.replace("R$", "").strip();
-        return VALOR.matcher(numero).matches()
-                && new BigDecimal(numero.replace(".", "").replace(',', '.')).signum() > 0;
+        if (!VALOR.matcher(numero).matches()) return null;
+        var decimal = new BigDecimal(numero.replace(".", "").replace(',', '.'));
+        return decimal.signum() > 0 ? decimal : null;
     }
 }

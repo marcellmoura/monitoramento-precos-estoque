@@ -3,10 +3,17 @@ import { unidades } from '../produtos/api';
 import type { ConferenciaCotacao, FalhaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 
-export function FormularioConferencia({ conferencia }: { conferencia: ConferenciaCotacao }) {
+export function FormularioConferencia({ conferencia, bloqueada }: { conferencia: ConferenciaCotacao; bloqueada: boolean }) {
   const fetcher = useFetcher<FalhaImportacao>();
   const { colunas, confirmada, sugestao, dataSugerida } = conferencia;
   const base = confirmada?.base ?? sugestao;
+  if (bloqueada && confirmada) {
+    return <section aria-labelledby="conferencia-comercial">
+      <h3 id="conferencia-comercial">Conferência comercial</h3>
+      <p>{confirmada.base.coluna} · {confirmada.base.unidade} · {confirmada.base.embalagem} · {confirmada.dataComercial.split('-').reverse().join('/')}</p>
+      <p>Conferência bloqueada após a confirmação de preços.</p>
+    </section>;
+  }
   return <section aria-labelledby="conferencia-comercial">
     <h3 id="conferencia-comercial">Conferência comercial</h3>
     {confirmada && <p>Conferência comercial salva.</p>}

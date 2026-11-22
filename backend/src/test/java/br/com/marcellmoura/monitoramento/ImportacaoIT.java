@@ -74,6 +74,7 @@ class ImportacaoIT {
     }
 
     @BeforeEach void preparar() throws Exception {
+        jdbc.update("DELETE FROM precos_confirmados");
         jdbc.update("DELETE FROM vinculos_itens_cotacao");
         jdbc.update("DELETE FROM produtos");
         jdbc.update("DELETE FROM revisoes_itens_cotacao");
@@ -577,6 +578,114 @@ class ImportacaoIT {
         jdbc.update("UPDATE produtos SET ativo = true WHERE id = ?", produto);
         gravarVinculo(intermediaria, outro, baseInt, 0);
         assertThat(vinculos(nova).get(0).get("reaproveitado").isNull()).isTrue();
+    }
+
+    @Test void confirmaParcialmenteECorrigeSomenteOsItensRestantes() throws Exception {
+        var rota = processar(fornecedor, ORIGINAL, ler(ORIGINAL));
+        var confirmar = rota + "/confirmar-itens";
+        var primeira = rota + "/itens/1";
+        var segunda = rota + "/itens/2";
+        assertThat(json(admin.enviar("GET", rota + "/precos", null, false)).get("itens").get(0)
+                .get("motivos").toString()).contains("Salve a conferência comercial");
+        long produto = cadastrarProduto("Açúcar", "KG");
+        long adocante = cadastrarProduto("Adoçante", "UN");
+        long base = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Preço KG", "KG", "A granel", "2026-10-31"), true)).get("confirmada").get("id").asLong();
+        long revisao = json(admin.enviar("PUT", primeira,
+                correcao(0, base, "KG", "Preço KG", "A granel", "32"), true)).get("id").asLong();
+        long vinculo = gravarVinculo(rota, produto, base, revisao);
+
+        assertThat(admin.enviar("POST", confirmar, null, false).statusCode()).isEqualTo(403);
+        assertThat(entrar(Perfil.ESTOQUE).enviar("POST", confirmar, null, true).statusCode()).isEqualTo(403);
+        var resultado = json(entrar(Perfil.COMPRAS).enviar("POST", confirmar, null, true)).get("itens");
+        var confirmado = resultado.get(0).get("confirmado");
+        long precoId = confirmado.get("id").asLong();
+        assertThat(confirmado.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
+        assertThat(confirmado.get("dataComercial").asText()).isEqualTo("2026-10-31");
+        assertThat(resultado.get(1).get("estado").asText()).isEqualTo("PENDENTE");
+        assertThat(statusDaTentativa(rota)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+        assertThat(json(admin.enviar("POST", confirmar, null, true)).get("itens").get(0).get("confirmado")
+                .get("id").asLong()).isEqualTo(precoId);
+
+        assertThat(admin.enviar("PUT", primeira, correcao(revisao, base, "KG", "Preço KG", "A granel", "40"), true)
+                .statusCode()).isEqualTo(409);
+        assertThat(admin.enviar("PUT", primeira + "/vinculo",
+                Map.of("produto", produto, "conferencia", base, "revisaoItem", revisao, "vinculo", vinculo), true)
+                .statusCode()).isEqualTo(409);
+        assertThat(admin.enviar("PUT", rota + "/conferencia", escolha(base, "Preço KG", "KG", "A granel", "2026-11-01"), true)
+                .statusCode()).isEqualTo(409);
+        assertThat(admin.enviar("PUT", segunda, correcao(0, base, "UN", null, "Pote", "0"), true).statusCode()).isEqualTo(400);
+        long novaRevisao = json(admin.enviar("PUT", segunda, correcao(0, base, "UN", null, "Pote", "78"), true))
+                .get("id").asLong();
+        assertThat(admin.enviar("PUT", segunda + "/vinculo",
+                Map.of("produto", adocante, "conferencia", base, "revisaoItem", novaRevisao, "vinculo", 0), true)
+                .statusCode()).isEqualTo(200);
+        var completo = json(admin.enviar("POST", confirmar, null, true)).get("itens");
+        assertThat(completo.get(0).get("confirmado").get("id").asLong()).isEqualTo(precoId);
+        assertThat(completo.get(1).get("estado").asText()).isEqualTo("CONFIRMADO");
+        assertThat(statusDaTentativa(rota)).isEqualTo("CONCLUIDA");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT preco_venda FROM produtos WHERE id = ?", java.math.BigDecimal.class, produto))
+                .isEqualByComparingTo("42.00");
+    }
+
+    @Test void preservaAOrigemReaproveitadaEDeixaConflitoNaMesmaDataPendente() throws Exception {
+        long produto = cadastrarProduto("Hibisco", "KG");
+        var origem = processar(fornecedor, "antiga.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(origem);
+        long vinculo = gravarVinculo(origem, produto, base, 0);
+        assertThat(admin.enviar("POST", origem + "/confirmar-itens", null, true).statusCode()).isEqualTo(200);
+
+        var conflito = processar(fornecedor, "mesma-data.pdf", varianteTabela("Outra cotação da mesma data"));
+        long baseRepetida = selecionarBaseTabela(conflito);
+        var resultado = json(admin.enviar("POST", conflito + "/confirmar-itens", null, true)).get("itens");
+        assertThat(resultado.get(0).get("motivos").toString()).contains("Já há outro preço");
+        assertThat(statusDaTentativa(conflito)).isEqualTo("AGUARDANDO_CONFERENCIA");
+
+        assertThat(admin.enviar("PUT", conflito + "/conferencia",
+                escolha(baseRepetida, "Preço", "KG", "Saco de 1 kg", "2026-10-31"), true).statusCode()).isEqualTo(200);
+        var retroativo = json(admin.enviar("POST", conflito + "/confirmar-itens", null, true)).get("itens").get(0).get("confirmado");
+        assertThat(retroativo.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
+        assertThat(retroativo.get("dataComercial").asText()).isEqualTo("2026-10-31");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
+    }
+
+    @Test void desfazTudoNaFalhaEConfirmaSemDuplicacaoEmSolicitacoesSimultaneas() throws Exception {
+        var rota = processar(fornecedor, "misto.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long base = selecionarBaseTabela(rota);
+        gravarVinculo(rota, cadastrarProduto("Hibisco", "KG"), base, 0);
+        long alecrim = cadastrarProduto("Alecrim", "KG");
+        assertThat(admin.enviar("PUT", rota + "/itens/2/vinculo",
+                Map.of("produto", alecrim, "conferencia", base, "revisaoItem", 0, "vinculo", 0), true).statusCode()).isEqualTo(200);
+        var confirmar = rota + "/confirmar-itens";
+        jdbc.execute("ALTER TABLE precos_confirmados ADD CONSTRAINT falha_de_teste CHECK (linha <> 2)");
+        try {
+            assertThat(admin.enviar("POST", confirmar, null, true).statusCode()).isEqualTo(500);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isZero();
+            assertThat(statusDaTentativa(rota)).isEqualTo("AGUARDANDO_CONFERENCIA");
+        } finally {
+            jdbc.execute("ALTER TABLE precos_confirmados DROP CONSTRAINT falha_de_teste");
+        }
+        var outro = entrar(Perfil.COMPRAS);
+        var partida = new CyclicBarrier(2);
+        try (var executores = Executors.newFixedThreadPool(2)) {
+            var primeiro = executores.submit(() -> {
+                partida.await(5, TimeUnit.SECONDS);
+                return admin.enviar("POST", confirmar, null, true).statusCode();
+            });
+            var segundo = executores.submit(() -> {
+                partida.await(5, TimeUnit.SECONDS);
+                return outro.enviar("POST", confirmar, null, true).statusCode();
+            });
+            assertThat(primeiro.get(10, TimeUnit.SECONDS)).isEqualTo(200);
+            assertThat(segundo.get(10, TimeUnit.SECONDS)).isEqualTo(200);
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
+        assertThat(statusDaTentativa(rota)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+    }
+
+    private String statusDaTentativa(String rota) throws Exception {
+        return json(admin.enviar("GET", rota, null, false)).get("status").asText();
     }
 
     private byte[] varianteTabela(String titulo) throws Exception {

@@ -32,6 +32,8 @@ import br.com.marcellmoura.monitoramento.acesso.http.ErroApi;
 import br.com.marcellmoura.monitoramento.acesso.security.UsuarioAutenticado;
 import br.com.marcellmoura.monitoramento.importacao.application.ImportacaoException;
 import br.com.marcellmoura.monitoramento.importacao.application.ConferirCotacao;
+import br.com.marcellmoura.monitoramento.importacao.application.ConfirmarPrecos;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
@@ -49,13 +51,15 @@ public class ImportacaoController {
     private final RegistroImportacoes registro;
     private final ConferirCotacao conferencia;
     private final RevisarItemCotacao revisaoItem;
+    private final ConfirmarPrecos precos;
 
     public ImportacaoController(RecepcaoPdf recepcao, RegistroImportacoes registro, ConferirCotacao conferencia,
-            RevisarItemCotacao revisaoItem) {
+            RevisarItemCotacao revisaoItem, ConfirmarPrecos precos) {
         this.recepcao = recepcao;
         this.registro = registro;
         this.conferencia = conferencia;
         this.revisaoItem = revisaoItem;
+        this.precos = precos;
     }
 
     public record Pagina(List<TentativaImportacao> itens, int pagina, int tamanho, long total, int paginas) {}
@@ -134,6 +138,14 @@ public class ImportacaoController {
             @PathVariable @Positive int linha, @Valid @RequestBody CorrecaoItem dados) {
         return revisaoItem.salvar(id, linha, ator.getId(),
                 new RevisarItemCotacao.Correcao(dados.revisao(), dados.conferencia(), dados.dados()));
+    }
+
+    @GetMapping("/{id}/precos")
+    public ConfirmacaoImportacao consultarPrecos(@PathVariable @Positive long id) { return precos.consultar(id); }
+
+    @PostMapping("/{id}/confirmar-itens")
+    public ConfirmacaoImportacao confirmarItens(@PathVariable @Positive long id, @AuthenticationPrincipal UsuarioAutenticado ator) {
+        return precos.confirmar(id, ator.getId());
     }
 
     @ExceptionHandler(ImportacaoException.class)
