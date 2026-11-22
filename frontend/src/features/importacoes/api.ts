@@ -2,7 +2,7 @@ import { redirect } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { enviarFormulario, HttpError, mutateJson, requestJson } from '../../shared/http';
 import { mensagemErro } from '../acesso/api';
-import type { Unidade } from '../produtos/api';
+import type { Produto, Unidade } from '../produtos/api';
 import type { Identidade } from '../acesso/api';
 import type { Fornecedor, PaginaFornecedores } from '../fornecedores/api';
 
@@ -77,10 +77,24 @@ export interface RevisaoItem {
   pendencias: string[];
 }
 
+export type ProdutoCatalogo = Pick<Produto, 'id' | 'codigo' | 'nome' | 'unidade'>;
+export interface PaginaCatalogo { itens: ProdutoCatalogo[]; pagina: number; paginas: number }
+
+export interface SituacaoVinculo {
+  linha: number;
+  conferencia: number | null;
+  revisaoItem: number;
+  identidade: { referencia: string | null; descricao: string; unidade: Unidade; embalagem: string } | null;
+  vinculo: { id: number; produto: ProdutoCatalogo } | null;
+  revalidar: boolean;
+}
+
 export interface DetalheTentativa extends TentativaImportacao {
   previa?: PreviaImportacao;
   conferencia?: ConferenciaCotacao;
   revisoes?: RevisaoItem[];
+  vinculos?: SituacaoVinculo[];
+  produtoCriado?: ProdutoCatalogo;
 }
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
@@ -122,12 +136,18 @@ export async function carregarTentativa({ params, request }: LoaderFunctionArgs)
     const rota = `/importacoes/${encodeURIComponent(params.id ?? '')}`;
     const tentativa = await consultar<TentativaImportacao>(rota, request.signal);
     if (tentativa.status !== 'AGUARDANDO_CONFERENCIA') return tentativa;
-    const [previa, conferencia, revisoes] = await Promise.all([
+    const produtoId = new URL(request.url).searchParams.get('produto');
+    const produto = produtoId && /^[1-9][0-9]{0,15}$/.test(produtoId)
+      ? requestJson<ProdutoCatalogo>(`/produtos/${produtoId}`, { signal: request.signal }).catch(() => undefined)
+      : undefined;
+    const [previa, conferencia, revisoes, vinculos, produtoCriado] = await Promise.all([
       consultar<PreviaImportacao>(rota + '/previa', request.signal),
       consultar<ConferenciaCotacao>(rota + '/conferencia', request.signal),
       consultar<RevisaoItem[]>(rota + '/itens', request.signal),
+      consultar<SituacaoVinculo[]>(rota + '/vinculos', request.signal),
+      produto,
     ]);
-    return { ...tentativa, previa, conferencia, revisoes };
+    return { ...tentativa, previa, conferencia, revisoes, vinculos, produtoCriado };
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -160,6 +180,7 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
   const form = await request.formData();
   const operacao = form.get('operacao');
   try {
+    if (operacao === 'associar-item') return salvarVinculo(id, form);
     if (operacao === 'corrigir-item') return salvarCorrecao(id, form);
     if (operacao === 'conferir') {
       await mutateJson<ConferenciaCotacao>(`/importacoes/${id}/conferencia`, 'PUT', {
@@ -193,5 +214,25 @@ async function salvarCorrecao(id: string, form: FormData) {
       motivo: campo('motivo'),
     });
     return revisao ? { salvo: true } : { erro: 'Consulte a prévia para verificar a correção.' };
+  } catch (error) { return tratarFalha(error); }
+}
+
+export async function carregarCatalogo({ request }: LoaderFunctionArgs) {
+  const params = new URL(request.url).searchParams;
+  try {
+    return await consultar<PaginaCatalogo>('/importacoes/catalogo?' + params, request.signal);
+  } catch (error) { return tratarFalha(error); }
+}
+
+async function salvarVinculo(id: string, form: FormData) {
+  try {
+    const linha = Number(form.get('linha'));
+    await mutateJson(`/importacoes/${id}/itens/${linha}/vinculo`, 'PUT', {
+      produto: Number(form.get('produto')),
+      conferencia: Number(form.get('conferencia')),
+      revisaoItem: Number(form.get('revisaoItem')),
+      vinculo: Number(form.get('vinculo')),
+    });
+    return { salvo: true };
   } catch (error) { return tratarFalha(error); }
 }

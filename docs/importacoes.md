@@ -33,6 +33,12 @@ Salve a conferência comercial e clique em **Corrigir item** na linha desejada. 
 
 A coluna **Preço KG** exige KG também na correção individual. Um item cotado em UN pode receber um preço por unidade verificado manualmente. Cada revisão da V10 guarda ator, data, linha e versão da conferência usada. A aplicação mantém os dados extraídos e as revisões anteriores. Dados comerciais completos ficam pendentes de associação ao produto interno.
 
+## Associação ao catálogo
+
+Salve a conferência comercial. Na linha com unidade e embalagem conferidas, clique em **Associar produto**. Busque pelo nome ou deixe o campo em branco para listar os produtos ativos da mesma unidade. Use o código interno para distinguir nomes repetidos. Selecione o produto e clique em **Confirmar associação**.
+
+**Cadastrar produto** abre o cadastro existente. Ao salvar, a aplicação volta à mesma linha e oferece o produto compatível para confirmação. A V11 grava fornecedor, referência, descrição, unidade, embalagem, produto, versão conferida, ator e data. A confirmação bloqueia mudanças diretas de unidade no produto. Se a identidade comercial da linha mudar, a tela passa a pedir nova confirmação. Uma linha sem referência pode receber vínculo manual quando a correspondência tiver sido verificada.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |
@@ -62,6 +68,9 @@ Mantenha o limite de transporte do arquivo acima do funcional e reserve espaço 
 | PUT | `/api/importacoes/{id}/conferencia` | Confirma `revisao` (0 na primeira gravação), `coluna`, `unidade`, `embalagem` e `dataComercial` (AAAA-MM-DD); `409` para revisão desatualizada |
 | GET | `/api/importacoes/{id}/itens` | Revisões atuais por linha com dados conferidos, ator, data e pendências |
 | PUT | `/api/importacoes/{id}/itens/{linha}` | Registra uma revisão para a linha numerada a partir de 1. Envia `revisao` (0 se inédita), `conferencia` (ID atual), campos corrigidos e `motivo`. `coluna: null` representa verificação manual. Alterações concorrentes retornam `409`. |
+| GET | `/api/importacoes/catalogo?unidade=KG&nome=&pagina=0` | Lista paginada de candidatos ativos na unidade, com código, nome e unidade |
+| GET | `/api/importacoes/{id}/vinculos` | Identidade comercial e situação do vínculo de cada linha |
+| PUT | `/api/importacoes/{id}/itens/{linha}/vinculo` | Confirma `produto`, `conferencia`, `revisaoItem` e `vinculo`. Use 0 para revisão individual ou vínculo ainda ausente. Retorna `409` se a escolha ficou desatualizada. |
 | POST | `/api/importacoes/{id}/reprocessamento` | Reagenda a mesma tentativa com falha de extração e mantém o histórico de execuções |
 
 As alterações exigem sessão, perfil autorizado e CSRF. Sem fornecedor identificado, o envio retorna `400` ou `404`. A validação verifica o formato e a presença de texto com Apache PDFBox, sem guardar o texto. Arquivos corrompidos, protegidos ou sem texto recebem motivo explícito. Os logs registram identificador e status, sem nomes de arquivos ou conteúdo. [Apache PDFBox 3.0.8](https://pdfbox.apache.org/3.0/getting-started.html)
@@ -87,3 +96,5 @@ No recorte de prévia passaram 19 testes unitários e 102 de integração no bac
 A conferência comercial foi validada com 19 testes unitários, 104 de integração, 91 testes de frontend, lint, build e Chromium. O teste real em Chromium, API e PostgreSQL verificou a rejeição de unidade incompatível com **Preço KG**, o salvamento da base e da data e a persistência da prévia e das pendências após recarregar a página.
 
 A correção individual passou em 19 testes unitários e 105 de integração no backend, além de 92 testes de frontend, lint, build e smoke Chromium. O fluxo real em Chromium, API e PostgreSQL verificou o salvamento, a persistência após recarregar, a preservação dos valores originais e a pendência de um preço cuja unidade ainda precisava de verificação.
+
+Na associação manual passaram 19 testes unitários e 107 de integração no backend, 94 testes de frontend, lint, build e smoke Chromium. A validação integrada cobriu perfis, homônimos, referências repetidas, unidades incompatíveis e revalidação após mudança de embalagem. O fluxo real em Chromium, API e PostgreSQL cobriu o cadastro, o retorno à mesma linha e a persistência da associação.

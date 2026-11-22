@@ -14,7 +14,7 @@ import { Fornecedores, NovoFornecedor, DetalheFornecedor } from '../features/for
 import { carregarFornecedores, carregarFornecedor, cadastrarFornecedor } from '../features/fornecedores/api';
 
 import { DetalheImportacao, Importacoes, NovoEnvio } from '../features/importacoes/Importacoes';
-import { carregarFornecedoresDoEnvio, carregarImportacoes, carregarTentativa, atualizarTentativa, enviarPdf } from '../features/importacoes/api';
+import { carregarFornecedoresDoEnvio, carregarImportacoes, carregarCatalogo, carregarTentativa, atualizarTentativa, enviarPdf } from '../features/importacoes/api';
 
 export const routes: RouteObject[] = [{
   path: '/', element: <App />, loader: carregarIdentidade, errorElement: <FalhaDeConexao />,
@@ -29,6 +29,7 @@ export const routes: RouteObject[] = [{
     { path: 'fornecedores/:id', element: <DetalheFornecedor />, loader: carregarFornecedor },
     { path: 'importacoes', element: <Importacoes />, loader: carregarImportacoes },
     { path: 'importacoes/nova', element: <NovoEnvio />, loader: carregarFornecedoresDoEnvio, action: enviarPdf },
+    { path: 'importacoes/catalogo', loader: carregarCatalogo },
     { path: 'importacoes/:id', element: <DetalheImportacao />, loader: carregarTentativa, action: atualizarTentativa },
     { path: 'login', element: <Login />, action: entrar },
     { path: 'alterar-senha', element: <AlterarSenha />, action: trocarSenha },

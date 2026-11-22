@@ -159,4 +159,10 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-21 | P7 / correção individual de itens | A V10 preserva a prévia e grava revisões por linha com unidade, embalagem, origem do preço, motivo e ator. | Fluxo real verificou a correção com dados completos e pendentes. US-10 segue aberta até validar a edição dos itens restantes após confirmação parcial. |
 
+| 2026-11-21 | P7 / correção individual em revisão | [PR #69](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/69), commit `3c95d1e`. US-10 em revisão. | [CI 44906374540](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44906374540) e ambos os Quality Gates aprovados. O PR aguarda revisão manual e integração. |
+
+| 2026-11-21 | P7 / correção individual integrada | [PR #69](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/69) integrado no commit `4d5b212`. Teste manual aprovado. | US-10 permanece aberta para validação após confirmação parcial. Próximo recorte: associação manual de um item ao produto interno (US-11). [CI pós-merge 44908537696](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/44908537696) aprovada. |
+
+| 2026-11-21 | P8 / associação manual de itens | US-11 implementada. A V11 registra o vínculo por fornecedor, referência, unidade e embalagem, com confirmação explícita e revalidação após mudança de apresentação. | Catálogo filtra candidatos pela unidade. Teste real validou o retorno do cadastro à linha, a confirmação e a persistência após recarregar. Reutilização e confirmação parcial seguem em US-12 e US-13. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

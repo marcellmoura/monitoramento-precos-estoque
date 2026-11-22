@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
 import type { Identidade } from '../acesso/api';
-import type { ConferenciaCotacao, RevisaoItem, TentativaImportacao } from './api';
+import type { ConferenciaCotacao, ProdutoCatalogo, RevisaoItem, SituacaoVinculo, TentativaImportacao } from './api';
 
 const base = {
   id: 1, fornecedorCodigo: 'FOR-000001', fornecedorNome: 'Distribuidora Teste', atorId: 1,
@@ -17,6 +17,9 @@ let tentativas: TentativaImportacao[];
 let falha: number | undefined;
 let conferencia: ConferenciaCotacao;
 let revisoes: RevisaoItem[];
+let vinculos: SituacaoVinculo[];
+let produtos: ProdutoCatalogo[];
+const homonimos = [1, 2].map(id => ({ id, codigo: `PRD-00000${id}`, nome: 'Açúcar', unidade: 'KG' as const }));
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
@@ -25,6 +28,8 @@ beforeEach(() => {
   tentativas = [];
   falha = undefined;
   revisoes = [];
+  vinculos = [];
+  produtos = [...homonimos];
   conferencia = { colunas: ['ATACADO', 'VAREJO'], dataSugerida: '2026-11-21', confirmada: null, sugestao: null, pendenciasComerciais: [] };
   fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     const url = new URL(input, 'http://localhost');
@@ -50,6 +55,23 @@ beforeEach(() => {
       }
       return Response.json(conferencia);
     }
+    if (url.pathname.endsWith('/vinculos')) return Response.json(vinculos);
+    if (url.pathname.endsWith('/catalogo')) return Response.json({ itens: produtos, pagina, paginas: 1 });
+    if (url.pathname.endsWith('/vinculo') && options?.method === 'PUT') {
+      const dados = JSON.parse(String(options.body));
+      const atual = vinculos[0];
+      const produto = produtos.find(item => item.id === dados.produto);
+      if (!produto) return Response.json({}, { status: 404 });
+      atual.vinculo = { id: 3, produto };
+      return Response.json(atual.vinculo);
+    }
+    if (url.pathname === '/api/produtos' && options?.method === 'POST') {
+      const dados = JSON.parse(String(options.body));
+      const produto = { id: 3, codigo: 'PRD-000003', nome: dados.nome, unidade: dados.unidade };
+      produtos.push(produto);
+      return Response.json(produto, { status: 201 });
+    }
+    if (url.pathname === '/api/produtos/3') return Response.json(produtos.at(-1));
     if (url.pathname.endsWith('/itens')) return Response.json(revisoes);
     if (url.pathname.endsWith('/itens/1') && options?.method === 'PUT') {
       const dados = JSON.parse(String(options.body));
@@ -208,6 +230,41 @@ describe('Importações', () => {
     expect(JSON.parse(chamada?.[1].body)).toMatchObject({
       conferencia: 5, revisao: 0, unidade: 'KG', coluna: null, preco: '33.25', embalagem: 'Saco',
     });
+  });
+
+  function prepararVinculo() {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA' }];
+    vinculos = [{ linha: 1, conferencia: 5, revisaoItem: 2, vinculo: null, revalidar: false,
+      identidade: { referencia: null, descricao: 'Açúcar', unidade: 'KG', embalagem: 'Saco' } }];
+  }
+
+  it('busca homônimos e só vincula o código escolhido após confirmar', async () => {
+    prepararVinculo();
+    abrir('/importacoes/1');
+    fireEvent.click(await screen.findByRole('button', { name: 'Associar produto da linha 1' }));
+    expect(screen.queryByRole('button', { name: 'Associar produto da linha 2' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar produtos em KG' }));
+    expect(await screen.findByRole('button', { name: /Selecionar PRD-000001/ })).toBeVisible();
+    fireEvent.click(await screen.findByRole('button', { name: /Selecionar PRD-000002/ }));
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar associação' }));
+    expect(await screen.findByText('Produto associado · PRD-000002 · Açúcar')).toBeVisible();
+    const chamada = fetchMock.mock.calls.find(([url]) => url.endsWith('/vinculo'));
+    expect(JSON.parse(chamada?.[1].body)).toEqual({ produto: 2, conferencia: 5, revisaoItem: 2, vinculo: 0 });
+  });
+
+  it('retorna à linha com o novo produto selecionado para confirmação', async () => {
+    prepararVinculo();
+    abrir('/importacoes/1');
+    fireEvent.click(await screen.findByRole('button', { name: 'Associar produto da linha 1' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Cadastrar produto' }));
+    fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Açúcar recém-cadastrado' } });
+    fireEvent.change(screen.getByLabelText('Unidade'), { target: { value: 'KG' } });
+    fireEvent.change(screen.getByLabelText('Preço de venda'), { target: { value: '40' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
+    expect(await screen.findByText(/Selecionado · PRD-000003/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Confirmar associação' })).toBeEnabled();
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
   });
 
   it('reprocessa a mesma tentativa em caso de falha', async () => {

@@ -74,6 +74,8 @@ class ImportacaoIT {
     }
 
     @BeforeEach void preparar() throws Exception {
+        jdbc.update("DELETE FROM vinculos_itens_cotacao");
+        jdbc.update("DELETE FROM produtos");
         jdbc.update("DELETE FROM revisoes_itens_cotacao");
         jdbc.update("DELETE FROM conferencias_cotacao");
         jdbc.update("UPDATE tentativas_importacao SET execucao_atual = NULL");
@@ -426,6 +428,94 @@ class ImportacaoIT {
         assertThat(admin.enviar("PUT", rota + "/conferencia",
                 escolha(conferencia, "Preço Fardo", "KG", "Saco", "2026-11-22"), true).statusCode()).isEqualTo(200);
         assertThat(admin.enviar("PUT", primeira, corrigida, true).statusCode()).isEqualTo(409);
+    }
+
+    @Test void associaProdutoEscolhidoERevalidaMudancaDeEmbalagem() throws Exception {
+        var rota = processar(fornecedor, ORIGINAL, ler(ORIGINAL));
+        var primeira = rota + "/itens/1";
+        var confirmar = primeira + "/vinculo";
+        long produto = cadastrarProduto("Açúcar de coco", "KG");
+        long homonimo = cadastrarProduto("Açúcar de coco", "KG");
+        long unidadeDiferente = cadastrarProduto("Açúcar de coco", "UN");
+        var compras = entrar(Perfil.COMPRAS);
+        var consulta = entrar(Perfil.CONSULTA);
+        var catalogo = ROTA + "/catalogo?unidade=KG&nome=A%C3%A7%C3%BAcar";
+        var candidatos = json(compras.enviar("GET", catalogo, null, false)).get("itens");
+        assertThat(candidatos.size()).isEqualTo(2);
+        assertThat(candidatos.get(0).get("codigo").asText()).isNotEqualTo(candidatos.get(1).get("codigo").asText());
+        assertThat(consulta.enviar("GET", catalogo, null, false).statusCode()).isEqualTo(403);
+
+        var base = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Preço KG", "KG", "A granel", "2026-11-21"), true));
+        long conferencia = base.get("confirmada").get("id").asLong();
+        var pendente = Map.of("produto", produto, "conferencia", conferencia, "revisaoItem", 0, "vinculo", 0);
+        assertThat(admin.enviar("PUT", confirmar, pendente, true).statusCode()).isEqualTo(409);
+        var conferido = json(admin.enviar("PUT", primeira,
+                correcao(0, conferencia, "KG", "Preço KG", "A granel", "32"), true));
+        long revisao = conferido.get("id").asLong();
+        var errado = Map.of("produto", unidadeDiferente, "conferencia", conferencia, "revisaoItem", revisao, "vinculo", 0);
+        assertThat(admin.enviar("PUT", confirmar, errado, true).statusCode()).isEqualTo(409);
+        var vincular = Map.of("produto", homonimo, "conferencia", conferencia, "revisaoItem", revisao, "vinculo", 0);
+        assertThat(consulta.enviar("PUT", confirmar, vincular, true).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("PUT", confirmar, vincular, false).statusCode()).isEqualTo(403);
+        var escolhido = json(compras.enviar("PUT", confirmar, vincular, true));
+        long vinculo = escolhido.get("id").asLong();
+        assertThat(escolhido.get("produto").get("id").asLong()).isEqualTo(homonimo);
+        assertThat(json(compras.enviar("PUT", confirmar, vincular, true))).isEqualTo(escolhido);
+        var estoque = json(admin.enviar("GET", "/api/produtos/" + homonimo, null, false));
+        assertThat(estoque.get("unidadeEditavel").asBoolean()).isFalse();
+        assertThat(estoque.get("precoVenda").asText()).isEqualTo("42.00");
+        assertThat(estoque.get("estoqueAtual").asText()).isEqualTo("0.000");
+
+        var ajustada = json(admin.enviar("PUT", primeira,
+                correcao(revisao, conferencia, "KG", "Preço KG", "Saco", "32"), true));
+        long novaRevisao = ajustada.get("id").asLong();
+        var situacao = json(admin.enviar("GET", rota + "/vinculos", null, false)).get(0);
+        assertThat(situacao.get("revalidar").asBoolean()).isTrue();
+        assertThat(situacao.get("vinculo").get("id").asLong()).isEqualTo(vinculo);
+        assertThat(admin.enviar("PUT", confirmar, vincular, true).statusCode()).isEqualTo(409);
+        var novaEscolha = Map.of("produto", produto, "conferencia", conferencia, "revisaoItem", novaRevisao, "vinculo", vinculo);
+        assertThat(admin.enviar("PUT", confirmar, novaEscolha, true).statusCode()).isEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM vinculos_itens_cotacao", Integer.class)).isEqualTo(2);
+    }
+
+    @Test void distingueReferenciaRepetidaPorFornecedorEApresentacao() throws Exception {
+        long produto = cadastrarProduto("Hibisco", "KG");
+        var arquivo = ler("sinteticos/tabela-v1.pdf");
+        var primeira = processar(fornecedor, "tabela.pdf", arquivo);
+        var outroFornecedor = salvarFornecedor();
+        var segunda = processar(outroFornecedor, "tabela.pdf", arquivo);
+        assertThat(admin.enviar("POST", segunda + "/confirmacao", null, true).statusCode()).isEqualTo(200);
+        processamento.executarFila();
+        long base1 = selecionarBaseTabela(primeira);
+        long base2 = selecionarBaseTabela(segunda);
+        var corrigida = correcao(0, base2, "KG", "Preço", "Saco de 5 kg", "33");
+        corrigida.put("referencia", "H01");
+        var revisao = json(admin.enviar("PUT", segunda + "/itens/1", corrigida, true)).get("id").asLong();
+        assertThat(admin.enviar("PUT", primeira + "/itens/1/vinculo",
+                Map.of("produto", produto, "conferencia", base1, "revisaoItem", 0, "vinculo", 0), true).statusCode())
+                .isEqualTo(200);
+        assertThat(admin.enviar("PUT", segunda + "/itens/1/vinculo",
+                Map.of("produto", produto, "conferencia", base2, "revisaoItem", revisao, "vinculo", 0), true).statusCode())
+                .isEqualTo(200);
+        var linhas = jdbc.queryForList("""
+                SELECT fornecedor_id, embalagem FROM vinculos_itens_cotacao
+                WHERE referencia = 'H01' ORDER BY id
+                """);
+        assertThat(linhas).containsExactly(Map.of("fornecedor_id", fornecedor.getId(), "embalagem", "Saco de 1 kg"),
+                Map.of("fornecedor_id", outroFornecedor.getId(), "embalagem", "Saco de 5 kg"));
+    }
+
+    private long selecionarBaseTabela(String rota) throws Exception {
+        var base = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-21"), true));
+        return base.get("confirmada").get("id").asLong();
+    }
+
+    private long cadastrarProduto(String nome, String unidade) throws Exception {
+        var resposta = admin.enviar("POST", "/api/produtos", Map.of("nome", nome, "unidade", unidade, "precoVenda", "42"), true);
+        assertThat(resposta.statusCode()).isEqualTo(201);
+        return json(resposta).get("id").asLong();
     }
 
     private Map<String, Object> correcao(long revisao, long conferencia, String unidade, String coluna, String embalagem, String preco) {
