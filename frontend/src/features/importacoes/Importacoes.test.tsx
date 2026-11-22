@@ -253,6 +253,16 @@ describe('Importações', () => {
     expect(JSON.parse(chamada?.[1].body)).toEqual({ produto: 2, conferencia: 5, revisaoItem: 2, vinculo: 0 });
   });
 
+  it('mostra de onde veio o vínculo aproveitado e permite escolher manualmente', async () => {
+    prepararVinculo();
+    vinculos[0].reaproveitado = { tentativaOrigem: 7, vinculoOrigem: 12, produto: homonimos[0] };
+    abrir('/importacoes/1');
+    expect(await screen.findByText(/Vínculo reaproveitado · PRD-000001/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Tentativa de origem #7' })).toHaveAttribute('href', '/importacoes/7');
+    expect(screen.getByRole('button', { name: 'Associar produto da linha 1' })).toHaveTextContent('Alterar associação');
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
+  });
+
   it('retorna à linha com o novo produto selecionado para confirmação', async () => {
     prepararVinculo();
     abrir('/importacoes/1');

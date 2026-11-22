@@ -139,7 +139,7 @@ function Previa({ previa, conferencia, revisoes, vinculos, tentativa, linhaRetor
         const linha = indice + 1;
         const revisao = porLinha.get(linha);
         const situacao = vinculosPorLinha.get(linha);
-        const associado = Boolean(situacao?.vinculo && !situacao.revalidar);
+        const associado = Boolean(situacao?.reaproveitado || (situacao?.vinculo && !situacao.revalidar));
         return <li key={linha} id={`item-${linha}`}>
           <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
           {revisao && <h4>Dados extraídos do PDF</h4>}

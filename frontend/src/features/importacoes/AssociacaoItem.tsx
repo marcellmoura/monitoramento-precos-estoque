@@ -13,16 +13,20 @@ interface Props {
 
 export function AssociacaoItem({ tentativa, situacao, abrirAoVoltar, produtoCriado }: Props) {
   const [aberto, setAberto] = useState(abrirAoVoltar);
-  const { identidade, vinculo, revalidar, conferencia } = situacao;
+  const { identidade, vinculo, revalidar, conferencia, reaproveitado } = situacao;
   return <>
     {vinculo && <p>{revalidar ? 'Vínculo anterior precisa de nova confirmação' : 'Produto associado'}{' · '}
       {vinculo.produto.codigo} · {vinculo.produto.nome}</p>}
+    {reaproveitado && <p>
+      Vínculo reaproveitado · {reaproveitado.produto.codigo} · {reaproveitado.produto.nome}{' · '}
+      <Link to={`/importacoes/${reaproveitado.tentativaOrigem}`}>Tentativa de origem #{reaproveitado.tentativaOrigem}</Link>
+    </p>}
     {identidade && conferencia && (aberto
       ? <FormularioVinculo tentativa={tentativa} situacao={situacao} unidade={identidade.unidade}
           produtoCriado={produtoCriado} fechar={() => setAberto(false)} />
       : <button className={importacoes.botaoCorrecao} type="button"
           aria-label={`Associar produto da linha ${situacao.linha}`} onClick={() => setAberto(true)}>
-          {vinculo && !revalidar ? 'Alterar associação' : 'Associar produto'}
+          {(vinculo && !revalidar) || reaproveitado ? 'Alterar associação' : 'Associar produto'}
         </button>)}
   </>;
 }
