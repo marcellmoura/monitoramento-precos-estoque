@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.BaseComparacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Confirmado;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PrecoAnterior;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Resolucao;
@@ -44,7 +45,23 @@ public class PrecoConfirmadoRepository {
     }
 
     public Map<Integer, Confirmado> listar(long tentativa) {
-        return jdbc.query("SELECT * FROM precos_confirmados WHERE tentativa_id = ?", this::mapear, tentativa)
+        return jdbc.query("""
+                SELECT atual.*, anterior.id AS anterior_id, anterior.tentativa_id AS anterior_tentativa_id,
+                       anterior.preco AS anterior_preco, anterior.data_comercial AS anterior_data_comercial
+                FROM precos_confirmados atual
+                LEFT JOIN LATERAL (
+                    SELECT p.id, p.tentativa_id, p.preco, p.data_comercial
+                    FROM precos_confirmados p
+                    WHERE atual.ordem IS NOT NULL AND p.ordem IS NOT NULL
+                      AND p.fornecedor_id = atual.fornecedor_id AND p.chave_item = atual.chave_item
+                      AND p.unidade = atual.unidade AND p.embalagem_chave = atual.embalagem_chave
+                      AND p.modalidade = atual.modalidade
+                      AND (p.data_comercial, p.ordem) < (atual.data_comercial, atual.ordem)
+                    ORDER BY p.data_comercial DESC, p.ordem DESC
+                    LIMIT 1
+                ) anterior ON true
+                WHERE atual.tentativa_id = ?
+                """, this::mapear, tentativa)
                 .stream().collect(Collectors.toMap(Confirmado::linha, Function.identity()));
     }
 
@@ -97,16 +114,16 @@ public class PrecoConfirmadoRepository {
                 """, tentativa, novo.data(), chave.item(), chave.unidade().name(), chave.embalagem(), chave.modalidade(), ordem);
     }
 
-    public Confirmado inserir(long tentativa, long ator, NovoPreco reg, int ordem, Resolucao resolucao) {
+    public void inserir(long tentativa, long ator, NovoPreco reg, int ordem, Resolucao resolucao) {
         var item = reg.identidade();
-        return jdbc.queryForObject("""
+        jdbc.update("""
                 INSERT INTO precos_confirmados (tentativa_id, linha, fornecedor_id, produto_id, conferencia_id,
                     revisao_item_id, vinculo_origem_id, ator_id, chave_item, referencia, descricao, unidade,
                     embalagem, embalagem_chave, modalidade, preco, data_comercial, enviada_em, ordem,
                     resolucao, preco_referencia_id, motivo_resolucao, revisao_conflito)
                 SELECT t.id, ?, t.fornecedor_id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, t.enviada_em, ?, ?, ?, ?, ?
-                FROM tentativas_importacao t WHERE t.id = ? RETURNING *
-                """, this::mapear, reg.linha(), reg.produto(), reg.conferencia(), reg.revisao(), reg.vinculo(), ator,
+                FROM tentativas_importacao t WHERE t.id = ?
+                """, reg.linha(), reg.produto(), reg.conferencia(), reg.revisao(), reg.vinculo(), ator,
                 reg.chave().item(), item.referencia(), item.descricao(), item.unidade().name(), item.embalagem(),
                 reg.chave().embalagem(), reg.chave().modalidade(), reg.preco(), reg.data(), ordem,
                 resolucao == null ? null : resolucao.operacao().name(),
@@ -120,8 +137,11 @@ public class PrecoConfirmadoRepository {
     }
 
     private Confirmado mapear(ResultSet rs, int posicao) throws SQLException {
+        var anteriorId = rs.getObject("anterior_id", Long.class);
+        var anterior = anteriorId == null ? null : new BaseComparacao(anteriorId, rs.getLong("anterior_tentativa_id"),
+                rs.getBigDecimal("anterior_preco"), rs.getObject("anterior_data_comercial", LocalDate.class));
         return new Confirmado(rs.getLong("id"), rs.getInt("linha"), rs.getLong("produto_id"), rs.getLong("vinculo_origem_id"),
                 rs.getBigDecimal("preco"), rs.getObject("data_comercial", LocalDate.class),
-                rs.getObject("confirmada_em", OffsetDateTime.class).toInstant(), rs.getObject("ordem") == null);
+                rs.getObject("confirmada_em", OffsetDateTime.class).toInstant(), rs.getObject("ordem") == null, anterior);
     }
 }

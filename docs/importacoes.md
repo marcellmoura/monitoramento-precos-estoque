@@ -64,6 +64,12 @@ Clique em **Confirmar resolução** para gravar a linha. As demais pendências c
 
 A V14 preserva preços existentes na primeira posição do dia. A ordem dos preços vigentes é definida por data comercial e posição dentro da mesma identidade e modalidade. A resolução é registrada com a operação, o preço de referência, o motivo da substituição quando aplicável e o ator. A validação da revisão, a atualização da ordem, a gravação do preço e o estado da tentativa são transacionais.
 
+### Último preço válido anterior
+
+Nas linhas com preço vigente, a prévia mostra **Último preço válido anterior** com valor, data comercial e link para a tentativa de origem. A primeira ocorrência mostra **Sem preço válido anterior**. Preços substituídos continuam visíveis na tentativa original.
+
+A consulta usa a mesma identidade comercial, fornecedor, unidade, embalagem e modalidade. A data comercial e a posição no dia determinam a precedência. A busca percorre os preços confirmados vigentes mesmo quando o item está ausente no PDF imediatamente anterior. Uma confirmação retroativa ou substituição passa a refletir nas consultas posteriores. A V15 adiciona o índice para essa busca.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |

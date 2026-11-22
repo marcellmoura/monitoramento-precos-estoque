@@ -319,11 +319,29 @@ describe('Importações', () => {
     falharConfirmacao = false;
     fireEvent.click(confirmar);
     expect(await screen.findByText(/Preço confirmado no histórico/)).toBeVisible();
+    expect(screen.getByText('Sem preço válido anterior.')).toBeVisible();
     expect(screen.getByRole('status')).toHaveTextContent('Concluída com pendências');
     expect(screen.getByText('Conferência bloqueada após a confirmação de preços.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Corrigir item linha 2' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Confirmar itens válidos' })).not.toBeInTheDocument();
+  });
+
+  it('mostra o preço válido anterior com data e origem apenas para o preço vigente', async () => {
+    tentativas = [{ ...base, status: 'CONCLUIDA', quantidadeItens: 2 }];
+    const confirmado = { id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm };
+    precos.itens = [
+      { linha: 1, estado: 'CONFIRMADO', preco: 34, motivos: [], confirmado: {
+        ...confirmado, anterior: { id: 5, tentativa: 3, preco: 36, dataComercial: '2026-11-20' },
+      } },
+      { linha: 2, estado: 'CONFIRMADO', preco: 32, motivos: [], confirmado: { ...confirmado, id: 8, substituido: true } },
+    ];
+    abrir('/importacoes/1');
+
+    expect(await screen.findByText(/Último preço válido anterior · R\$\s*36,00 · 20\/11\/2026/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Tentativa #3' })).toHaveAttribute('href', '/importacoes/3');
+    expect(screen.getByText(/Preço substituído no histórico/)).toBeVisible();
+    expect(screen.getAllByText(/Último preço válido anterior/)).toHaveLength(1);
   });
 
   it.each([

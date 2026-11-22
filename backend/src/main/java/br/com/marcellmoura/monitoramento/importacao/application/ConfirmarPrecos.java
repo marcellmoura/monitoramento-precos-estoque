@@ -65,10 +65,16 @@ public class ConfirmarPrecos {
         conferencias.bloquearTentativa(tentativa);
         precos.bloquearFornecedor(tentativa);
         var avaliadas = avaliar(tentativa, this::bloquearProdutos);
-        var resultado = avaliadas.stream().map(avaliacao -> gravar(tentativa, ator, avaliacao)).toList();
-        if (avaliadas.stream().anyMatch(avaliacao -> avaliacao.linha().estado() == ConfirmacaoImportacao.Estado.PRONTO)) {
-            atualizarEstado(tentativa, resultado);
-        }
+        var prontos = avaliadas.stream().filter(item -> item.linha().estado() == ConfirmacaoImportacao.Estado.PRONTO).toList();
+        if (prontos.isEmpty()) return new ConfirmacaoImportacao(avaliadas.stream().map(Avaliacao::linha).toList());
+
+        prontos.forEach(item -> precos.inserir(tentativa, ator, item.registro(), 1, null));
+        var confirmados = precos.listar(tentativa);
+        var resultado = avaliadas.stream().map(Avaliacao::linha).map(linha -> {
+            var confirmado = confirmados.get(linha.linha());
+            return confirmado == null ? linha : Linha.confirmado(confirmado);
+        }).toList();
+        atualizarEstado(tentativa, resultado.stream().allMatch(linha -> linha.confirmado() != null));
         return new ConfirmacaoImportacao(resultado);
     }
 
@@ -93,9 +99,9 @@ public class ConfirmarPrecos {
         int ordem = anterior.ordem() + (resolucao.operacao() == Operacao.DEPOIS ? 1 : 0);
         if (resolucao.operacao() == Operacao.SUBSTITUIR) precos.liberarOrdem(anterior.id());
         else precos.abrirPosicao(tentativa, novo, ordem);
-        var salvo = precos.inserir(tentativa, ator, novo, ordem, resolucao);
-        atualizarEstado(tentativa, avaliadas.stream()
-                .map(item -> item.linha().linha() == linha ? Linha.confirmado(salvo) : item.linha()).toList());
+        precos.inserir(tentativa, ator, novo, ordem, resolucao);
+        atualizarEstado(tentativa, avaliadas.stream().map(Avaliacao::linha)
+                .allMatch(item -> item.linha() == linha || item.confirmado() != null));
     }
 
     private static void validarMotivo(Resolucao resolucao) {
@@ -112,18 +118,12 @@ public class ConfirmarPrecos {
                 "O conflito mudou. Confira novamente os preços e confirme uma nova escolha.");
     }
 
-    private void atualizarEstado(long tentativa, List<Linha> resultado) {
-        var concluida = resultado.stream().allMatch(linha -> linha.confirmado() != null);
+    private void atualizarEstado(long tentativa, boolean concluida) {
         precos.atualizarEstado(tentativa, concluida ? Status.CONCLUIDA : Status.CONCLUIDA_COM_PENDENCIAS);
     }
 
     private List<Produto> bloquearProdutos(List<Long> ids) {
         return ids.stream().sorted().flatMap(id -> produtos.buscarParaVinculo(id).stream()).toList();
-    }
-
-    private Linha gravar(long tentativa, long ator, Avaliacao avaliacao) {
-        if (avaliacao.linha().estado() != ConfirmacaoImportacao.Estado.PRONTO) return avaliacao.linha();
-        return Linha.confirmado(precos.inserir(tentativa, ator, avaliacao.registro(), 1, null));
     }
 
     private record Avaliacao(Linha linha, NovoPreco registro) {
