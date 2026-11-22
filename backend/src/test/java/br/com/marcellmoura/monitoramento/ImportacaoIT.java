@@ -723,6 +723,56 @@ class ImportacaoIT {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
     }
 
+    @Test void consultaHistoricoComFiltrosPaginacaoEPermissoes() throws Exception {
+        String historico = ROTA + "/historico-precos";
+        long produto = cadastrarProduto("Hibisco", "KG");
+        long outroProduto = cadastrarProduto("Outro produto", "KG");
+        var anterior = processar(fornecedor, "anterior.pdf", ler("sinteticos/tabela-v1.pdf"));
+        gravarVinculo(anterior, produto, selecionarBaseTabela(anterior, "2026-11-15"), 0);
+        long precoAnterior = confirmarPrimeiraLinha(anterior).get("id").asLong();
+
+        var recente = processar(fornecedor, "recente.pdf", varianteTabela("Cotação recente"));
+        selecionarBaseTabela(recente, "2026-11-22");
+        long precoRecente = confirmarPrimeiraLinha(recente).get("id").asLong();
+
+        var outroFornecedor = salvarFornecedor();
+        var outra = processar(outroFornecedor, "outra.pdf", varianteTabela("Outro fornecedor"));
+        gravarVinculo(outra, outroProduto, selecionarBaseTabela(outra, "2026-11-15"), 0);
+        confirmarPrimeiraLinha(outra);
+
+        var filtros = "?fornecedorId=" + fornecedor.getId() + "&produtoId=" + produto;
+        var primeira = json(entrar(Perfil.COMPRAS).enviar("GET", historico + filtros + "&tamanho=1", null, false));
+        assertThat(primeira.get("total").asLong()).isEqualTo(2);
+        assertThat(primeira.get("paginas").asInt()).isEqualTo(2);
+        assertThat(primeira.get("itens").get(0).get("id").asLong()).isEqualTo(precoRecente);
+        var segunda = json(admin.enviar("GET", historico + filtros + "&tamanho=1&pagina=1", null, false));
+        assertThat(segunda.get("itens").get(0).get("id").asLong()).isEqualTo(precoAnterior);
+
+        var periodo = json(admin.enviar("GET", historico + filtros + "&inicio=2026-11-15&fim=2026-11-15", null, false));
+        var registro = periodo.get("itens").get(0);
+        assertThat(periodo.get("total").asLong()).isEqualTo(1);
+        assertThat(registro.get("produto").get("nome").asText()).isEqualTo("Hibisco");
+        assertThat(registro.get("origem").get("arquivo").asText()).isEqualTo("anterior.pdf");
+        assertThat(registro.get("ordem").asInt()).isEqualTo(1);
+        assertThat(registro.get("substituidoPor").isNull()).isTrue();
+
+        var tentativa = registro.get("origem").get("tentativa").asText();
+        var resultado = json(admin.enviar("GET", historico + "?tentativa=" + tentativa, null, false));
+        assertThat(resultado.get("itens").size()).isEqualTo(1);
+        assertThat(resultado.get("itens").get(0).get("origem").get("linha").asInt()).isEqualTo(1);
+        assertThat(statusDaTentativa(anterior)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+
+        var vazio = json(admin.enviar("GET", historico + "?produtoId=" + outroProduto + "&fornecedorId=" + fornecedor.getId(),
+                null, false));
+        assertThat(vazio.get("itens").size()).isZero();
+        assertThat(vazio.get("total").asLong()).isZero();
+        assertThat(admin.enviar("GET", historico + "?inicio=2026-11-22&fim=2026-11-15", null, false).statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("GET", historico + "?inicio=0000-01-01", null, false).statusCode()).isEqualTo(400);
+        assertThat(admin.enviar("GET", historico + "?produtoId=0", null, false).statusCode()).isEqualTo(400);
+        assertThat(entrar(Perfil.ESTOQUE).enviar("GET", historico, null, false).statusCode()).isEqualTo(403);
+        assertThat(entrar(Perfil.CONSULTA).enviar("GET", historico, null, false).statusCode()).isEqualTo(403);
+    }
+
     @Test void ordenaESubstituiPrecosDaMesmaDataPreservandoAuditoria() throws Exception {
         var origem = processar(fornecedor, "origem.pdf", ler("sinteticos/tabela-v1.pdf"));
         long base = selecionarBaseTabela(origem);
@@ -808,6 +858,17 @@ class ImportacaoIT {
         assertThat(jdbc.queryForMap("""
                 SELECT ordem, motivo_resolucao FROM precos_confirmados WHERE preco_referencia_id = ? AND resolucao = 'SUBSTITUIR'
                 """, original)).containsEntry("ordem", 2).containsEntry("motivo_resolucao", "Fornecedor corrigiu a cotação");
+        var historico = json(admin.enviar("GET", ROTA + "/historico-precos", null, false)).get("itens");
+        assertThat(historico.size()).isEqualTo(4);
+        assertThat(historico.get(0).get("ordem").asInt()).isEqualTo(3);
+        assertThat(historico.get(1).get("substituiu").get("preco").decimalValue())
+                .isEqualByComparingTo(registroOriginal.get("preco").decimalValue());
+        assertThat(historico.get(1).get("substituiu").get("tentativa").asLong())
+                .isEqualTo(historico.get(3).get("origem").get("tentativa").asLong());
+        assertThat(historico.get(3).get("ordem").isNull()).isTrue();
+        assertThat(historico.get(3).get("substituidoPor").get("tentativa").asLong())
+                .isEqualTo(historico.get(1).get("origem").get("tentativa").asLong());
+        assertThat(historico.get(3).get("substituidoPor").get("motivo").asText()).isEqualTo("Fornecedor corrigiu a cotação");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(4);
     }
 

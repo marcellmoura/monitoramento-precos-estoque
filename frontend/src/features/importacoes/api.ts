@@ -131,6 +131,29 @@ export interface DetalheTentativa extends TentativaImportacao {
 }
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
+export interface VinculoSubstituicao {
+  tentativa: number;
+  linha: number;
+  preco: number;
+  motivo: string;
+}
+
+export interface PrecoHistorico {
+  id: number;
+  produto: { codigo: string; nome: string };
+  fornecedor: { codigo: string; nome: string };
+  unidade: Unidade;
+  embalagem: string;
+  modalidade: string;
+  preco: number;
+  dataComercial: string;
+  ordem: number | null;
+  origem: { tentativa: number; linha: number; arquivo: string };
+  substituiu: VinculoSubstituicao | null;
+  substituidoPor: VinculoSubstituicao | null;
+}
+
+export interface PaginaHistorico { itens: PrecoHistorico[]; pagina: number; tamanho: number; total: number; paginas: number }
 export interface FalhaImportacao { erro: string }
 
 export function podeImportar(perfil: Identidade['perfil']) {
@@ -141,7 +164,7 @@ function tratarFalha(error: unknown) {
   if (error instanceof HttpError) {
     if (error.status === 401) return redirect('/login');
     if (error.status === 403) return { erro: 'Acesso disponível para Administrador e Compras.' };
-    if (error.code && ['COLUNA_INDISPONIVEL', 'UNIDADE_INCOMPATIVEL', 'DATA_COMERCIAL_INVALIDA', 'EMBALAGEM_INVALIDA'].includes(error.code)) {
+    if (error.code && ['COLUNA_INDISPONIVEL', 'UNIDADE_INCOMPATIVEL', 'DATA_COMERCIAL_INVALIDA', 'EMBALAGEM_INVALIDA', 'PERIODO_INVALIDO'].includes(error.code)) {
       return { erro: error.detail ?? 'Confira os dados comerciais.' };
     }
     if (error.status === 404 || error.status === 409 || error.status === 413) {
@@ -161,6 +184,27 @@ export async function carregarImportacoes({ request }: LoaderFunctionArgs) {
   const pagina = new URL(request.url).searchParams.get('pagina') ?? '0';
   try {
     return await consultar<PaginaImportacoes>(`/importacoes?${new URLSearchParams({ pagina })}`, request.signal);
+  } catch (error) { return tratarFalha(error); }
+}
+
+export async function carregarHistorico({ request }: LoaderFunctionArgs) {
+  const filtros = new URL(request.url).searchParams;
+  const produto = filtros.get('produto')?.trim();
+  const fornecedor = filtros.get('fornecedor')?.trim();
+  const produtoId = produto?.match(/^PRD-([0-9]{6,19})$/i)?.[1];
+  const fornecedorId = fornecedor?.match(/^FOR-([0-9]{6,19})$/i)?.[1];
+  if (produto && !produtoId) return { erro: 'Informe o código do produto no formato PRD-000001.' };
+  if (fornecedor && !fornecedorId) return { erro: 'Informe o código do fornecedor no formato FOR-000001.' };
+
+  const consulta = new URLSearchParams();
+  if (produtoId) consulta.set('produtoId', produtoId);
+  if (fornecedorId) consulta.set('fornecedorId', fornecedorId);
+  for (const chave of ['tentativa', 'inicio', 'fim', 'pagina']) {
+    const valor = filtros.get(chave)?.trim();
+    if (valor) consulta.set(chave, valor);
+  }
+  try {
+    return await consultar<PaginaHistorico>(`/importacoes/historico-precos?${consulta}`, request.signal);
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -297,4 +341,8 @@ async function resolverConflitoPreco(id: string, form: FormData) {
     });
     return redirect(`/importacoes/${id}#item-${linha}`);
   } catch (error) { return tratarFalha(error); }
+}
+
+export function formatarDataComercial(data: string) {
+  return data.split('-').reverse().join('/');
 }

@@ -191,8 +191,12 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P9 / classificação de preços | A prévia mostra Aumentou, Diminuiu, Sem alteração, Novo ou Pendente com o motivo. A classificação usa a base vigente em cada consulta. | US-17 em revisão. A validação no navegador confirmou as cinco classificações e a mudança após substituição. |
 
-| 2026-11-22 | P9 / classificação de preços integrada | [PR #75](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/75) integrado no commit `602373b`. US-17 encerrada. | Teste manual aprovado. [CI pós-merge 45004688883](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45004688883) em execução. |
+| 2026-11-22 | P9 / classificação de preços integrada | [PR #75](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/75) integrado no commit `602373b`. US-17 encerrada. | Teste manual aprovado. [CI pós-merge 45004688883](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45004688883) aprovada. |
 
 | 2026-11-22 | P9 / valores e variações | A prévia mostra diferença monetária absoluta, percentual com sinal e classificação textual. O cálculo usa a base vigente e arredondamento decimal. | US-18 em revisão. Testes de aumento, redução, igualdade, arredondamento e ausência de base aprovados. Validação no navegador confirmou a atualização da diferença após substituição. |
+
+| 2026-11-22 | P9 / valores e variações integrados | [PR #76](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/76) integrado no commit `6b93dbf`. US-18 encerrada. | Teste manual aprovado. [CI pós-merge 45005641162](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45005641162) aprovada. |
+
+| 2026-11-22 | P9 / consulta do histórico | A tela consulta preços registrados por produto, fornecedor, tentativa e período. Exibe vigência, origem e os vínculos de substituição. | US-19 em revisão. Testes de filtros, paginação, permissões e rastreabilidade aprovados. O navegador validou a consulta e a navegação para as tentativas de origem. |
 
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

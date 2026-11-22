@@ -107,7 +107,9 @@ public class Produto {
         return valor.setScale(2, RoundingMode.UNNECESSARY);
     }
     public Long getId() { return id; }
-    public String getCodigo() { return String.format(Locale.ROOT, "PRD-%06d", id); }
+    public String getCodigo() { return gerarCodigo(id); }
+
+    public static String gerarCodigo(Long id) { return String.format(Locale.ROOT, "PRD-%06d", id); }
     public String getNome() { return nome; }
     public String getCategoria() { return categoria; }
     public Unidade getUnidade() { return unidade; }
