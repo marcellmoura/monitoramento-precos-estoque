@@ -15,6 +15,7 @@ interface Props {
   colunas: string[];
   revisao?: RevisaoItem;
   associado?: boolean;
+  bloqueado?: boolean;
 }
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -25,10 +26,10 @@ export function CorrecaoItem(props: Props) {
   const rotulo = props.item.dados?.descricao ?? `linha ${linha}`;
   return <>
     {revisao && <DadosConferidos revisao={revisao} associado={props.associado} />}
-    {editando
+    {!props.bloqueado && (editando
       ? <FormularioCorrecao {...props} fechar={() => setEditando(false)} />
       : <button className={importacoes.botaoCorrecao} type="button" aria-label={`Corrigir item ${rotulo}`}
-          onClick={() => setEditando(true)}>Corrigir item</button>}
+          onClick={() => setEditando(true)}>Corrigir item</button>)}
   </>;
 }
 

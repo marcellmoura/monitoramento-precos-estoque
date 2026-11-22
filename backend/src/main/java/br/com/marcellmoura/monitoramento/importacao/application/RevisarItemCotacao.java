@@ -8,17 +8,20 @@ import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.RevisaoItem;
 import br.com.marcellmoura.monitoramento.importacao.domain.RevisaoItem.Dados;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ConferenciaRepository;
+import br.com.marcellmoura.monitoramento.importacao.persistence.PrecoConfirmadoRepository;
 import br.com.marcellmoura.monitoramento.importacao.persistence.RevisaoItemRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class RevisarItemCotacao {
     private final RegistroImportacoes importacoes;
+    private final PrecoConfirmadoRepository precos;
     private final ConferenciaRepository conferencias;
     private final RevisaoItemRepository itens;
 
-    public RevisarItemCotacao(RegistroImportacoes importacoes, ConferenciaRepository conferencias, RevisaoItemRepository itens) {
+    public RevisarItemCotacao(RegistroImportacoes importacoes, ConferenciaRepository conferencias, RevisaoItemRepository itens, PrecoConfirmadoRepository precos) {
         this.importacoes = importacoes;
+        this.precos = precos;
         this.conferencias = conferencias;
         this.itens = itens;
     }
@@ -36,6 +39,9 @@ public class RevisarItemCotacao {
         var previa = importacoes.previa(tentativa);
         if (linha < 1 || linha > previa.itens().size()) {
             throw new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da prévia não encontrado.");
+        }
+        if (precos.confirmado(tentativa, linha)) {
+            throw new ImportacaoException(409, "PRECO_JA_CONFIRMADO", "O preço desta linha já foi confirmado no histórico.");
         }
         var base = conferencias.atual(tentativa).orElseThrow(() ->
                 new ImportacaoException(409, "CONFERENCIA_OBRIGATORIA", "Salve a conferência comercial antes de corrigir um item."));

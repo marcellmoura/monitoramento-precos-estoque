@@ -10,6 +10,8 @@ export const estados = {
   PENDENTE: 'Aguardando processamento',
   PROCESSANDO: 'Processando PDF',
   AGUARDANDO_CONFERENCIA: 'Aguardando conferência',
+  CONCLUIDA_COM_PENDENCIAS: 'Concluída com pendências',
+  CONCLUIDA: 'Concluída',
   FALHA_EXTRACAO: 'Falha na extração',
   REJEITADA: 'PDF rejeitado',
   FALHA_ENVIO: 'Falha no envio',
@@ -90,12 +92,23 @@ export interface SituacaoVinculo {
   reaproveitado?: { tentativaOrigem: number; vinculoOrigem: number; produto: ProdutoCatalogo } | null;
 }
 
+export interface LinhaConfirmacao {
+  linha: number;
+  estado: 'PENDENTE' | 'PRONTO' | 'CONFIRMADO';
+  motivos: string[];
+  preco: number | null;
+  confirmado: { id: number; produtoId: number; dataComercial: string; confirmadaEm: string } | null;
+}
+
+export interface ConfirmacaoImportacao { itens: LinhaConfirmacao[] }
+
 export interface DetalheTentativa extends TentativaImportacao {
   previa?: PreviaImportacao;
   conferencia?: ConferenciaCotacao;
   revisoes?: RevisaoItem[];
   vinculos?: SituacaoVinculo[];
   produtoCriado?: ProdutoCatalogo;
+  precos?: ConfirmacaoImportacao;
 }
 
 export interface PaginaImportacoes { itens: TentativaImportacao[]; pagina: number; tamanho: number; total: number; paginas: number }
@@ -136,19 +149,20 @@ export async function carregarTentativa({ params, request }: LoaderFunctionArgs)
   try {
     const rota = `/importacoes/${encodeURIComponent(params.id ?? '')}`;
     const tentativa = await consultar<TentativaImportacao>(rota, request.signal);
-    if (tentativa.status !== 'AGUARDANDO_CONFERENCIA') return tentativa;
+    if (!['AGUARDANDO_CONFERENCIA', 'CONCLUIDA_COM_PENDENCIAS', 'CONCLUIDA'].includes(tentativa.status)) return tentativa;
     const produtoId = new URL(request.url).searchParams.get('produto');
     const produto = produtoId && /^[1-9][0-9]{0,15}$/.test(produtoId)
       ? requestJson<ProdutoCatalogo>(`/produtos/${produtoId}`, { signal: request.signal }).catch(() => undefined)
       : undefined;
-    const [previa, conferencia, revisoes, vinculos, produtoCriado] = await Promise.all([
+    const [previa, conferencia, revisoes, vinculos, produtoCriado, precos] = await Promise.all([
       consultar<PreviaImportacao>(rota + '/previa', request.signal),
       consultar<ConferenciaCotacao>(rota + '/conferencia', request.signal),
       consultar<RevisaoItem[]>(rota + '/itens', request.signal),
       consultar<SituacaoVinculo[]>(rota + '/vinculos', request.signal),
       produto,
+      consultar<ConfirmacaoImportacao>(rota + '/precos', request.signal),
     ]);
-    return { ...tentativa, previa, conferencia, revisoes, vinculos, produtoCriado };
+    return { ...tentativa, previa, conferencia, revisoes, vinculos, produtoCriado, precos };
   } catch (error) { return tratarFalha(error); }
 }
 
@@ -181,6 +195,7 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
   const form = await request.formData();
   const operacao = form.get('operacao');
   try {
+    if (operacao === 'confirmar-itens') return gravarPrecos(id);
     if (operacao === 'associar-item') return salvarVinculo(id, form);
     if (operacao === 'corrigir-item') return salvarCorrecao(id, form);
     if (operacao === 'conferir') {
@@ -236,4 +251,16 @@ async function salvarVinculo(id: string, form: FormData) {
     });
     return { salvo: true };
   } catch (error) { return tratarFalha(error); }
+}
+
+async function gravarPrecos(id: string) {
+  try {
+    await mutateJson<ConfirmacaoImportacao>(`/importacoes/${id}/confirmar-itens`, 'POST');
+    return redirect(`/importacoes/${id}`);
+  } catch (error) {
+    if (error instanceof HttpError && error.status >= 500) {
+      return { erro: 'A confirmação falhou. Consulte a tentativa antes de tentar novamente.' };
+    }
+    return tratarFalha(error);
+  }
 }

@@ -19,6 +19,7 @@ import br.com.marcellmoura.monitoramento.importacao.domain.VinculoItem.Identidad
 import br.com.marcellmoura.monitoramento.importacao.domain.VinculoItem.ProdutoCatalogo;
 import br.com.marcellmoura.monitoramento.importacao.domain.VinculoItem.Situacao;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ConferenciaRepository;
+import br.com.marcellmoura.monitoramento.importacao.persistence.PrecoConfirmadoRepository;
 import br.com.marcellmoura.monitoramento.importacao.persistence.RevisaoItemRepository;
 import br.com.marcellmoura.monitoramento.importacao.persistence.VinculoItemRepository;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
@@ -28,6 +29,7 @@ import br.com.marcellmoura.monitoramento.produto.persistence.ProdutoRepository;
 @Transactional(readOnly = true)
 public class AssociarItemCotacao {
     private final RegistroImportacoes importacoes;
+    private final PrecoConfirmadoRepository precos;
     private final ConferenciaRepository conferencias;
     private final RevisaoItemRepository revisoes;
     private final VinculoItemRepository vinculos;
@@ -36,8 +38,9 @@ public class AssociarItemCotacao {
 
     public AssociarItemCotacao(RegistroImportacoes importacoes, ConferenciaRepository conferencias,
             RevisaoItemRepository revisoes, VinculoItemRepository vinculos, ProdutoRepository produtos,
-            ReaproveitarVinculos reaproveitamento) {
+            ReaproveitarVinculos reaproveitamento, PrecoConfirmadoRepository precos) {
         this.importacoes = importacoes;
+        this.precos = precos;
         this.conferencias = conferencias;
         this.revisoes = revisoes;
         this.vinculos = vinculos;
@@ -82,6 +85,9 @@ public class AssociarItemCotacao {
         conferencias.bloquearTentativa(tentativa);
         var atual = listar(tentativa, false).stream().filter(item -> item.linha() == linha).findFirst().orElseThrow(() ->
                 new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da prévia não encontrado."));
+        if (precos.confirmado(tentativa, linha)) {
+            throw new ImportacaoException(409, "PRECO_JA_CONFIRMADO", "O preço desta linha já foi confirmado no histórico.");
+        }
         var identidade = atual.identidade();
         if (identidade == null) {
             throw new ImportacaoException(409, "APRESENTACAO_PENDENTE", "Confira a unidade e a embalagem antes de associar.");

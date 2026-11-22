@@ -5,7 +5,7 @@ import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
-import type { ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -88,6 +88,8 @@ export function DetalheImportacao() {
     return <section><h2>Tentativa de importação</h2><Falha mensagem={tentativa.erro} />
       <Link to="/importacoes">Voltar às importações</Link></section>;
   }
+  const linhasPrecos = tentativa.precos?.itens ?? [];
+  const bloqueada = linhasPrecos.some(linha => linha.estado === 'CONFIRMADO');
   return <section className={styles.painel}>
     <h2>Tentativa #{tentativa.id}</h2>
     <p role="status">{estados[tentativa.status]}</p>
@@ -111,19 +113,21 @@ export function DetalheImportacao() {
       <input type="hidden" name="operacao" value="reprocessar" />
       <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
     </fetcher.Form>}
-    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia}
+    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia} bloqueada={bloqueada}
       key={`${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
+    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} />}
     {tentativa.previa && <Previa previa={tentativa.previa}
       conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
-      tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
+      precos={linhasPrecos} tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
       key={`${tentativa.id}-${params.get('produto') ?? ''}`} />}
   </section>;
 }
 
-function Previa({ previa, conferencia, revisoes, vinculos, tentativa, linhaRetorno, produtoCriado }: {
+function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, linhaRetorno, produtoCriado }: {
   previa: PreviaImportacao; conferencia?: ConferenciaCotacao; revisoes: RevisaoItem[];
-  vinculos: SituacaoVinculo[]; tentativa: number; linhaRetorno: number; produtoCriado?: ProdutoCatalogo;
+  vinculos: SituacaoVinculo[]; precos: LinhaConfirmacao[]; tentativa: number; linhaRetorno: number; produtoCriado?: ProdutoCatalogo;
 }) {
+  const precosPorLinha = new Map(precos.map(preco => [preco.linha, preco]));
   const vinculosPorLinha = new Map(vinculos.map(vinculo => [vinculo.linha, vinculo]));
   const porLinha = new Map(revisoes.map(revisao => [revisao.linha, revisao]));
   const base = conferencia?.confirmada;
@@ -139,7 +143,9 @@ function Previa({ previa, conferencia, revisoes, vinculos, tentativa, linhaRetor
         const linha = indice + 1;
         const revisao = porLinha.get(linha);
         const situacao = vinculosPorLinha.get(linha);
-        const associado = Boolean(situacao?.reaproveitado || (situacao?.vinculo && !situacao.revalidar));
+        const preco = precosPorLinha.get(linha);
+        const confirmado = preco?.estado === 'CONFIRMADO';
+        const associado = confirmado || Boolean(situacao?.reaproveitado || (situacao?.vinculo && !situacao.revalidar));
         return <li key={linha} id={`item-${linha}`}>
           <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
           {revisao && <h4>Dados extraídos do PDF</h4>}
@@ -159,11 +165,38 @@ function Previa({ previa, conferencia, revisoes, vinculos, tentativa, linhaRetor
             {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p key={aviso}>{aviso}</p>)}
           </>}
           {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
-            revisao={revisao} associado={associado} />}
-          {situacao && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
+            revisao={revisao} associado={associado} bloqueado={confirmado} />}
+          {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
             produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
+          {preco && <EstadoPreco linha={preco} />}
         </li>;
       })}
     </ol>
+  </section>;
+}
+
+const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
+  if (linha.preco !== null) {
+    const rotulo = linha.estado === 'CONFIRMADO' ? 'Preço confirmado no histórico' : 'Preço pronto para confirmar';
+    return <p>{rotulo} · {moeda.format(linha.preco)}</p>;
+  }
+  return <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>;
+}
+
+function ConfirmacaoItens({ linhas }: { linhas: LinhaConfirmacao[] }) {
+  const fetcher = useFetcher<FalhaImportacao>();
+  const prontos = linhas.filter(linha => linha.estado === 'PRONTO').length;
+  const confirmados = linhas.filter(linha => linha.estado === 'CONFIRMADO').length;
+  const pendentes = linhas.length - prontos - confirmados;
+  return <section aria-labelledby="confirmar-precos">
+    <h3 id="confirmar-precos">Confirmação de preços</h3>
+    <p>{prontos} pronto(s) · {confirmados} confirmado(s) · {pendentes} pendente(s)</p>
+    {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
+    {prontos > 0 && <fetcher.Form method="post" className={styles.formulario}>
+      <input type="hidden" name="operacao" value="confirmar-itens" />
+      <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar itens válidos</button>
+    </fetcher.Form>}
   </section>;
 }

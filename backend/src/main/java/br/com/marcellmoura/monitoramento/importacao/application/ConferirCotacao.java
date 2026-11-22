@@ -18,6 +18,7 @@ import br.com.marcellmoura.monitoramento.importacao.domain.PrecoCotado;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ConferenciaRepository;
+import br.com.marcellmoura.monitoramento.importacao.persistence.PrecoConfirmadoRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,12 +26,14 @@ public class ConferirCotacao {
     private static final DateTimeFormatter DATA_PDF = DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ROOT)
             .withResolverStyle(ResolverStyle.STRICT);
     private final RegistroImportacoes importacoes;
+    private final PrecoConfirmadoRepository precos;
     private final ConferenciaRepository conferencias;
     private final ZoneId fuso;
 
     public ConferirCotacao(RegistroImportacoes importacoes, ConferenciaRepository conferencias,
-            @Value("${app.importacao.fuso-comercial}") String fuso) {
+            PrecoConfirmadoRepository precos, @Value("${app.importacao.fuso-comercial}") String fuso) {
         this.importacoes = importacoes;
+        this.precos = precos;
         this.conferencias = conferencias;
         this.fuso = ZoneId.of(fuso);
     }
@@ -52,6 +55,9 @@ public class ConferirCotacao {
         var atual = conferencias.atual(id).orElse(null);
         if (atual != null && atual.base().equals(escolha.base()) && atual.dataComercial().equals(escolha.dataComercial())) {
             return montar(id, previa, atual);
+        }
+        if (precos.temConfirmados(id)) {
+            throw new ImportacaoException(409, "CONFERENCIA_JA_USADA", "A conferência está bloqueada após a confirmação de preços.");
         }
         if (escolha.revisao() != (atual == null ? 0 : atual.id())) {
             throw new ImportacaoException(409, "CONFERENCIA_DESATUALIZADA", "Outra conferência foi salva. Reabra a página para revisar.");

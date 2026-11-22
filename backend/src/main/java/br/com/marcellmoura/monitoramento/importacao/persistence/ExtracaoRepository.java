@@ -80,7 +80,7 @@ public class ExtracaoRepository {
     public Optional<PreviaImportacao> previa(long id) {
         return jdbc.queryForList("""
                 SELECT e.previa::text FROM tentativas_importacao t JOIN execucoes_extracao e ON e.id = t.execucao_atual
-                WHERE t.id = ? AND t.status = 'AGUARDANDO_CONFERENCIA'
+                WHERE t.id = ? AND t.status IN ('AGUARDANDO_CONFERENCIA','CONCLUIDA_COM_PENDENCIAS','CONCLUIDA')
                 """, String.class, id).stream().findFirst().map(json -> JSON.readValue(json, PreviaImportacao.class));
     }
 

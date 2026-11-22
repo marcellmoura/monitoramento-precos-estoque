@@ -45,6 +45,14 @@ Na nova tentativa, salve a conferência comercial e confirme os dados que faltar
 
 A prévia recalcula essa associação a partir das revisões atuais. A V12 indexa os vínculos manuais usados na consulta. A associação reaproveitada aponta para o vínculo manual de origem. A aplicação mantém a linha pendente quando há conflito entre produtos, uma apresentação incerta, referência ausente ou produto inativo. **Alterar associação** continua disponível para confirmar um vínculo manual na nova tentativa.
 
+## Confirmação de preços
+
+Em **Confirmação de preços**, consulte o total de itens prontos, confirmados e pendentes. **Confirmar itens válidos** grava apenas linhas com associação vigente, unidade e embalagem conferidas e preço de compra positivo. Uma associação reaproveitada aponta para a confirmação manual que a originou. A data comercial pode ser anterior à do envio.
+
+Após a confirmação parcial, a tentativa fica **Concluída com pendências**. Corrija ou associe as linhas ainda pendentes e confirme novamente. O botão grava apenas as novas linhas válidas. Quando todas estiverem confirmadas, a tentativa fica **Concluída**. A primeira gravação bloqueia a conferência comercial e cada linha confirmada. O catálogo e o estoque não são alterados.
+
+A V13 guarda os dados do preço e sua origem, o ator e as datas comercial, de envio e de confirmação. Uma transação grava os preços e o status. A mesma apresentação e modalidade na mesma data comercial ficam pendentes quando já há preço confirmado ou quando mais de uma linha pronta disputa a mesma posição. A interface mostra a causa. A escolha explícita de ordem ou substituição terá um recorte próprio.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |
@@ -77,6 +85,8 @@ Mantenha o limite de transporte do arquivo acima do funcional e reserve espaço 
 | GET | `/api/importacoes/catalogo?unidade=KG&nome=&pagina=0` | Lista paginada de candidatos ativos na unidade, com código, nome e unidade |
 | GET | `/api/importacoes/{id}/vinculos` | Identidade comercial, vínculo manual e, quando aplicável, vínculo reaproveitado com a tentativa e o vínculo manual de origem |
 | PUT | `/api/importacoes/{id}/itens/{linha}/vinculo` | Confirma `produto`, `conferencia`, `revisaoItem` e `vinculo`. Use 0 para revisão individual ou vínculo ainda ausente. Retorna `409` se a escolha ficou desatualizada. |
+| GET | `/api/importacoes/{id}/precos` | Validação por linha com estado, preço, motivos e registro confirmado quando disponível |
+| POST | `/api/importacoes/{id}/confirmar-itens` | Revalida e grava os itens elegíveis em uma transação. Repetir a solicitação devolve os mesmos registros quando não houver novos itens prontos. |
 | POST | `/api/importacoes/{id}/reprocessamento` | Reagenda a mesma tentativa com falha de extração e mantém o histórico de execuções |
 
 As alterações exigem sessão, perfil autorizado e CSRF. Sem fornecedor identificado, o envio retorna `400` ou `404`. A validação verifica o formato e a presença de texto com Apache PDFBox, sem guardar o texto. Arquivos corrompidos, protegidos ou sem texto recebem motivo explícito. Os logs registram identificador e status, sem nomes de arquivos ou conteúdo. [Apache PDFBox 3.0.8](https://pdfbox.apache.org/3.0/getting-started.html)
@@ -106,3 +116,5 @@ A correção individual passou em 19 testes unitários e 105 de integração no 
 Na associação manual passaram 19 testes unitários e 107 de integração no backend, 94 testes de frontend, lint, build e smoke Chromium. A validação integrada cobriu perfis, homônimos, referências repetidas, unidades incompatíveis e revalidação após mudança de embalagem. O fluxo real em Chromium, API e PostgreSQL cobriu o cadastro, o retorno à mesma linha e a persistência da associação.
 
 No reaproveitamento de vínculos passaram 19 testes unitários, 110 de integração e 95 de frontend, além de lint, build e Chromium. A validação integrada cobriu item que reaparece, fornecedores distintos, conflito de produtos, cadastro inativo e mudanças de unidade, apresentação ou identificação. O fluxo com navegador, API e PostgreSQL verificou a origem reaproveitada após recarregar e a volta à associação manual após mudar a modalidade.
+
+A confirmação parcial passou em 19 testes unitários, 113 de integração e 96 de frontend, além de lint, build e Chromium. Os testes cobriram rollback após falha na segunda linha, confirmação concorrente sem duplicação, vínculo de origem reaproveitado, datas retroativas e conflito na mesma data. O fluxo real em Chromium, API e PostgreSQL confirmou o açúcar, corrigiu e associou o adoçante pendente e concluiu a tentativa com dois registros no histórico.

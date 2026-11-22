@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from '../../app/routes';
 import type { Identidade } from '../acesso/api';
-import type { ConferenciaCotacao, ProdutoCatalogo, RevisaoItem, SituacaoVinculo, TentativaImportacao } from './api';
+import type { ConferenciaCotacao, ConfirmacaoImportacao, ProdutoCatalogo, RevisaoItem, SituacaoVinculo, TentativaImportacao } from './api';
 
 const base = {
   id: 1, fornecedorCodigo: 'FOR-000001', fornecedorNome: 'Distribuidora Teste', atorId: 1,
@@ -17,6 +17,8 @@ let tentativas: TentativaImportacao[];
 let falha: number | undefined;
 let conferencia: ConferenciaCotacao;
 let revisoes: RevisaoItem[];
+let precos: ConfirmacaoImportacao;
+let falharConfirmacao: boolean;
 let vinculos: SituacaoVinculo[];
 let produtos: ProdutoCatalogo[];
 const homonimos = [1, 2].map(id => ({ id, codigo: `PRD-00000${id}`, nome: 'Açúcar', unidade: 'KG' as const }));
@@ -28,6 +30,8 @@ beforeEach(() => {
   tentativas = [];
   falha = undefined;
   revisoes = [];
+  precos = { itens: [] };
+  falharConfirmacao = false;
   vinculos = [];
   produtos = [...homonimos];
   conferencia = { colunas: ['ATACADO', 'VAREJO'], dataSugerida: '2026-11-21', confirmada: null, sugestao: null, pendenciasComerciais: [] };
@@ -54,6 +58,16 @@ beforeEach(() => {
           pendenciasComerciais: [['Confirme a unidade deste item.'], []] };
       }
       return Response.json(conferencia);
+    }
+    if (url.pathname.endsWith('/precos')) return Response.json(precos);
+    if (url.pathname.endsWith('/confirmar-itens') && options?.method === 'POST') {
+      if (falharConfirmacao) return Response.json({}, { status: 500 });
+      precos = { itens: precos.itens.map(item => item.estado === 'PRONTO'
+        ? { ...item, estado: 'CONFIRMADO', confirmado: {
+          id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm,
+        } } : item) };
+      tentativas[0].status = 'CONCLUIDA_COM_PENDENCIAS';
+      return Response.json(precos);
     }
     if (url.pathname.endsWith('/vinculos')) return Response.json(vinculos);
     if (url.pathname.endsWith('/catalogo')) return Response.json({ itens: produtos, pagina, paginas: 1 });
@@ -275,6 +289,34 @@ describe('Importações', () => {
     expect(await screen.findByText(/Selecionado · PRD-000003/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Confirmar associação' })).toBeEnabled();
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
+  });
+
+  it('confirma os preços prontos, bloqueia a base e mantém o motivo da linha pendente', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.confirmada = { id: 5, base: { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco' },
+      dataComercial: '2026-11-21' };
+    precos.itens = [
+      { linha: 1, estado: 'PRONTO', preco: 32, motivos: [], confirmado: null },
+      { linha: 2, estado: 'PENDENTE', preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
+    ];
+    abrir('/importacoes/1');
+    const confirmar = await screen.findByRole('button', { name: 'Confirmar itens válidos' });
+    expect(screen.getByText(/Preço pronto para confirmar/)).toBeVisible();
+    expect(screen.getByText(/Pendência para confirmar · Informe um preço positivo/)).toBeVisible();
+
+    falharConfirmacao = true;
+    fireEvent.click(confirmar);
+    expect(await screen.findByText('A confirmação falhou. Consulte a tentativa antes de tentar novamente.')).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('Aguardando conferência');
+
+    falharConfirmacao = false;
+    fireEvent.click(confirmar);
+    expect(await screen.findByText(/Preço confirmado no histórico/)).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('Concluída com pendências');
+    expect(screen.getByText('Conferência bloqueada após a confirmação de preços.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Corrigir item linha 2' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Confirmar itens válidos' })).not.toBeInTheDocument();
   });
 
   it('reprocessa a mesma tentativa em caso de falha', async () => {
