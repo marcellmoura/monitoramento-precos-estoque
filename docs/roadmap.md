@@ -187,4 +187,8 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P9 / último preço válido | A V15 indexa a busca do preço vigente imediatamente anterior pela identidade e cronologia comerciais. A prévia de cada preço vigente mostra valor, data e tentativa de origem. | US-16 em revisão. Testes de identidade, cronologia, retroativo e substituição aprovados. A validação no navegador conferiu a atualização do preço anterior e o link de origem. |
 
+| 2026-11-22 | P9 / último preço válido integrado | [PR #74](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/74) integrado no commit `0d046c1`. US-16 encerrada. | O teste manual aprovou o preço anterior e o link da tentativa de origem. [CI pós-merge 45003598166](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45003598166) aprovada. |
+
+| 2026-11-22 | P9 / classificação de preços | A prévia mostra Aumentou, Diminuiu, Sem alteração, Novo ou Pendente com o motivo. A classificação usa a base vigente em cada consulta. | US-17 em revisão. A validação no navegador confirmou as cinco classificações e a mudança após substituição. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

@@ -63,14 +63,14 @@ beforeEach(() => {
     if (url.pathname.endsWith('/resolver-conflito-preco') && options?.method === 'POST') {
       if (falharConfirmacao) return Response.json({ mensagem: 'O conflito mudou. Confira novamente os preços.' }, { status: 409 });
       const item = precos.itens[0];
-      precos = { itens: [{ ...item, estado: 'CONFIRMADO', conflito: null, preco: item.conflito!.preco,
+      precos = { itens: [{ ...item, estado: 'CONFIRMADO', classificacao: 'NOVO', motivos: [], conflito: null, preco: item.conflito!.preco,
         confirmado: { id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm } }] };
       return new Response(null, { status: 204 });
     }
     if (url.pathname.endsWith('/confirmar-itens') && options?.method === 'POST') {
       if (falharConfirmacao) return Response.json({}, { status: 500 });
       precos = { itens: precos.itens.map(item => item.estado === 'PRONTO'
-        ? { ...item, estado: 'CONFIRMADO', confirmado: {
+        ? { ...item, estado: 'CONFIRMADO', classificacao: 'NOVO', motivos: [], confirmado: {
           id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm,
         } } : item) };
       tentativas[0].status = 'CONCLUIDA_COM_PENDENCIAS';
@@ -303,12 +303,16 @@ describe('Importações', () => {
     conferencia.confirmada = { id: 5, base: { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco' },
       dataComercial: '2026-11-21' };
     precos.itens = [
-      { linha: 1, estado: 'PRONTO', preco: 32, motivos: [], confirmado: null },
-      { linha: 2, estado: 'PENDENTE', preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
+      { linha: 1, estado: 'PRONTO', classificacao: 'PENDENTE', preco: 32,
+        motivos: ['Aguardando confirmação do preço.'], confirmado: null },
+      { linha: 2, estado: 'PENDENTE', classificacao: 'PENDENTE', preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
     ];
     abrir('/importacoes/1');
     const confirmar = await screen.findByRole('button', { name: 'Confirmar itens válidos' });
     expect(screen.getByText(/Preço pronto para confirmar/)).toBeVisible();
+    expect(screen.getByText('Aguardando confirmação do preço.')).toBeVisible();
+    expect(screen.getAllByText('Classificação').map(rotulo => rotulo.parentElement?.textContent))
+      .toEqual(['Classificação · Pendente', 'Classificação · Pendente']);
     expect(screen.getByText(/Pendência para confirmar · Informe um preço positivo/)).toBeVisible();
 
     falharConfirmacao = true;
@@ -320,6 +324,7 @@ describe('Importações', () => {
     fireEvent.click(confirmar);
     expect(await screen.findByText(/Preço confirmado no histórico/)).toBeVisible();
     expect(screen.getByText('Sem preço válido anterior.')).toBeVisible();
+    expect(screen.getByText('· Novo')).toBeVisible();
     expect(screen.getByRole('status')).toHaveTextContent('Concluída com pendências');
     expect(screen.getByText('Conferência bloqueada após a confirmação de preços.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
@@ -327,20 +332,25 @@ describe('Importações', () => {
     expect(screen.queryByRole('button', { name: 'Confirmar itens válidos' })).not.toBeInTheDocument();
   });
 
-  it('mostra o preço válido anterior com data e origem apenas para o preço vigente', async () => {
+  it.each([
+    [37, 'AUMENTOU', 'Aumentou'],
+    [34, 'DIMINUIU', 'Diminuiu'],
+    [36, 'SEM_ALTERACAO', 'Sem alteração'],
+  ] as const)('mostra a classificação de preço vigente %s com a origem', async (preco, classificacao, rotulo) => {
     tentativas = [{ ...base, status: 'CONCLUIDA', quantidadeItens: 2 }];
     const confirmado = { id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm };
     precos.itens = [
-      { linha: 1, estado: 'CONFIRMADO', preco: 34, motivos: [], confirmado: {
+      { linha: 1, estado: 'CONFIRMADO', classificacao, preco, motivos: [], confirmado: {
         ...confirmado, anterior: { id: 5, tentativa: 3, preco: 36, dataComercial: '2026-11-20' },
       } },
-      { linha: 2, estado: 'CONFIRMADO', preco: 32, motivos: [], confirmado: { ...confirmado, id: 8, substituido: true } },
+      { linha: 2, estado: 'CONFIRMADO', classificacao: null, preco: 32, motivos: [], confirmado: { ...confirmado, id: 8, substituido: true } },
     ];
     abrir('/importacoes/1');
 
     expect(await screen.findByText(/Último preço válido anterior · R\$\s*36,00 · 20\/11\/2026/)).toBeVisible();
     expect(screen.getByRole('link', { name: 'Tentativa #3' })).toHaveAttribute('href', '/importacoes/3');
     expect(screen.getByText(/Preço substituído no histórico/)).toBeVisible();
+    expect(screen.getByText('Classificação').parentElement).toHaveTextContent(`Classificação · ${rotulo}`);
     expect(screen.getAllByText(/Último preço válido anterior/)).toHaveLength(1);
   });
 
@@ -350,7 +360,7 @@ describe('Importações', () => {
     ['SUBSTITUIR', 'SUBSTITUIR', 'Cotação corrigida pelo fornecedor'],
   ])('envia a escolha explícita de conflito (%s %s)', async (decisao, operacao, motivo) => {
     tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
-    precos.itens = [{ linha: 1, estado: 'PENDENTE', preco: null, motivos: ['Já há outro preço.'], confirmado: null,
+    precos.itens = [{ linha: 1, estado: 'PENDENTE', classificacao: 'PENDENTE', preco: null, motivos: ['Já há outro preço.'], confirmado: null,
       conflito: { preco: 35, dataComercial: '2026-11-21', revisao: 'revisao-teste',
         anteriores: [{ id: 42, tentativa: 7, preco: 32, ordem: 1 }] } }];
     abrir('/importacoes/1');

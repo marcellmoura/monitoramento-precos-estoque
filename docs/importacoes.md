@@ -70,6 +70,12 @@ Nas linhas com preço vigente, a prévia mostra **Último preço válido anterio
 
 A consulta usa a mesma identidade comercial, fornecedor, unidade, embalagem e modalidade. A data comercial e a posição no dia determinam a precedência. A busca percorre os preços confirmados vigentes mesmo quando o item está ausente no PDF imediatamente anterior. Uma confirmação retroativa ou substituição passa a refletir nas consultas posteriores. A V15 adiciona o índice para essa busca.
 
+### Classificação dos preços
+
+Em **Prévia dos itens**, **Classificação** indica **Aumentou**, **Diminuiu** ou **Sem alteração** conforme o preço vigente e o último preço válido anterior. A primeira ocorrência válida mostra **Novo**. A comparação usa valores decimais.
+
+Linhas à espera de correção, associação, resolução de conflito ou confirmação mostram **Pendente** e o motivo. Após um retroativo ou uma substituição, a classificação acompanha a base vigente na próxima consulta. A tentativa de origem mantém o rótulo **Preço substituído no histórico** para auditoria.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |

@@ -2,6 +2,7 @@ package br.com.marcellmoura.monitoramento;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -596,9 +597,16 @@ class ImportacaoIT {
                 correcao(0, base, "KG", "Preço KG", "A granel", "32"), true)).get("id").asLong();
         long vinculo = gravarVinculo(rota, produto, base, revisao);
 
+        var pronto = consultarPrimeiraLinha(rota);
+        assertThat(pronto.get("estado").asText()).isEqualTo("PRONTO");
+        assertThat(pronto.get("classificacao").asText()).isEqualTo("PENDENTE");
+        assertThat(pronto.get("motivos").get(0).asText()).isEqualTo("Aguardando confirmação do preço.");
+
         assertThat(admin.enviar("POST", confirmar, null, false).statusCode()).isEqualTo(403);
         assertThat(entrar(Perfil.ESTOQUE).enviar("POST", confirmar, null, true).statusCode()).isEqualTo(403);
         var resultado = json(entrar(Perfil.COMPRAS).enviar("POST", confirmar, null, true)).get("itens");
+        assertThat(resultado.get(0).get("classificacao").asText()).isEqualTo("NOVO");
+        assertThat(resultado.get(1).get("classificacao").asText()).isEqualTo("PENDENTE");
         var confirmado = resultado.get(0).get("confirmado");
         long precoId = confirmado.get("id").asLong();
         assertThat(confirmado.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
@@ -682,8 +690,12 @@ class ImportacaoIT {
         return json(resposta).get("itens").get(0).get("confirmado");
     }
 
+    private JsonNode consultarPrimeiraLinha(String rota) throws Exception {
+        return json(admin.enviar("GET", rota + "/precos", null, false)).get("itens").get(0);
+    }
+
     private JsonNode consultarPrimeiroPreco(String rota) throws Exception {
-        return json(admin.enviar("GET", rota + "/precos", null, false)).get("itens").get(0).get("confirmado");
+        return consultarPrimeiraLinha(rota).get("confirmado");
     }
 
     @Test void preservaAOrigemReaproveitadaEDeixaConflitoNaMesmaDataPendente() throws Exception {
@@ -751,7 +763,17 @@ class ImportacaoIT {
         assertThat(statusDaTentativa(antes)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
         assertThat(conflitoPreco(alterar).get("anteriores").get(1).get("id").asLong()).isEqualTo(original);
         assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(original);
+        assertThat(consultarPrimeiraLinha(depois).get("classificacao").asText()).isEqualTo("SEM_ALTERACAO");
         assertThat(consultarPrimeiroPreco(antes).get("anterior").isNull()).isTrue();
+
+        long baseSubstituicao = json(admin.enviar("GET", alterar + "/conferencia", null, false))
+                .get("confirmada").get("id").asLong();
+        String maior = registroOriginal.get("preco").decimalValue().add(BigDecimal.ONE).toPlainString();
+        var correcao = correcao(0, baseSubstituicao, "KG", "Preço", "Saco de 1 kg", maior);
+        correcao.put("referencia", "H01");
+        correcao.put("descricao", "Hibisco");
+        assertThat(admin.enviar("PUT", alterar + "/itens/1", correcao, true).statusCode()).isEqualTo(200);
+        assertThat(consultarPrimeiraLinha(alterar).get("classificacao").asText()).isEqualTo("PENDENTE");
 
         var revisao = conflitoPreco(alterar).get("revisao").asText();
         var semMotivo = Map.of("operacao", "SUBSTITUIR", "precoReferencia", original, "revisao", revisao);
@@ -767,6 +789,9 @@ class ImportacaoIT {
         assertThat(anterior.get("anterior").isNull()).isTrue();
         long substituto = consultarPrimeiroPreco(alterar).get("id").asLong();
         assertThat(consultarPrimeiroPreco(depois).get("anterior").get("id").asLong()).isEqualTo(substituto);
+        assertThat(consultarPrimeiraLinha(depois).get("classificacao").asText()).isEqualTo("DIMINUIU");
+        assertThat(consultarPrimeiraLinha(alterar).get("classificacao").asText()).isEqualTo("AUMENTOU");
+        assertThat(consultarPrimeiraLinha(origem).get("classificacao").isNull()).isTrue();
         assertThat(anterior.get("preco").asText()).isEqualTo(registroOriginal.get("preco").asText());
         assertThat(jdbc.queryForList("""
                 SELECT ordem FROM precos_confirmados WHERE ordem IS NOT NULL ORDER BY ordem

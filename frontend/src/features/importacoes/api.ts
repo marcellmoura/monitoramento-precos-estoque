@@ -99,9 +99,12 @@ export interface ConflitoPreco {
   revisao: string;
 }
 
+export type ClassificacaoPreco = 'AUMENTOU' | 'DIMINUIU' | 'SEM_ALTERACAO' | 'NOVO' | 'PENDENTE';
+
 export interface LinhaConfirmacao {
   linha: number;
   estado: 'PENDENTE' | 'PRONTO' | 'CONFIRMADO';
+  classificacao: ClassificacaoPreco | null;
   motivos: string[];
   preco: number | null;
   confirmado: {
