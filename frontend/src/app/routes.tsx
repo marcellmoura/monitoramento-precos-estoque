@@ -13,8 +13,9 @@ import { carregarProdutos, carregarProduto, cadastrarProduto, editarProduto } fr
 import { Fornecedores, NovoFornecedor, DetalheFornecedor } from '../features/fornecedores/Fornecedores';
 import { carregarFornecedores, carregarFornecedor, cadastrarFornecedor } from '../features/fornecedores/api';
 
+import { HistoricoPrecos } from '../features/importacoes/HistoricoPrecos';
 import { DetalheImportacao, Importacoes, NovoEnvio } from '../features/importacoes/Importacoes';
-import { carregarFornecedoresDoEnvio, carregarImportacoes, carregarCatalogo, carregarTentativa, atualizarTentativa, enviarPdf } from '../features/importacoes/api';
+import { carregarFornecedoresDoEnvio, carregarHistorico, carregarImportacoes, carregarCatalogo, carregarTentativa, atualizarTentativa, enviarPdf } from '../features/importacoes/api';
 
 export const routes: RouteObject[] = [{
   path: '/', element: <App />, loader: carregarIdentidade, errorElement: <FalhaDeConexao />,
@@ -27,6 +28,7 @@ export const routes: RouteObject[] = [{
     { path: 'fornecedores', element: <Fornecedores />, loader: carregarFornecedores },
     { path: 'fornecedores/novo', element: <NovoFornecedor />, action: cadastrarFornecedor },
     { path: 'fornecedores/:id', element: <DetalheFornecedor />, loader: carregarFornecedor },
+    { path: 'historico-precos', element: <HistoricoPrecos />, loader: carregarHistorico },
     { path: 'importacoes', element: <Importacoes />, loader: carregarImportacoes },
     { path: 'importacoes/nova', element: <NovoEnvio />, loader: carregarFornecedoresDoEnvio, action: enviarPdf },
     { path: 'importacoes/catalogo', loader: carregarCatalogo },

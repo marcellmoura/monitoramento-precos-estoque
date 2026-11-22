@@ -4,7 +4,7 @@ import type { Fornecedor } from '../fornecedores/api';
 import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
-import { estados } from './api';
+import { estados, formatarDataComercial } from './api';
 import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
@@ -103,6 +103,7 @@ export function DetalheImportacao() {
     </dl>
     <nav className={styles.paginacao} aria-label="Ações da tentativa">
       {tentativa.importacaoExistenteId != null && <Link to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
+      <Link to={`/historico-precos?tentativa=${tentativa.id}`}>Ver histórico desta tentativa</Link>
       <Link to="/importacoes">Voltar às importações</Link>
     </nav>
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
@@ -215,10 +216,6 @@ function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
       <dt>Variação percentual</dt><dd>{percentual.format(variacao.percentual)}%</dd>
     </dl>}
   </>;
-}
-
-function formatarDataComercial(data: string) {
-  return data.split('-').reverse().join('/');
 }
 
 function ResolverConflito({ linha, conflito }: { linha: number; conflito: ConflitoPreco }) {

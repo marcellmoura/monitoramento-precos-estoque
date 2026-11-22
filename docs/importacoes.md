@@ -82,6 +82,14 @@ Quando há preço anterior válido, a prévia mostra **Diferença em reais** e *
 
 O backend calcula (atual − anterior) × 100 ÷ anterior somente para uma base positiva, arredonda para duas casas com `HALF_UP` e transmite o percentual em texto decimal para preservar a precisão na exibição. Itens novos mostram **Sem preço válido anterior**. A consulta dos preços exige perfil Administrador ou Compras.
 
+## Histórico de preços
+
+Na tela inicial, abra **Histórico de preços**. Use **Código do produto**, **Código do fornecedor**, **Número da tentativa**, **Data comercial inicial** ou **Data comercial final**. Os filtros podem ser combinados e as datas-limite são inclusivas. A consulta é paginada e ordenada pela data comercial mais recente. Dentro da mesma apresentação e modalidade no dia, a posição comercial mais recente aparece primeiro.
+
+A tabela exibe produto, fornecedor, unidade, embalagem, modalidade, preço e tentativa de origem. Um preço **Substituído** permanece visível, com link para o substituto e motivo. O substituto também indica o preço original. Abra **Tentativa #…** para ver a linha do PDF e **Consultar importações e pendências** para consultar tentativas e itens que ainda aguardam confirmação. O histórico exige perfil Administrador ou Compras.
+
+`GET /api/importacoes/historico-precos` aceita `produtoId`, `fornecedorId`, `tentativa`, `inicio`, `fim`, `pagina` e `tamanho`. As datas usam ISO, a página inicial é 0 e o tamanho padrão é 20, com máximo de 100.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |

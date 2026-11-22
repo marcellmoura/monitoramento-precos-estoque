@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,10 +34,12 @@ import br.com.marcellmoura.monitoramento.acesso.security.UsuarioAutenticado;
 import br.com.marcellmoura.monitoramento.importacao.application.ImportacaoException;
 import br.com.marcellmoura.monitoramento.importacao.application.ConferirCotacao;
 import br.com.marcellmoura.monitoramento.importacao.application.ConfirmarPrecos;
+import br.com.marcellmoura.monitoramento.importacao.application.ConsultarHistoricoPrecos;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Operacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Resolucao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConferenciaCotacao;
+import br.com.marcellmoura.monitoramento.importacao.domain.HistoricoPrecos;
 import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 import br.com.marcellmoura.monitoramento.importacao.application.RecepcaoPdf;
 import br.com.marcellmoura.monitoramento.importacao.application.RegistroImportacoes;
@@ -54,14 +57,16 @@ public class ImportacaoController {
     private final ConferirCotacao conferencia;
     private final RevisarItemCotacao revisaoItem;
     private final ConfirmarPrecos precos;
+    private final ConsultarHistoricoPrecos historico;
 
     public ImportacaoController(RecepcaoPdf recepcao, RegistroImportacoes registro, ConferirCotacao conferencia,
-            RevisarItemCotacao revisaoItem, ConfirmarPrecos precos) {
+            RevisarItemCotacao revisaoItem, ConfirmarPrecos precos, ConsultarHistoricoPrecos historico) {
         this.recepcao = recepcao;
         this.registro = registro;
         this.conferencia = conferencia;
         this.revisaoItem = revisaoItem;
         this.precos = precos;
+        this.historico = historico;
     }
 
     public record Pagina(List<TentativaImportacao> itens, int pagina, int tamanho, long total, int paginas) {}
@@ -71,6 +76,15 @@ public class ImportacaoController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int tamanho) {
         var dados = registro.listar(pagina, tamanho);
         return new Pagina(dados.getContent(), dados.getNumber(), dados.getSize(), dados.getTotalElements(), dados.getTotalPages());
+    }
+
+    @GetMapping("/historico-precos")
+    public HistoricoPrecos listarHistorico(@RequestParam(required = false) @Positive Long produtoId,
+            @RequestParam(required = false) @Positive Long fornecedorId, @RequestParam(required = false) @Positive Long tentativa,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
+            @RequestParam(defaultValue = "0") @Min(0) int pagina, @RequestParam(defaultValue = "20") @Min(1) @Max(100) int tamanho) {
+        return historico.consultar(new HistoricoPrecos.Filtros(produtoId, fornecedorId, tentativa, inicio, fim), pagina, tamanho);
     }
 
     @GetMapping("/{id}")
