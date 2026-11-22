@@ -199,4 +199,8 @@ Testes, logs, documentação e qualidade acompanham os incrementos; as etapas fi
 
 | 2026-11-22 | P9 / consulta do histórico | A tela consulta preços registrados por produto, fornecedor, tentativa e período. Exibe vigência, origem e os vínculos de substituição. | US-19 em revisão. Testes de filtros, paginação, permissões e rastreabilidade aprovados. O navegador validou a consulta e a navegação para as tentativas de origem. |
 
+| 2026-11-22 | P9 / consulta do histórico integrada | [PR #77](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/77) integrado no commit `8512c26`. US-19 encerrada. | Teste manual aprovado para filtros e rastreabilidade. [CI pós-merge 45007340825](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45007340825) aprovada. |
+
+| 2026-11-22 | P9 / item ausente em cotação posterior | A sequência de três PDFs verifica a permanência do produto e do último preço válido durante a ausência e a base correta após o retorno. | US-20 em revisão. O teste de integração e o fluxo no navegador validam a ausência, a permanência de R$ 22,00 e o retorno a R$ 24,00 com +9,09%. |
+
 Atualizar estados e acrescentar histórico após cada incremento, com evidências e pendências reais. Não registrar apresentação ou submissão antes de sua realização.

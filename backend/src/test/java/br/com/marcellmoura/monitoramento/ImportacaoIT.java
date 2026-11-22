@@ -723,6 +723,50 @@ class ImportacaoIT {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
     }
 
+    @Test void preservaPrecoEProdutoQuandoItemSomeEReapareceEmCotacaoPosterior() throws Exception {
+        long ervaDoce = cadastrarProduto("Erva-doce", "KG");
+        long hibisco = cadastrarProduto("Hibisco", "KG");
+        var produto = "/api/produtos/" + ervaDoce;
+        var historico = ROTA + "/historico-precos?produtoId=" + ervaDoce + "&fornecedorId=" + fornecedor.getId();
+
+        var primeira = processar(fornecedor, "presente.pdf", ler("sinteticos/tabela-v1.pdf"));
+        long basePrimeira = selecionarBaseTabela(primeira, "2026-11-01");
+        long vinculo = gravarVinculo(primeira, 4, ervaDoce, basePrimeira, 0);
+        var primeiro = json(admin.enviar("POST", primeira + "/confirmar-itens", null, true))
+                .get("itens").get(3).get("confirmado");
+        assertThat(primeiro.get("preco").decimalValue()).isEqualByComparingTo("22.00");
+        var estadoOriginal = json(admin.enviar("GET", produto, null, false));
+        assertThat(estadoOriginal.get("ativo").asBoolean()).isTrue();
+
+        var segunda = processar(fornecedor, "ausente.pdf", ler("sinteticos/tabela-v2.pdf"));
+        var previa = json(admin.enviar("GET", segunda + "/previa", null, false)).get("itens");
+        assertThat(previa.size()).isEqualTo(6);
+        assertThat(previa.toString()).doesNotContain("E01", "Erva-doce");
+        long baseSegunda = selecionarBaseTabela(segunda, "2026-11-08");
+        gravarVinculo(segunda, hibisco, baseSegunda, 0);
+        assertThat(confirmarPrimeiraLinha(segunda).get("preco").decimalValue()).isEqualByComparingTo("35.00");
+
+        var duranteAusencia = json(admin.enviar("GET", historico, null, false)).get("itens");
+        assertThat(duranteAusencia.size()).isEqualTo(1);
+        assertThat(duranteAusencia.get(0).get("id").asLong()).isEqualTo(primeiro.get("id").asLong());
+        assertThat(duranteAusencia.get(0).get("preco").decimalValue()).isEqualByComparingTo("22.00");
+        assertThat(duranteAusencia.get(0).get("ordem").asInt()).isEqualTo(1);
+        assertThat(json(admin.enviar("GET", produto, null, false))).isEqualTo(estadoOriginal);
+
+        var terceira = processar(fornecedor, "retorno.pdf", ler("sinteticos/tabela-v3-us20.pdf"));
+        selecionarBaseTabela(terceira, "2026-11-15");
+        var atual = confirmarPrimeiraLinha(terceira);
+        assertThat(atual.get("vinculoOrigem").asLong()).isEqualTo(vinculo);
+        assertThat(atual.get("preco").decimalValue()).isEqualByComparingTo("24.00");
+        assertThat(atual.get("anterior").get("id").asLong()).isEqualTo(primeiro.get("id").asLong());
+        assertThat(atual.get("anterior").get("dataComercial").asText()).isEqualTo("2026-11-01");
+
+        var depoisDoRetorno = json(admin.enviar("GET", historico, null, false)).get("itens");
+        assertThat(depoisDoRetorno.size()).isEqualTo(2);
+        assertThat(depoisDoRetorno.get(0).get("id").asLong()).isEqualTo(atual.get("id").asLong());
+        assertThat(depoisDoRetorno.get(1)).isEqualTo(duranteAusencia.get(0));
+    }
+
     @Test void consultaHistoricoComFiltrosPaginacaoEPermissoes() throws Exception {
         String historico = ROTA + "/historico-precos";
         long produto = cadastrarProduto("Hibisco", "KG");
@@ -954,7 +998,11 @@ class ImportacaoIT {
     }
 
     private long gravarVinculo(String rota, long produto, long conferencia, long revisao) throws Exception {
-        var resposta = admin.enviar("PUT", rota + "/itens/1/vinculo",
+        return gravarVinculo(rota, 1, produto, conferencia, revisao);
+    }
+
+    private long gravarVinculo(String rota, int linha, long produto, long conferencia, long revisao) throws Exception {
+        var resposta = admin.enviar("PUT", rota + "/itens/" + linha + "/vinculo",
                 Map.of("produto", produto, "conferencia", conferencia, "revisaoItem", revisao, "vinculo", 0), true);
         assertThat(resposta.statusCode()).isEqualTo(200);
         return json(resposta).get("id").asLong();
