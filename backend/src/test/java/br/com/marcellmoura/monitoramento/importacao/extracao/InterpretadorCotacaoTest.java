@@ -11,7 +11,7 @@ class InterpretadorCotacaoTest {
         assertThat(previa.itens()).hasSize(3);
         assertThat(previa.itens().get(1).dados()).isNull();
         assertThat(previa.itens().get(1).textoOriginal()).isEqualTo("Linha quebrada");
-        assertThat(previa.itens().get(2).pendencias()).contains("Preço ausente ou inválido em ATACADO.");
+        assertThat(previa.itens().get(2).pendencias()).contains("Preço inválido em ATACADO. Informe um valor positivo.");
     }
 
     @Test void cabecalhoSemLinhaLegivelEUmaFalha() {

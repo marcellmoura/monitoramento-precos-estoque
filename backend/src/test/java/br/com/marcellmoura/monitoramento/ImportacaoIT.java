@@ -2,6 +2,7 @@ package br.com.marcellmoura.monitoramento;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -638,6 +639,96 @@ class ImportacaoIT {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM precos_confirmados", Integer.class)).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT preco_venda FROM produtos WHERE id = ?", java.math.BigDecimal.class, produto))
                 .isEqualByComparingTo("42.00");
+    }
+
+    @Test void confirmaApenasPrecosValidosEAssociadosDeUmaCotacaoComDadosIncompletos() throws Exception {
+        String coluna = "Valor de compra";
+        String embalagem = "Saco de 1 kg";
+        var rota = processar(fornecedor, "precos-invalidos.pdf", pdfComPrecosInvalidos());
+        var previa = json(admin.enviar("GET", rota + "/previa", null, false)).get("itens");
+        assertThat(previa.size()).isEqualTo(6);
+        assertThat(previa.get(1).get("precos").get(coluna).asText()).isEqualTo("0,00");
+        assertThat(previa.get(2).get("precos").get(coluna).asText()).isEqualTo("-12,00");
+        assertThat(previa.get(3).get("precos").get(coluna).asText()).isEmpty();
+        assertThat(previa.get(1).get("pendencias").get(0).asText()).contains("Preço inválido");
+        assertThat(previa.get(2).get("pendencias").get(0).asText()).contains("Preço inválido");
+        assertThat(previa.get(3).get("pendencias").get(0).asText()).contains("Preço ausente");
+
+        long base = json(admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, coluna, "KG", embalagem, "2026-11-21"), true)).get("confirmada").get("id").asLong();
+        gravarVinculo(rota, 1, cadastrarProduto("Hibisco", "KG"), base, 0);
+        gravarVinculo(rota, 2, cadastrarProduto("Boldo", "KG"), base, 0);
+        gravarVinculo(rota, 3, cadastrarProduto("Melissa", "KG"), base, 0);
+        long alecrim = cadastrarProduto("Alecrim", "KG");
+        long vinculoAlecrim = gravarVinculo(rota, 4, alecrim, base, 0);
+
+        long camomila = cadastrarProduto("Camomila seca", "KG");
+        var busca = json(admin.enviar("GET", ROTA + "/catalogo?nome=Camomila&unidade=KG", null, false)).get("itens");
+        assertThat(busca.size()).isEqualTo(1);
+        assertThat(busca.get(0).get("id").asLong()).isEqualTo(camomila);
+        assertThat(vinculos(rota).get(4).get("identidade").isNull()).isTrue();
+        assertThat(vinculos(rota).get(5).get("vinculo").isNull()).isTrue();
+
+        var confirmar = rota + "/confirmar-itens";
+        var parcial = json(admin.enviar("POST", confirmar, null, true)).get("itens");
+        assertThat(parcial.get(0).get("estado").asText()).isEqualTo("CONFIRMADO");
+        long primeiroId = parcial.get(0).get("confirmado").get("id").asLong();
+        for (int i = 1; i <= 3; i++) {
+            assertThat(parcial.get(i).get("estado").asText()).isEqualTo("PENDENTE");
+            assertThat(parcial.get(i).get("motivos").get(0).asText()).contains("preço de compra positivo");
+        }
+        assertThat(parcial.get(4).get("motivos").get(0).asText()).contains("unidade e a embalagem");
+        assertThat(parcial.get(5).get("motivos").get(0).asText()).contains("associação");
+        assertThat(statusDaTentativa(rota)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+        var historico = ROTA + "/historico-precos?tentativa=" + rota.substring(rota.lastIndexOf('/') + 1);
+        assertThat(json(admin.enviar("GET", historico, null, false)).get("itens").size()).isEqualTo(1);
+
+        var correcao = correcao(0, base, "KG", coluna, embalagem, "15");
+        correcao.put("descricao", "Alecrim");
+        correcao.put("referencia", "A01");
+        long revisao = json(admin.enviar("PUT", rota + "/itens/4", correcao, true)).get("id").asLong();
+        assertThat(admin.enviar("PUT", rota + "/itens/4/vinculo",
+                Map.of("produto", alecrim, "conferencia", base, "revisaoItem", revisao, "vinculo", vinculoAlecrim), true)
+                .statusCode()).isEqualTo(200);
+        gravarVinculo(rota, 6, camomila, base, 0);
+        var resultado = json(admin.enviar("POST", confirmar, null, true)).get("itens");
+        assertThat(resultado.get(0).get("confirmado").get("id").asLong()).isEqualTo(primeiroId);
+        assertThat(resultado.get(3).get("confirmado").get("preco").decimalValue()).isEqualByComparingTo("15");
+        assertThat(resultado.get(5).get("confirmado").get("preco").decimalValue()).isEqualByComparingTo("14");
+        assertThat(json(admin.enviar("GET", historico, null, false)).get("itens").size()).isEqualTo(3);
+        assertThat(json(admin.enviar("GET", rota + "/previa", null, false)).get("itens")).isEqualTo(previa);
+    }
+
+    private byte[] pdfComPrecosInvalidos() throws IOException {
+        String[][] fichas = {
+            {"Hibisco", "H01", "35,00", "Saco de 1 kg"},
+            {"Boldo", "B01", "0,00", "Saco de 1 kg"},
+            {"Melissa", "M01", "-12,00", "Saco de 1 kg"},
+            {"Alecrim", "A01", "", "Saco de 1 kg"},
+            {"Mistura", "X01", "18,00", ""},
+            {"Camomila", "C01", "14,00", "Saco de 1 kg"}
+        };
+        try (var documento = new PDDocument(); var saida = new ByteArrayOutputStream()) {
+            var pagina = new PDPage();
+            documento.addPage(pagina);
+            try (var escrita = new PDPageContentStream(documento, pagina)) {
+                escrita.beginText();
+                escrita.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+                escrita.setLeading(18);
+                escrita.newLineAtOffset(50, 700);
+                for (String[] ficha : fichas) {
+                    escrita.showText(ficha[0]);
+                    escrita.newLine();
+                    escrita.showText("Valor de compra: " + ficha[2] + " | Referência: " + ficha[1] + " | Unidade: KG");
+                    escrita.newLine();
+                    escrita.showText("Apresentação: " + ficha[3] + " | Quantidade cotada: 1");
+                    escrita.newLine();
+                }
+                escrita.endText();
+            }
+            documento.save(saida);
+            return saida.toByteArray();
+        }
     }
 
     @Test void comparaPelaIdentidadeComercialMesmoAposCotacoesIncompativeisOuPendentes() throws Exception {
