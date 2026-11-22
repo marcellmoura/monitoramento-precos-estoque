@@ -187,9 +187,12 @@ const classificacoes: Record<ClassificacaoPreco, string> = {
 };
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const percentual = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'exceptZero',
+});
 
 function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
-  const { confirmado, preco } = linha;
+  const { confirmado, preco, variacao } = linha;
   if (preco === null) return <>
     <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>
     {linha.conflito && <ResolverConflito linha={linha.linha} conflito={linha.conflito} />}
@@ -207,6 +210,10 @@ function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
       Último preço válido anterior · {moeda.format(anterior.preco)} · {formatarDataComercial(anterior.dataComercial)} ·{' '}
       <Link to={`/importacoes/${anterior.tentativa}`}>Tentativa #{anterior.tentativa}</Link>
     </p> : <p>Sem preço válido anterior.</p>}
+    {variacao && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
+      <dt>Diferença em reais</dt><dd>{moeda.format(variacao.diferencaAbsoluta)}</dd>
+      <dt>Variação percentual</dt><dd>{percentual.format(variacao.percentual)}%</dd>
+    </dl>}
   </>;
 }
 

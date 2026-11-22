@@ -76,6 +76,12 @@ Em **Prévia dos itens**, **Classificação** indica **Aumentou**, **Diminuiu** 
 
 Linhas à espera de correção, associação, resolução de conflito ou confirmação mostram **Pendente** e o motivo. Após um retroativo ou uma substituição, a classificação acompanha a base vigente na próxima consulta. A tentativa de origem mantém o rótulo **Preço substituído no histórico** para auditoria.
 
+### Diferença em reais e variação percentual
+
+Quando há preço anterior válido, a prévia mostra **Diferença em reais** e **Variação percentual** abaixo dos preços. A diferença em reais é absoluta. A classificação indica a direção e o percentual usa sinal em aumentos e reduções. Preços iguais mostram R$ 0,00 e 0,00%.
+
+O backend calcula (atual − anterior) × 100 ÷ anterior somente para uma base positiva, arredonda para duas casas com `HALF_UP` e transmite o percentual em texto decimal para preservar a precisão na exibição. Itens novos mostram **Sem preço válido anterior**. A consulta dos preços exige perfil Administrador ou Compras.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |

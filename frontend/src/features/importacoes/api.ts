@@ -105,6 +105,7 @@ export interface LinhaConfirmacao {
   linha: number;
   estado: 'PENDENTE' | 'PRONTO' | 'CONFIRMADO';
   classificacao: ClassificacaoPreco | null;
+  variacao: { diferencaAbsoluta: number; percentual: `${number}` } | null;
   motivos: string[];
   preco: number | null;
   confirmado: {

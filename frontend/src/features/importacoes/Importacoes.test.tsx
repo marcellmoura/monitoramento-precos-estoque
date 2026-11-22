@@ -303,9 +303,9 @@ describe('Importações', () => {
     conferencia.confirmada = { id: 5, base: { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco' },
       dataComercial: '2026-11-21' };
     precos.itens = [
-      { linha: 1, estado: 'PRONTO', classificacao: 'PENDENTE', preco: 32,
+      { linha: 1, estado: 'PRONTO', classificacao: 'PENDENTE', variacao: null, preco: 32,
         motivos: ['Aguardando confirmação do preço.'], confirmado: null },
-      { linha: 2, estado: 'PENDENTE', classificacao: 'PENDENTE', preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
+      { linha: 2, estado: 'PENDENTE', classificacao: 'PENDENTE', variacao: null, preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
     ];
     abrir('/importacoes/1');
     const confirmar = await screen.findByRole('button', { name: 'Confirmar itens válidos' });
@@ -325,6 +325,7 @@ describe('Importações', () => {
     expect(await screen.findByText(/Preço confirmado no histórico/)).toBeVisible();
     expect(screen.getByText('Sem preço válido anterior.')).toBeVisible();
     expect(screen.getByText('· Novo')).toBeVisible();
+    expect(screen.queryByText('Variação percentual')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Concluída com pendências');
     expect(screen.getByText('Conferência bloqueada após a confirmação de preços.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
@@ -333,21 +334,31 @@ describe('Importações', () => {
   });
 
   it.each([
-    [37, 'AUMENTOU', 'Aumentou'],
-    [34, 'DIMINUIU', 'Diminuiu'],
-    [36, 'SEM_ALTERACAO', 'Sem alteração'],
-  ] as const)('mostra a classificação de preço vigente %s com a origem', async (preco, classificacao, rotulo) => {
+    [33, 35, 'AUMENTOU', 'Aumentou', 2, '6.06', '+6,06%'],
+    [15, 14, 'DIMINUIU', 'Diminuiu', 1, '-6.67', '-6,67%'],
+    [38, 38, 'SEM_ALTERACAO', 'Sem alteração', 0, '0.00', '0,00%'],
+  ] as const)('mostra valores e variação de %s para %s', async (
+    anterior, preco, classificacao, rotulo, diferencaAbsoluta, percentual, esperado,
+  ) => {
     tentativas = [{ ...base, status: 'CONCLUIDA', quantidadeItens: 2 }];
     const confirmado = { id: 7, produtoId: 2, dataComercial: '2026-11-21', confirmadaEm: base.enviadaEm };
     precos.itens = [
-      { linha: 1, estado: 'CONFIRMADO', classificacao, preco, motivos: [], confirmado: {
-        ...confirmado, anterior: { id: 5, tentativa: 3, preco: 36, dataComercial: '2026-11-20' },
-      } },
-      { linha: 2, estado: 'CONFIRMADO', classificacao: null, preco: 32, motivos: [], confirmado: { ...confirmado, id: 8, substituido: true } },
+      {
+        linha: 1, estado: 'CONFIRMADO', classificacao, preco, motivos: [],
+        variacao: { diferencaAbsoluta, percentual },
+        confirmado: { ...confirmado, anterior: { id: 5, tentativa: 3, preco: anterior, dataComercial: '2026-11-20' } },
+      },
+      {
+        linha: 2, estado: 'CONFIRMADO', classificacao: null, variacao: null, preco: 32, motivos: [],
+        confirmado: { ...confirmado, id: 8, substituido: true },
+      },
     ];
     abrir('/importacoes/1');
 
-    expect(await screen.findByText(/Último preço válido anterior · R\$\s*36,00 · 20\/11\/2026/)).toBeVisible();
+    const origem = await screen.findByText(/Último preço válido anterior/);
+    expect(origem).toHaveTextContent(`R$ ${anterior},00 · 20/11/2026`);
+    expect(screen.getByText('Diferença em reais').nextElementSibling).toHaveTextContent(`R$ ${diferencaAbsoluta},00`);
+    expect(screen.getByText('Variação percentual').nextElementSibling).toHaveTextContent(esperado);
     expect(screen.getByRole('link', { name: 'Tentativa #3' })).toHaveAttribute('href', '/importacoes/3');
     expect(screen.getByText(/Preço substituído no histórico/)).toBeVisible();
     expect(screen.getByText('Classificação').parentElement).toHaveTextContent(`Classificação · ${rotulo}`);
@@ -360,7 +371,7 @@ describe('Importações', () => {
     ['SUBSTITUIR', 'SUBSTITUIR', 'Cotação corrigida pelo fornecedor'],
   ])('envia a escolha explícita de conflito (%s %s)', async (decisao, operacao, motivo) => {
     tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
-    precos.itens = [{ linha: 1, estado: 'PENDENTE', classificacao: 'PENDENTE', preco: null, motivos: ['Já há outro preço.'], confirmado: null,
+    precos.itens = [{ linha: 1, estado: 'PENDENTE', classificacao: 'PENDENTE', variacao: null, preco: null, motivos: ['Já há outro preço.'], confirmado: null,
       conflito: { preco: 35, dataComercial: '2026-11-21', revisao: 'revisao-teste',
         anteriores: [{ id: 42, tentativa: 7, preco: 32, ordem: 1 }] } }];
     abrir('/importacoes/1');
