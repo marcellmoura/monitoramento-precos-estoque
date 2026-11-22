@@ -5,7 +5,7 @@ import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados } from './api';
-import type { ConflitoPreco, LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -168,12 +168,23 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
             revisao={revisao} associado={associado} bloqueado={confirmado} />}
           {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
             produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
-          {preco && <EstadoPreco linha={preco} />}
+          {preco && <>
+            {preco.classificacao && <p><strong>Classificação</strong> · {classificacoes[preco.classificacao]}</p>}
+            <EstadoPreco linha={preco} />
+          </>}
         </li>;
       })}
     </ol>
   </section>;
 }
+
+const classificacoes: Record<ClassificacaoPreco, string> = {
+  AUMENTOU: 'Aumentou',
+  DIMINUIU: 'Diminuiu',
+  SEM_ALTERACAO: 'Sem alteração',
+  NOVO: 'Novo',
+  PENDENTE: 'Pendente',
+};
 
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -184,7 +195,10 @@ function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
     {linha.conflito && <ResolverConflito linha={linha.linha} conflito={linha.conflito} />}
   </>;
 
-  if (!confirmado) return <p>Preço pronto para confirmar · {moeda.format(preco)}</p>;
+  if (!confirmado) return <>
+    <p>Preço pronto para confirmar · {moeda.format(preco)}</p>
+    <p>{linha.motivos.join(' ')}</p>
+  </>;
   if (confirmado.substituido) return <p>Preço substituído no histórico · {moeda.format(preco)}</p>;
   const anterior = confirmado.anterior;
   return <>
