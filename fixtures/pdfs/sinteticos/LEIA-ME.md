@@ -4,7 +4,7 @@ Criada em 2026-11-13. Dados e fornecedores inteiramente fictícios. São PDFs si
 
 ## Arquivos e sequência
 
-- Serra Verde: `tabela-v1.pdf` (01/11/2026) e `tabela-v2.pdf` (08/11/2026).
+- Serra Verde: `tabela-v1.pdf` (01/11/2026) e `tabela-v2.pdf` (08/11/2026) e `tabela-v3-us20.pdf` (15/11/2026).
 - Raiz Natural: `fichas-v1.pdf` (01/11/2026) e `fichas-v2.pdf` (08/11/2026).
 - `dados-esperados.json`: valores de origem para futuros testes; não é relatório de execução do sistema.
 - Originais do professor continuam um nível acima: `../Fornecedor_1.pdf` e `../Fornecedor_2.pdf`.
@@ -27,8 +27,16 @@ Cadastrar produtos internos e fornecedores fictícios, vincular os itens identif
 
 V1 tem quatro linhas; V2 tem seis. Na primeira importação, os itens válidos e associados são novos. Reenviar exatamente o mesmo arquivo ao mesmo fornecedor deve detectar duplicidade. Confirmar itens válidos e associados, preservando os demais como pendentes, conforme AP06.
 
+## US-20 — Erva-doce em três cotações
+
+Use o mesmo fornecedor nos três envios. Em **Conferência comercial**, selecione **Preço**, **Quilograma (KG)** e **Saco de 1 kg**. Use a data de referência de cada PDF como data comercial.
+
+1. Na V1, associe **Erva-doce** (E01) e confirme **R$ 22,00**.
+2. Na V2, associe **Hibisco** (H01) e confirme **R$ 35,00**. A erva-doce está ausente da prévia, continua ativa no catálogo e permanece no histórico com **R$ 22,00** e origem na V1.
+3. Na V3, confirme **Erva-doce · R$ 24,00** com o vínculo reaproveitado. A comparação usa **R$ 22,00** da V1, com aumento de **R$ 2,00** e **+9,09%**.
+
 ## Limites
 
-Esta amostra não cobre toda a matriz do projeto: faltam, entre outros, terceiro período com reaparecimento, código repetido entre embalagens, preço ausente, arquivo corrompido, descrições quebradas, tabelas multipágina e documentos digitalizados/OCR. Planejar esses cenários antes das implementações correspondentes. A apresentação com dados sintéticos é permitida; os originais continuam obrigatórios nos testes.
+Esta amostra não cobre toda a matriz do projeto: faltam, entre outros, código repetido entre embalagens, preço ausente, arquivo corrompido, descrições quebradas, tabelas multipágina e documentos digitalizados/OCR. Planejar esses cenários antes das implementações correspondentes. A apresentação com dados sintéticos é permitida; os originais continuam obrigatórios nos testes.
 
-Arquivos conferidos visualmente e por extração de texto. Nenhum leitor do sistema foi implementado ou validado. Conjunto de referência para validar suporte aos layouts tabela e fichas.
+Os arquivos servem para validar a extração dos layouts tabela e fichas. A sequência da US-20 usa o layout tabela.

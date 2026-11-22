@@ -90,6 +90,10 @@ A tabela exibe produto, fornecedor, unidade, embalagem, modalidade, preço e ten
 
 `GET /api/importacoes/historico-precos` aceita `produtoId`, `fornecedorId`, `tentativa`, `inicio`, `fim`, `pagina` e `tamanho`. As datas usam ISO, a página inicial é 0 e o tamanho padrão é 20, com máximo de 100.
 
+### Itens ausentes em cotações posteriores
+
+A prévia lista as linhas encontradas no PDF da tentativa. Se um produto ficar de fora de uma cotação, seu último preço válido continua disponível no histórico e seu estado no catálogo é preservado. Quando o item reaparecer com a mesma identidade comercial, a comparação parte do último preço vigente, mesmo que ele esteja em uma cotação anterior à imediatamente precedente.
+
 ## Configuração local
 
 | Variável | Padrão | Uso |
