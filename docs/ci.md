@@ -1,6 +1,6 @@
 # Integração contínua
 
-Workflow: [CI](../.github/workflows/ci.yml). Build/testes integrados e validados em PR e na main (TT-06). Inicialização SonarQube integrada pelo [PR #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) (TT-07), com os dois gates aprovados na main. Ajuste do escopo e análise de PRs validados no [PR #59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59), aguardando integração; proteção de merge pendente.
+O [workflow de CI](../.github/workflows/ci.yml) executa builds, testes e os dois Quality Gates em Pull Requests e na `main`. O SonarQube Cloud foi integrado pelos [PRs #58](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/58) e [#59](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/59). A [CI aprovada do PR #81](https://github.com/marcellmoura/monitoramento-precos-estoque/actions/runs/45134191490) mostra a sequência completa.
 
 ## Eventos e ambiente
 
@@ -29,8 +29,7 @@ Surefire e Failsafe usam a versão 3.5.6 gerenciada pelo Spring Boot:
 
 - `./mvnw test`: testes rápidos `Test*`, `*Test`, `*Tests` e `*TestCase`.
 - `./mvnw verify`: inclui também integração `*IT` via Failsafe e gera cobertura JaCoCo.
-- O teste de inicialização/contexto com MockMvc é `MonitoramentoApplicationIT`; não abre um servidor HTTP real. Testes de rede e PostgreSQL serão acrescentados com as funcionalidades correspondentes.
-- Ainda não existem testes unitários Java de negócio. Uma rodada `test` vazia não comprova o teste de integração; usar `verify` na validação completa. Failsafe reprova se a suíte de integração esperada não for encontrada.
+- `MonitoramentoApplicationIT` usa MockMvc para verificar a inicialização. As suítes de acesso, cadastros e importação exercitam a API com PostgreSQL descartável via Testcontainers. Use `verify` para incluir essas suítes. Failsafe reprova se a suíte de integração esperada não for encontrada.
 - JaCoCo acumula a execução das suítes no mesmo arquivo durante o ciclo; `clean` remove dados de ciclos anteriores. Não excluir código de aplicação para melhorar a métrica.
 
 ## Relatórios e artefatos
