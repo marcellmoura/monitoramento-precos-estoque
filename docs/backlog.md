@@ -1,6 +1,6 @@
 # Product Backlog — Monitoramento de Preços, Estoque e Compras
 
-Versão: 2026-11-13. **Status: especificação concluída e 53 issues publicadas no GitHub Project; implementação pendente.**
+Atualização: 2026-11-23. O fluxo principal foi validado para demonstração. Consulte os rótulos das issues para acompanhar a preparação da apresentação e as evoluções.
 
 **Prazo do backlog E0: 15/11/2026. Entrega final do projeto no planejamento: 23/11/2026.** Sem datas intermediárias definidas.
 
@@ -10,7 +10,14 @@ US significa User Story (história de usuário); TT significa tarefa técnica. R
 
 Cada link abre a especificação de uma história ou tarefa. A coluna Issue GitHub contém os links verificados das 53 issues publicadas. Manter status e conteúdo consistentes entre issues e documentos.
 
-Prioridades e sequência representam o planejamento de execução. Alta não significa que a tarefa pode começar sem dependências. Estimativas ficam **A definir**, sem pontos/prazos inventados. Todos os itens começam em **Backlog**, sem funcionalidades concluídas. Situação atual: **TT-01 e TT-06 em Em andamento; TT-02 e TT-03 Concluídas**, integradas pelo [PR #56](https://github.com/marcellmoura/monitoramento-precos-estoque/pull/56) (merge `08eb103`, 14/11/2026); os outros 49 itens continuam em Backlog.
+Prioridades e fases descrevem o escopo original. O estado de cada item fica no GitHub. A preparação atual está descrita no [plano da apresentação](apresentacao.md).
+
+## Prioridade para a apresentação
+
+| Rótulo | Uso |
+|---|---|
+| [apresentação](https://github.com/marcellmoura/monitoramento-precos-estoque/issues?q=is%3Aissue%20is%3Aopen%20label%3Aapresenta%C3%A7%C3%A3o) | Verificar o fluxo existente, os critérios aplicáveis e as evidências da entrega. Em issues que também incluem evoluções, verificar os critérios individualmente. |
+| [pós-apresentação](https://github.com/marcellmoura/monitoramento-precos-estoque/issues?q=is%3Aissue%20is%3Aopen%20label%3Ap%C3%B3s-apresenta%C3%A7%C3%A3o) | US-23 a US-28, US-35 e US-36. A sequência de implementação dessas evoluções será retomada depois da apresentação. |
 
 ## Escopos
 
