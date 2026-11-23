@@ -6,12 +6,12 @@ Criada em 2026-11-13. Dados e fornecedores inteiramente fictícios. São PDFs si
 
 - Serra Verde: `tabela-v1.pdf` (01/11/2026) e `tabela-v2.pdf` (08/11/2026) e `tabela-v3-us20.pdf` (15/11/2026).
 - Raiz Natural: `fichas-v1.pdf` (01/11/2026) e `fichas-v2.pdf` (08/11/2026).
-- `dados-esperados.json`: valores de origem para futuros testes; não é relatório de execução do sistema.
+- `dados-esperados.json`: valores de origem usados pelos testes de extração para conferir as quatro amostras.
 - Originais do professor continuam um nível acima: `../Fornecedor_1.pdf` e `../Fornecedor_2.pdf`.
 
 Todos têm texto selecionável. Layout tabela e layout em fichas usam os mesmos dados para permitir comparar a extração; fornecedores são distintos, portanto comparar v1 e v2 apenas dentro do mesmo fornecedor. Quantidade cotada não representa movimentação de estoque. Preços são BRL por apresentação; nestes exemplos cada apresentação válida é um saco de 1 kg.
 
-## Preparação futura do cenário
+## Cenário de comparação
 
 Cadastrar produtos internos e fornecedores fictícios, vincular os itens identificados e validar a v1 antes de comparar a v2. Sem vínculo, mesmo um preço positivo pode permanecer pendente de associação. Não transformar as expectativas abaixo em regras baseadas no nome do produto.
 
@@ -40,3 +40,5 @@ Use o mesmo fornecedor nos três envios. Em **Conferência comercial**, selecion
 Esta amostra não cobre toda a matriz do projeto: faltam, entre outros, código repetido entre embalagens, preço ausente, arquivo corrompido, descrições quebradas, tabelas multipágina e documentos digitalizados/OCR. Planejar esses cenários antes das implementações correspondentes. A apresentação com dados sintéticos é permitida; os originais continuam obrigatórios nos testes.
 
 Os arquivos servem para validar a extração dos layouts tabela e fichas. A sequência da US-20 usa o layout tabela.
+
+Os testes da US-22 usam as versões v1 e v2 de cada layout e conferem os quatro arquivos contra o manifesto. Para cada formato, exercitam a tabela de resultados acima e verificam também que uma cotação mais recente de outro fornecedor fica fora da comparação e que o reenvio do PDF mantém os mesmos registros no histórico. Os dois PDFs originais têm casos de regressão próprios.
