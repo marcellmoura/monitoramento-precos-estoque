@@ -22,6 +22,7 @@ Acompanhamento: [AV2 DevOps — Product Backlog](https://github.com/users/marcel
 - [Planejamento funcional e técnico](docs/planejamento.md)
 - [Decisões de arquitetura e negócio](docs/decisoes.md)
 - [Roadmap e entregas](docs/roadmap.md)
+- [Validação do MVP para a entrega](docs/validacao-entrega.md)
 - [Arquivos de referência para testes](fixtures/pdfs/README.md)
 
 ## Versionamento
