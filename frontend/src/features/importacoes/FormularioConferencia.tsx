@@ -2,20 +2,21 @@ import { useFetcher } from 'react-router';
 import { unidades } from '../produtos/api';
 import type { ConferenciaCotacao, FalhaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
+import importacoes from './Importacoes.module.css';
 
 export function FormularioConferencia({ conferencia, bloqueada }: { conferencia: ConferenciaCotacao; bloqueada: boolean }) {
   const fetcher = useFetcher<FalhaImportacao>();
   const { colunas, confirmada, sugestao, baseDoPdf, dataSugerida } = conferencia;
   const base = confirmada?.base ?? sugestao ?? baseDoPdf;
   if (bloqueada && confirmada) {
-    return <section aria-labelledby="conferencia-comercial">
-      <h3 id="conferencia-comercial">Conferência comercial</h3>
+    return <section className={importacoes.painelCotacao} aria-labelledby="conferencia-comercial">
+      <h2 id="conferencia-comercial">Conferência comercial</h2>
       <p>{confirmada.base.coluna} · {confirmada.base.unidade} · {confirmada.base.embalagem} · {confirmada.dataComercial.split('-').reverse().join('/')}</p>
       <p>Conferência bloqueada após a confirmação de preços.</p>
     </section>;
   }
-  return <section aria-labelledby="conferencia-comercial">
-    <h3 id="conferencia-comercial" tabIndex={-1}>Dados para usar os preços</h3>
+  return <section className={importacoes.painelCotacao} aria-labelledby="conferencia-comercial">
+    <h2 id="conferencia-comercial" tabIndex={-1}>Dados para usar os preços</h2>
     {confirmada && <p>Conferência comercial salva. <a href="#previa-itens">Voltar à prévia dos itens</a></p>}
     {!confirmada && sugestao && <p>Configuração sugerida a partir de uma cotação deste fornecedor. Confira os campos antes de salvar.</p>}
     {!confirmada && !sugestao && baseDoPdf && <p>Preenchemos os dados que aparecem no PDF. Confira antes de continuar.</p>}

@@ -11,20 +11,258 @@
   cursor: pointer;
 }
 
-.proximoPasso {
-  border-block: 1px solid #ccd8ce;
-  margin-block: 1.5rem;
-  padding-block: 1rem;
+.cotacao {
+  --resumo-fundo: #edf4ef;
+  --aviso-fundo: #fff3df;
+  --aviso-texto: #634115;
+  --aviso-borda: #d5a658;
+  --raio: 1rem;
+  display: grid;
+  gap: 1.15rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-.proximoPasso h3 {
-  margin-top: 0;
+.cotacao h1,
+.cotacao h2,
+.cotacao h3,
+.cotacao p { margin: 0; }
+
+.cotacao h2 { font-size: clamp(1.2rem, 2.5vw, 1.5rem); }
+.cotacao h3 { font-size: 1.05rem; }
+
+.trilha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  color: var(--texto-secundario);
+  font-size: .875rem;
 }
+
+.cabecalhoCotacao,
+.painelCotacao,
+.proximoPasso {
+  min-width: 0;
+  display: grid;
+  gap: .9rem;
+  padding: clamp(1rem, 3vw, 1.65rem);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  background: var(--superficie);
+}
+
+.cabecalhoCotacao { background: linear-gradient(120deg, #edf4ef, #fff 82%); }
+
+.tituloCotacao {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .6rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.tituloCotacao h1 {
+  font-size: clamp(1.6rem, 3.3vw, 2.35rem);
+  font-weight: 760;
+  letter-spacing: -.035em;
+  line-height: 1.13;
+}
+
+.codigoFornecedor {
+  color: var(--texto-secundario);
+  font-size: .9rem;
+  font-weight: 650;
+}
+
+.estadoCotacao,
+.classificacao {
+  width: fit-content;
+  padding: .28rem .72rem;
+  border-radius: 2rem;
+  background: #e8f0ea;
+  color: var(--primaria);
+  font-size: .85rem;
+  font-weight: 650;
+}
+
+.estadoCotacao[data-estado='AGUARDANDO_CONFERENCIA'],
+.estadoCotacao[data-estado='CONCLUIDA_COM_PENDENCIAS'],
+.estadoCotacao[data-estado='AGUARDANDO_CONFIRMACAO'],
+.classificacao[data-classificacao='PENDENTE'] {
+  background: var(--aviso-fundo);
+  color: var(--aviso-texto);
+}
+
+.estadoCotacao[data-estado='REJEITADA'],
+.estadoCotacao[data-estado='FALHA_EXTRACAO'],
+.estadoCotacao[data-estado='FALHA_ENVIO'],
+.classificacao[data-classificacao='AUMENTOU'] {
+  color: #822b29;
+  background: #fff0eb;
+}
+
+.dadosCotacao {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  gap: .6rem clamp(1rem, 4vw, 2.6rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.dadosCotacao dt,
+.contadores dt {
+  color: var(--texto-secundario);
+  font-size: .85rem;
+}
+
+.dadosCotacao dd,
+.contadores dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.acoesCotacao {
+  display: flex;
+  gap: .4rem 1rem;
+  flex-wrap: wrap;
+  font-size: .9rem;
+}
+
+.proximoPasso {
+  border-top: 4px solid var(--primaria);
+  gap: .65rem;
+}
+
+.revisar { width: fit-content; }
 
 .resumoGravacao {
-  margin-block: 1rem;
+  display: grid;
+  gap: .65rem;
+  border-radius: .7rem;
+  background: var(--resumo-fundo);
+  padding: .9rem 1rem;
 }
 
-.resumoGravacao li p {
-  margin-block: .25rem 0;
+.listaPrecos,
+.listaItens {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listaPrecos { gap: .5rem; }
+
+.listaPrecos li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .25rem 1rem;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--borda);
+  padding-top: .55rem;
+}
+
+.listaPrecos li a { font-weight: 650; }
+
+.listaPrecos li p {
+  color: var(--texto-secundario);
+  font-variant-numeric: tabular-nums;
+}
+
+.listaPrecos li strong {
+  color: var(--texto);
+  font-size: 1.15rem;
+}
+
+.variacao {
+  white-space: nowrap;
+  color: var(--primaria);
+  font-weight: 650;
+}
+
+.avisoCotacao {
+  background: var(--aviso-fundo);
+  border-inline-start: 3px solid var(--aviso-borda);
+  color: var(--aviso-texto);
+  padding: .5rem .75rem;
+  border-radius: .3rem;
+}
+
+.contadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  margin: 0;
+}
+
+.contadores div {
+  min-width: 7rem;
+  padding: .45rem .75rem;
+  background: var(--resumo-fundo);
+  border-radius: .55rem;
+}
+
+.contadores dd {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.acoesPrecos {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .8rem 1rem;
+}
+
+.cotacao .salvarPrecos {
+  margin: .25rem 0 0 auto;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  justify-items: end;
+}
+
+.salvarPrecos button {
+  background: var(--primaria);
+  border-radius: .6rem;
+}
+
+.salvarPrecos button:not(:disabled):hover { background: #193d2d; }
+
+.cabecalhoPrevia {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .35rem 1rem;
+}
+
+.cabecalhoPrevia p {
+  font-size: .9rem;
+  color: var(--texto-secundario);
+}
+
+.itemCotacao {
+  display: flow-root;
+  min-width: 0;
+  scroll-margin-top: 1rem;
+  padding-block: .95rem;
+  border-top: 1px solid var(--borda);
+}
+
+.itemCotacao > :is(h3, dl, p) { margin-block-end: .55rem; }
+
+.itemCotacao > button {
+  margin: .25rem .45rem .35rem 0;
+}
+
+.valorItem dd { color: var(--primaria); }
+
+@media (max-width: 34rem) {
+  .acoesPrecos { align-items: stretch; flex-direction: column; }
+  .cotacao .salvarPrecos { justify-items: stretch; margin-inline-start: 0; }
+  .contadores div { flex: 1 1 6rem; min-width: 0; }
 }

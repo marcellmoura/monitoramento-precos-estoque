@@ -85,27 +85,35 @@ export function DetalheImportacao() {
     return () => window.clearTimeout(timer);
   }, [aguardando, revalidate, state]);
   if ('erro' in tentativa) {
-    return <section><h2>Tentativa de importação</h2><Falha mensagem={tentativa.erro} />
+    return <section><h1>Tentativa de importação</h1><Falha mensagem={tentativa.erro} />
       <Link to="/importacoes">Voltar às importações</Link></section>;
   }
   const linhasPrecos = tentativa.precos?.itens ?? [];
   const bloqueada = linhasPrecos.some(linha => linha.estado === 'CONFIRMADO');
-  return <section className={styles.painel}>
-    <h2>Tentativa #{tentativa.id}</h2>
-    <p role="status">{estados[tentativa.status]}</p>
-    {tentativa.motivo && <p>{tentativa.motivo}</p>}
-    <dl className={styles.dados}>
-      <dt>Fornecedor</dt><dd>{tentativa.fornecedorCodigo} · {tentativa.fornecedorNome}</dd>
-      <dt>Arquivo</dt><dd>{tentativa.arquivo}</dd>
-      <dt>Enviado em</dt><dd>{dataHora.format(new Date(tentativa.enviadaEm))}</dd>
-      {tentativa.paginas != null && <><dt>Páginas</dt><dd>{tentativa.paginas}</dd></>}
-      {tentativa.quantidadeItens != null && <><dt>Itens</dt><dd>{tentativa.quantidadeItens}</dd></>}
-    </dl>
-    <nav className={styles.paginacao} aria-label="Ações da tentativa">
-      {tentativa.importacaoExistenteId != null && <Link to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
-      <Link to={`/historico-precos?tentativa=${tentativa.id}`}>Ver histórico desta tentativa</Link>
+  return <section className={importacoes.cotacao}>
+    <nav className={importacoes.trilha} aria-label="Localização">
       <Link to="/importacoes">Voltar às importações</Link>
+      <span aria-hidden="true">/</span>
+      <span>Tentativa #{tentativa.id}</span>
     </nav>
+    <header className={importacoes.cabecalhoCotacao}>
+      <div className={importacoes.tituloCotacao}>
+        <h1>{tentativa.fornecedorNome}</h1>
+        <p role="status" className={importacoes.estadoCotacao} data-estado={tentativa.status}>{estados[tentativa.status]}</p>
+      </div>
+      <p className={importacoes.codigoFornecedor}>{tentativa.fornecedorCodigo}</p>
+      {tentativa.motivo && <p>{tentativa.motivo}</p>}
+      <dl className={importacoes.dadosCotacao}>
+        <div><dt>Arquivo</dt><dd>{tentativa.arquivo}</dd></div>
+        <div><dt>Enviado em</dt><dd>{dataHora.format(new Date(tentativa.enviadaEm))}</dd></div>
+        {tentativa.paginas != null && <div><dt>Páginas</dt><dd>{tentativa.paginas}</dd></div>}
+        {tentativa.quantidadeItens != null && <div><dt>Itens</dt><dd>{tentativa.quantidadeItens}</dd></div>}
+      </dl>
+      <nav className={importacoes.acoesCotacao} aria-label="Ações da tentativa">
+        {tentativa.importacaoExistenteId != null && <Link to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
+        <Link to={`/historico-precos?tentativa=${tentativa.id}`}>Ver histórico desta tentativa</Link>
+      </nav>
+    </header>
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
     {tentativa.status === 'AGUARDANDO_CONFIRMACAO' && <fetcher.Form method="post" className={styles.formulario}>
       <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar para este fornecedor</button>
@@ -134,11 +142,13 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
   const porLinha = new Map(revisoes.map(revisao => [revisao.linha, revisao]));
   const base = conferencia?.confirmada;
   const leituraParcial = previa.itens.some(item => item.dados === null);
-  return <section aria-labelledby="previa-itens">
-    <h3 id="previa-itens">Prévia dos itens</h3>
-    <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
+  return <section className={importacoes.painelCotacao} aria-labelledby="previa-itens">
+    <div className={importacoes.cabecalhoPrevia}>
+      <h2 id="previa-itens">Prévia dos itens</h2>
+      <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
+    </div>
     {leituraParcial && <p role="alert">Leitura parcial. Confira as linhas não reconhecidas no PDF.</p>}
-    <ol className={styles.lista}>
+    <ol role="list" className={importacoes.listaItens}>
       {previa.itens.map((item, indice) => {
         const { dados, precos, textoOriginal, pendencias } = item;
         const linha = indice + 1;
@@ -147,30 +157,32 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
         const preco = precosPorLinha.get(linha);
         const confirmado = preco?.estado === 'CONFIRMADO';
         const associado = confirmado || Boolean(situacao?.reaproveitado || (situacao?.vinculo && !situacao.revalidar));
-        return <li key={linha} id={`item-${linha}`}>
-          <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
+        return <li key={linha} id={`item-${linha}`} className={importacoes.itemCotacao}>
+          <h3>{dados?.descricao ?? 'Linha não reconhecida'}</h3>
           {revisao && <h4>Dados extraídos do PDF</h4>}
-          {dados && <dl className={`${styles.dados} ${importacoes.dadosItem}`}>
-            <dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd>
-            <dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd>
-            <dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd>
-            <dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd>
-            {Object.entries(precos).map(([coluna, valor]) => <Fragment key={coluna}>
+          {dados && <dl className={importacoes.dadosCotacao}>
+            <div><dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd></div>
+            <div><dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd></div>
+            <div><dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd></div>
+            <div><dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd></div>
+            {Object.entries(precos).map(([coluna, valor]) => <div key={coluna} className={importacoes.valorItem}>
               <dt>{coluna}</dt><dd>{valor || 'Não informado'}</dd>
-            </Fragment>)}
+            </div>)}
           </dl>}
           {!dados && <p>{textoOriginal}</p>}
-          {pendencias.length > 0 && <p>{pendencias.join(' ')}</p>}
+          {pendencias.length > 0 && <p className={importacoes.avisoCotacao}>{pendencias.join(' ')}</p>}
           {!revisao && <>
-            {base && pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
-            {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p key={aviso}>{aviso}</p>)}
+            {base && !preco && pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
+            {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p className={importacoes.avisoCotacao} key={aviso}>{aviso}</p>)}
           </>}
           {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
             revisao={revisao} associado={associado} bloqueado={confirmado} />}
           {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
             produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
           {preco && (base || preco.estado !== 'PENDENTE' || preco.conflito) && <>
-            {preco.classificacao && <p><strong>Classificação</strong> · {classificacoes[preco.classificacao]}</p>}
+            {preco.classificacao && <p className={importacoes.classificacao} data-classificacao={preco.classificacao}>
+              <strong>Classificação</strong> · {classificacoes[preco.classificacao]}
+            </p>}
             <EstadoPreco linha={preco} />
           </>}
         </li>;
@@ -195,7 +207,7 @@ const percentual = new Intl.NumberFormat('pt-BR', {
 function EstadoPreco({ linha }: { linha: LinhaConfirmacao }) {
   const { confirmado, preco, variacao } = linha;
   if (preco === null) return <>
-    <p>Pendência para confirmar · {linha.motivos.join(' ')}</p>
+    <p className={importacoes.avisoCotacao}>Pendência para confirmar · {linha.motivos.join(' ')}</p>
     {linha.conflito && <ResolverConflito linha={linha.linha} conflito={linha.conflito} />}
   </>;
 
@@ -280,16 +292,19 @@ function FormularioConflito({ linha, conflito, fetcher }: {
 
 function ResumoGravacao({ previa }: { previa: PreviaGravacao }) {
   return <div className={importacoes.resumoGravacao}>
-    <p><strong>{previa.prontos.length === 1 ? '1 preço pronto para salvar' : `${previa.prontos.length} preços prontos para salvar`}</strong></p>
-    {previa.prontos.length > 0 && <ul className={styles.lista}>
+    <h3>{previa.prontos.length === 1 ? '1 preço pronto para salvar' : `${previa.prontos.length} preços prontos para salvar`}</h3>
+    {previa.prontos.length > 0 && <ul role="list" className={importacoes.listaPrecos}>
       {previa.prontos.map(item => <li key={item.linha}>
         <a href={`#item-${item.linha}`}>{[item.descricao, item.referencia, item.embalagem].filter(Boolean).join(' · ')}</a>
         <p>{item.anterior ? <>De {moeda.format(item.anterior.preco)} para </> : null}
-          <strong>{moeda.format(item.preco)}</strong>{item.variacao && ` (${percentual.format(item.variacao.percentual)}%)`}
+          <strong>{moeda.format(item.preco)}</strong>{item.variacao &&
+            <span className={importacoes.variacao}>{` (${percentual.format(item.variacao.percentual)}%)`}</span>}
         </p>
       </li>)}
     </ul>}
-    {previa.pendentes > 0 && <p>{previa.pendentes === 1 ? '1 item ficará pendente.' : `${previa.pendentes} itens ficarão pendentes.`}</p>}
+    {previa.pendentes > 0 && <p className={importacoes.avisoCotacao}>
+      {previa.pendentes === 1 ? '1 item ficará pendente.' : `${previa.pendentes} itens ficarão pendentes.`}
+    </p>}
   </div>;
 }
 
@@ -305,33 +320,39 @@ function ConfirmacaoItens({ linhas, conferencia, previa }: {
     ? { ...conferencia.sugestao, dataComercial: conferencia.dataSugerida }
     : null;
   return <section className={importacoes.proximoPasso} aria-labelledby="confirmar-precos">
-    <h3 id="confirmar-precos">Confirmação de preços</h3>
+    <h2 id="confirmar-precos">Confirmação de preços</h2>
     {exigeConferencia ? <>
       {sugestao ? <>
         <p>Podemos reaproveitar os dados de compra da última cotação deste fornecedor.</p>
         <p>{sugestao.coluna} · {sugestao.unidade} · {sugestao.embalagem} · {formatarDataComercial(sugestao.dataComercial)}</p>
         {previa?.prontos.length === 0 && <p>Revise os dados de compra para salvar a conferência e tratar as pendências.</p>}
       </> : <p>Confira a prévia abaixo e confirme os dados de compra para vincular os itens ao catálogo.</p>}
-      <a href="#conferencia-comercial">Revisar dados de compra</a>
     </> : <>
-      <p>{prontos} pronto(s) · {confirmados} confirmado(s) · {pendentes} pendente(s)</p>
+      <dl className={importacoes.contadores}>
+        <div><dt>Prontos</dt><dd>{prontos}</dd></div>
+        <div><dt>Confirmados</dt><dd>{confirmados}</dd></div>
+        <div><dt>Pendentes</dt><dd>{pendentes}</dd></div>
+      </dl>
       {prontos === 0 && pendentes > 0 && <p>Veja o que falta em cada item da prévia.</p>}
     </>}
     {previa && (sugestao || prontos > 0) && <ResumoGravacao previa={previa} />}
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    {previa && previa.prontos.length > 0 && <fetcher.Form method="post" className={styles.formulario}>
-      <input type="hidden" name="operacao" value="confirmar-itens" />
-      <input type="hidden" name="revisaoPrevia" value={previa.revisao} />
-      {sugestao && <>
-        <input type="hidden" name="revisao" value={0} />
-        <input type="hidden" name="coluna" value={sugestao.coluna} />
-        <input type="hidden" name="unidade" value={sugestao.unidade} />
-        <input type="hidden" name="embalagem" value={sugestao.embalagem} />
-        <input type="hidden" name="dataComercial" value={sugestao.dataComercial} />
-      </>}
-      <button type="submit" disabled={fetcher.state !== 'idle'}>
-        {fetcher.state === 'idle' ? 'Salvar preços válidos' : 'Salvando…'}
-      </button>
-    </fetcher.Form>}
+    {(exigeConferencia || Boolean(previa?.prontos.length)) && <div className={importacoes.acoesPrecos}>
+      {exigeConferencia && <a className={importacoes.revisar} href="#conferencia-comercial">Revisar dados de compra</a>}
+      {previa && previa.prontos.length > 0 && <fetcher.Form method="post" className={`${styles.formulario} ${importacoes.salvarPrecos}`}>
+        <input type="hidden" name="operacao" value="confirmar-itens" />
+        <input type="hidden" name="revisaoPrevia" value={previa.revisao} />
+        {sugestao && <>
+          <input type="hidden" name="revisao" value={0} />
+          <input type="hidden" name="coluna" value={sugestao.coluna} />
+          <input type="hidden" name="unidade" value={sugestao.unidade} />
+          <input type="hidden" name="embalagem" value={sugestao.embalagem} />
+          <input type="hidden" name="dataComercial" value={sugestao.dataComercial} />
+        </>}
+        <button type="submit" disabled={fetcher.state !== 'idle'}>
+          {fetcher.state === 'idle' ? 'Salvar preços válidos' : 'Salvando…'}
+        </button>
+      </fetcher.Form>}
+    </div>}
   </section>;
 }
