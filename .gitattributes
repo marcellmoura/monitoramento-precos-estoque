@@ -1,2 +1,4 @@
 # Preservar PDFs como arquivos binários
 *.pdf binary
+
+/backend/mvnw text eol=lf

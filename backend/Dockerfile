@@ -3,7 +3,7 @@ WORKDIR /build
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 COPY src/main/ src/main/
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp -Dmaven.test.skip=true package
+RUN --mount=type=cache,target=/root/.m2 sh ./mvnw -B -ntp -Dmaven.test.skip=true package
 
 FROM eclipse-temurin:25.0.5_8-jre@sha256:945247f9d092703e0c6be92243ef3c51640229e23ab34d353c8dcdc73e6cd4e6
 WORKDIR /app
