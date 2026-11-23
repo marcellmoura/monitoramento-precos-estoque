@@ -91,6 +91,21 @@ public class PrecoConfirmadoRepository {
                 .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
+    public Map<Chave, BaseComparacao> anteriores(long tentativa, LocalDate data) {
+        return jdbc.query("""
+                SELECT DISTINCT ON (chave_item, unidade, embalagem_chave, modalidade)
+                    chave_item, unidade, embalagem_chave, modalidade, id, tentativa_id, preco, data_comercial
+                FROM precos_confirmados
+                WHERE fornecedor_id = (SELECT fornecedor_id FROM tentativas_importacao WHERE id = ?)
+                  AND data_comercial < ? AND ordem IS NOT NULL
+                ORDER BY chave_item, unidade, embalagem_chave, modalidade, data_comercial DESC, ordem DESC
+                """, (rs, linha) -> Map.entry(new Chave(rs.getString("chave_item"), Unidade.valueOf(rs.getString("unidade")),
+                        rs.getString("embalagem_chave"), rs.getString("modalidade")),
+                        new BaseComparacao(rs.getLong("id"), rs.getLong("tentativa_id"), rs.getBigDecimal("preco"),
+                                rs.getObject("data_comercial", LocalDate.class))), tentativa, data).stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     public boolean resolucaoRegistrada(long id, Resolucao resolucao) {
         return Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS (SELECT 1 FROM precos_confirmados

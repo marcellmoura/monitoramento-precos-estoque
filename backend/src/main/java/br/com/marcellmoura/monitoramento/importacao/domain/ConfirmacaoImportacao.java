@@ -6,7 +6,17 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-public record ConfirmacaoImportacao(List<Linha> itens) {
+public record ConfirmacaoImportacao(List<Linha> itens, PreviaGravacao previaGravacao) {
+    public ConfirmacaoImportacao(List<Linha> itens) {
+        this(itens, null);
+    }
+
+    public record PreviaGravacao(List<PrecoPronto> prontos, long pendentes, String revisao) {}
+
+    public record PrecoPronto(int linha, String descricao, String referencia, String embalagem, BigDecimal preco,
+            BaseComparacao anterior, Variacao variacao) {}
+
+    public record ContextoPreco(BigDecimal preco, String embalagem, boolean conferido) {}
     public enum Estado { PENDENTE, PRONTO, CONFIRMADO }
 
     public enum Classificacao { AUMENTOU, DIMINUIU, SEM_ALTERACAO, NOVO, PENDENTE }
@@ -25,6 +35,12 @@ public record ConfirmacaoImportacao(List<Linha> itens) {
             Instant confirmadaEm, boolean substituido, BaseComparacao anterior) {}
 
     public record Variacao(BigDecimal diferencaAbsoluta, String percentual) {}
+
+    public static Variacao comparar(BigDecimal preco, BaseComparacao anterior) {
+        var diferenca = preco.subtract(anterior.preco());
+        var percentual = diferenca.movePointRight(2).divide(anterior.preco(), 2, RoundingMode.HALF_UP);
+        return new Variacao(diferenca.abs(), percentual.toPlainString());
+    }
 
     public record Linha(int linha, Estado estado, List<String> motivos, BigDecimal preco, Confirmado confirmado,
             Conflito conflito, Classificacao classificacao, Variacao variacao) {
@@ -45,9 +61,7 @@ public record ConfirmacaoImportacao(List<Linha> itens) {
             var anterior = registro.anterior();
             if (anterior == null || anterior.preco().signum() <= 0) return confirmado(registro, Classificacao.NOVO, null);
 
-            var diferenca = registro.preco().subtract(anterior.preco());
-            var percentual = diferenca.movePointRight(2).divide(anterior.preco(), 2, RoundingMode.HALF_UP);
-            return confirmado(registro, classificar(diferenca), new Variacao(diferenca.abs(), percentual.toPlainString()));
+            return confirmado(registro, classificar(registro.preco().subtract(anterior.preco())), comparar(registro.preco(), anterior));
         }
 
         private static Linha confirmado(Confirmado registro, Classificacao classificacao, Variacao variacao) {

@@ -3,8 +3,10 @@ import { useState } from 'react';
 import type { Identidade } from '../acesso/api';
 import { formatarMoeda } from '../../shared/decimal';
 import { destinoImportacao, unidades } from './api';
-import type { FalhaProduto, PaginaProdutos, Produto } from './api';
+import type { ContextoPrecoCotado, FalhaProduto, PaginaProdutos, Produto } from './api';
 import styles from '../../shared/gestao.module.css';
+
+const moedaCotada = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function podeCadastrar(usuario: Identidade) {
   return usuario.perfil === 'ADMINISTRADOR' || usuario.perfil === 'COMPRAS';
@@ -60,18 +62,25 @@ export function Produtos() {
 export function NovoProduto() {
   const [params] = useSearchParams();
   const retorno = destinoImportacao(params);
+  const cotacao = useLoaderData<ContextoPrecoCotado | null>();
   const usuario = useOutletContext<Identidade>();
   const fetcher = useFetcher<FalhaProduto>();
   if (!podeCadastrar(usuario)) return <section><h2>Acesso restrito</h2><Falha mensagem="Cadastro disponível para Administrador e Compras." /><Link to="/produtos">Voltar aos produtos</Link></section>;
   return <section className={styles.painel}><h2>Cadastrar produto</h2>
     <p>Estoque atual e mínimo começam em zero. O produto fica ativo após o cadastro.</p>
+    {cotacao?.preco != null && <p>
+      <strong>{cotacao.conferido ? 'Preço conferido na cotação' : 'Preço cotado no PDF'}</strong>
+      {' · '}{moedaCotada.format(cotacao.preco)}{cotacao.embalagem && ` · ${cotacao.embalagem}`}
+    </p>}
     <fetcher.Form method="post" className={styles.formulario}>
       <label>Nome<input name="nome" maxLength={255} required /></label>
       <label>Categoria (opcional)<input name="categoria" maxLength={100} /></label>
       <CampoUnidade />
       <p id="ajuda-precos">Preços em reais. Use vírgula ou ponto para os centavos, sem separador de milhar.</p>
       <label>Preço de venda<input name="precoVenda" type="text" inputMode="decimal" maxLength={20} pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-precos" required /></label>
-      <label>Preço de compra (opcional)<input name="precoCompra" type="text" inputMode="decimal" maxLength={20} pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-precos" /></label>
+      <label>Preço de compra de referência (opcional)<input name="precoCompra" type="text" inputMode="decimal" maxLength={20}
+        pattern="[0-9]{1,17}([.,][0-9]{1,2})?" aria-describedby="ajuda-referencia" /></label>
+      <p id="ajuda-referencia">Valor interno do catálogo. {retorno && 'Pode ficar em branco. O valor da cotação vai para o histórico quando você confirmar os preços na importação.'}</p>
       {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
       <button type="submit" disabled={fetcher.state !== 'idle'}>{fetcher.state === 'idle' ? 'Cadastrar produto' : 'Salvando…'}</button>
     </fetcher.Form><Link to={retorno ?? "/produtos"}>{retorno ? "Voltar à importação" : "Voltar aos produtos"}</Link>

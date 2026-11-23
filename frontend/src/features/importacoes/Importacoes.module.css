@@ -20,3 +20,11 @@
 .proximoPasso h3 {
   margin-top: 0;
 }
+
+.resumoGravacao {
+  margin-block: 1rem;
+}
+
+.resumoGravacao li p {
+  margin-block: .25rem 0;
+}

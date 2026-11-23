@@ -77,7 +77,7 @@ Usuários e Acesso: autenticação, administração de usuários, sessões e per
 3. Selecionar fornecedor e enviar PDF: salvar original, registrar tentativa e retornar ID.
 4. Processar em segundo plano com trabalho durável e apresentar status/prévia.
 5. Apresentar a prévia imediatamente após a extração. Preencher os dados de compra identificados no PDF e orientar a conferência, a correção e a associação dos itens.
-6. Em cotações recorrentes compatíveis, oferecer o reaproveitamento da última configuração de compra do fornecedor e dos vínculos elegíveis. Permitir confirmar a configuração e salvar os preços válidos em uma ação explícita. As outras linhas ficam pendentes. Repetições não duplicam o histórico.
+6. Em cotações recorrentes compatíveis, oferecer o reaproveitamento da última configuração de compra do fornecedor e dos vínculos elegíveis. Permitir confirmar a configuração e salvar os preços válidos em uma ação explícita. Exibir os itens elegíveis, os valores cotados, a comparação disponível e o total de pendências antes da gravação. As outras linhas ficam pendentes. Repetições não duplicam o histórico.
 7. Comparar com último preço válido anterior da mesma identidade comercial; consultar resultados e histórico.
 8. Corrigir preços confirmados por registros vinculados, preservando original e recalculando comparações afetadas.
 9. Escolher explicitamente preço válido como referência de compra interna. Estoque e venda não mudam automaticamente.
