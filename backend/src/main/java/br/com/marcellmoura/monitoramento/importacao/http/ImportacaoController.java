@@ -125,8 +125,12 @@ public class ImportacaoController {
     @PutMapping("/{id}/conferencia")
     public ConferenciaCotacao confirmarConferencia(@AuthenticationPrincipal UsuarioAutenticado ator,
             @PathVariable @Positive long id, @Valid @RequestBody ConfirmacaoComercial dados) {
+        return conferencia.confirmar(id, ator.getId(), escolha(dados));
+    }
+
+    private static ConferirCotacao.Escolha escolha(ConfirmacaoComercial dados) {
         var base = new ConferenciaCotacao.Base(dados.coluna(), dados.unidade(), dados.embalagem());
-        return conferencia.confirmar(id, ator.getId(), new ConferirCotacao.Escolha(dados.revisao(), base, dados.dataComercial()));
+        return new ConferirCotacao.Escolha(dados.revisao(), base, dados.dataComercial());
     }
 
     @GetMapping("/{id}/itens")
@@ -160,8 +164,9 @@ public class ImportacaoController {
     public ConfirmacaoImportacao consultarPrecos(@PathVariable @Positive long id) { return precos.consultar(id); }
 
     @PostMapping("/{id}/confirmar-itens")
-    public ConfirmacaoImportacao confirmarItens(@PathVariable @Positive long id, @AuthenticationPrincipal UsuarioAutenticado ator) {
-        return precos.confirmar(id, ator.getId());
+    public ConfirmacaoImportacao confirmarItens(@PathVariable @Positive long id, @AuthenticationPrincipal UsuarioAutenticado ator,
+            @Valid @RequestBody(required = false) ConfirmacaoComercial dados) {
+        return precos.confirmar(id, ator.getId(), dados == null ? null : escolha(dados));
     }
 
     public record ResolucaoPreco(@NotNull Operacao operacao, @NotNull @Positive Long precoReferencia,

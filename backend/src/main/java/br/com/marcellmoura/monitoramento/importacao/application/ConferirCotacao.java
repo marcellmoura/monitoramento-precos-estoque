@@ -6,8 +6,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.PreviaImportacao.Item;
 import br.com.marcellmoura.monitoramento.importacao.persistence.ConferenciaRepository;
 import br.com.marcellmoura.monitoramento.importacao.persistence.PrecoConfirmadoRepository;
+import br.com.marcellmoura.monitoramento.produto.domain.Unidade;
 
 @Service
 @Transactional(readOnly = true)
@@ -70,11 +73,28 @@ public class ConferirCotacao {
         var colunas = colunas(previa);
         var sugestao = atual == null ? conferencias.sugestao(id, previa.layout(), assinatura(colunas))
                 .filter(base -> colunas.contains(base.coluna()))
-                .filter(base -> previa.itens().stream().allMatch(item -> pendencias(item, base).isEmpty()))
+                .filter(base -> previa.itens().stream().anyMatch(item -> pendencias(item, base).isEmpty()))
                 .orElse(null) : null;
-        var pendentes = atual == null ? List.<List<String>>of() :
-                previa.itens().stream().map(item -> pendencias(item, atual.base())).toList();
-        return new ConferenciaCotacao(colunas, dataSugerida(id, previa.dataReferencia()), atual, sugestao, pendentes);
+        var baseDoPdf = atual == null && sugestao == null && colunas.size() == 1 ? sugerirDoPdf(previa, colunas.getFirst()) : null;
+        var sugerida = sugestao != null ? sugestao : baseDoPdf;
+        var base = atual != null ? atual.base() : sugerida;
+        var pendentes = base == null ? List.<List<String>>of() :
+                previa.itens().stream().map(item -> pendencias(item, base)).toList();
+        return new ConferenciaCotacao(colunas, dataSugerida(id, previa.dataReferencia()), atual, sugestao, baseDoPdf, pendentes);
+    }
+
+    private Base sugerirDoPdf(PreviaImportacao previa, String coluna) {
+        var bases = previa.itens().stream().map(Item::dados).filter(Objects::nonNull)
+                .map(dados -> baseDaLinha(coluna, dados)).filter(Objects::nonNull).distinct().limit(2).toList();
+        return bases.size() == 1 ? bases.getFirst() : null;
+    }
+
+    private Base baseDaLinha(String coluna, PreviaImportacao.Dados dados) {
+        String embalagem = dados.apresentacao();
+        if (embalagem == null || embalagem.isBlank() || "Não informada".equalsIgnoreCase(embalagem.strip())
+                || embalagem.strip().length() > 120) return null;
+        return Arrays.stream(Unidade.values()).filter(unidade -> unidade.name().equalsIgnoreCase(dados.unidade()))
+                .findFirst().map(unidade -> new Base(coluna, unidade, embalagem.strip())).orElse(null);
     }
 
     private void validar(String layout, List<String> colunas, Escolha escolha) {

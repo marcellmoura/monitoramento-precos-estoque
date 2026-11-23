@@ -19,9 +19,9 @@ O detalhe atualiza o status enquanto o processamento estiver pendente ou em curs
 
 ## Conferência comercial
 
-Abra a tentativa em **Aguardando conferência**. Compare as colunas em **Prévia dos itens**. Em **Conferência comercial**, escolha a coluna que representa o preço de compra, selecione a unidade, informe a embalagem e confira a data comercial antes de clicar em **Salvar conferência**. A data sugerida vem do PDF quando válida ou do dia do envio no fuso comercial. A data extraída continua visível na prévia.
+Abra a tentativa em **Aguardando conferência**. Compare as colunas em **Prévia dos itens**. Em **Dados para usar os preços**, escolha a coluna que representa o preço de compra, selecione a unidade, informe a embalagem e confira a data comercial antes de clicar em **Salvar conferência**. A data sugerida vem do PDF quando válida ou do dia do envio no fuso comercial. A data extraída continua visível na prévia.
 
-A aplicação sugere a última configuração do mesmo fornecedor e layout quando o conjunto de colunas e todos os itens são compatíveis com a base salva. A sugestão exige confirmação explícita e usa a data sugerida para a nova tentativa. Colunas de modalidades diferentes continuam distintas. No layout KG/Fardo, a coluna **Preço KG** exige unidade KG.
+Quando o PDF tem uma única coluna de preço e as linhas com unidade e embalagem identificadas concordam entre si, esses campos vêm preenchidos para conferência. Em uma nova cotação do mesmo fornecedor e layout, com as mesmas colunas e pelo menos uma linha compatível, a aplicação oferece a última configuração salva. **Salvar preços válidos** usa os dados de compra exibidos e grava, em uma ação, os preços com vínculo válido. A nova tentativa usa sua própria data comercial e deixa as demais linhas pendentes. Use **Revisar dados de compra** se precisar ajustar a configuração antes de gravar. Colunas de modalidades diferentes continuam distintas. No layout KG/Fardo, a coluna **Preço KG** exige unidade KG.
 
 A V9 preserva as revisões por tentativa, com ator e momento de gravação. Repetir a mesma confirmação devolve a revisão existente. Ao salvar uma alteração, a revisão esperada deve corresponder à atual. Uma alteração concorrente pede que a tela seja reaberta antes de salvar outra escolha.
 
@@ -47,7 +47,7 @@ A prévia recalcula essa associação a partir das revisões atuais. A V12 index
 
 ## Confirmação de preços
 
-Em **Confirmação de preços**, consulte o total de itens prontos, confirmados e pendentes. **Confirmar itens válidos** grava apenas linhas com associação vigente, unidade e embalagem conferidas e preço de compra positivo. Uma associação reaproveitada aponta para a confirmação manual que a originou. A data comercial pode ser anterior à do envio.
+Em **Confirmação de preços**, consulte o total de itens prontos, confirmados e pendentes. **Salvar preços válidos** grava apenas linhas com associação vigente, unidade e embalagem conferidas e preço de compra positivo. Uma associação reaproveitada aponta para a confirmação manual que a originou. A data comercial pode ser anterior à do envio.
 
 Após a confirmação parcial, a tentativa fica **Concluída com pendências**. Corrija ou associe as linhas ainda pendentes e confirme novamente. O botão grava apenas as novas linhas válidas. Quando todas estiverem confirmadas, a tentativa fica **Concluída**. A primeira gravação bloqueia a conferência comercial e cada linha confirmada. O catálogo e o estoque não são alterados.
 

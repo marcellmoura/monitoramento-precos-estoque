@@ -10,3 +10,13 @@
   border-radius: .4rem;
   cursor: pointer;
 }
+
+.proximoPasso {
+  border-block: 1px solid #ccd8ce;
+  margin-block: 1.5rem;
+  padding-block: 1rem;
+}
+
+.proximoPasso h3 {
+  margin-top: 0;
+}

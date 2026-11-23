@@ -64,7 +64,7 @@ Use uma base de demonstração limpa e siga os passos de [execução com Docker 
 
 ### Primeira cotação
 
-1. Em **Conferência comercial**, preencha os campos abaixo e clique em **Salvar conferência**.
+1. Na **Prévia dos itens**, confira os quatro itens. Clique em **Revisar dados de compra**, confira os campos preenchidos abaixo e clique em **Salvar conferência**.
 
    | Campo | Valor |
    |---|---|
@@ -78,14 +78,14 @@ Use uma base de demonstração limpa e siga os passos de [execução com Docker 
    - **Cadastrar produto** → clique no link do formulário de associação.
    - **Nome** → digite o nome do item da vez. **Unidade** → selecione **Quilograma (KG)**. **Preço de venda** → digite `40`. Deixe os campos opcionais em branco.
    - **Cadastrar produto** → clique no botão para voltar à cotação. **Confirmar associação** → clique para gravar o vínculo com o produto recém-cadastrado.
-3. Em **Confirmação de preços**, clique em **Confirmar itens válidos**. Espere o status **Concluída** e quatro preços confirmados.
+3. Em **Confirmação de preços**, clique em **Salvar preços válidos**. Espere o status **Concluída** e quatro preços confirmados.
 
 ### Segunda cotação
 
 1. Abra **Enviar PDF** novamente, no mesmo endereço usado na primeira cotação. Em **Fornecedor**, selecione a mesma opção de **Fornecedor de demonstração**. Em **Arquivo PDF**, selecione `fixtures/pdfs/sinteticos/tabela-v2.pdf`. Clique em **Enviar PDF** e espere a **Prévia dos itens** com seis linhas.
-2. Em **Conferência comercial**, use **Coluna de preço de compra** → **Preço**, **Unidade de compra** → **Quilograma (KG)**, **Embalagem de compra** → `Saco de 1 kg` e **Data comercial** → `08/11/2026`. Clique em **Salvar conferência**.
-3. Na **Prévia dos itens**, confira **Vínculo reaproveitado** em **Hibisco**, **Alecrim** e **Camomila**. Associe **Melissa** com a mesma sequência de cadastro e associação da primeira cotação, usando **Nome** → `Melissa`. Deixe **Boldo** e **Mistura sem identificação** pendentes.
-4. Em **Confirmação de preços**, clique em **Confirmar itens válidos**. A tentativa fica **Concluída com pendências**. Confira os resultados na **Prévia dos itens**.
+2. Em **Confirmação de preços**, confira a configuração sugerida **Preço · KG · Saco de 1 kg · 08/11/2026** e clique em **Salvar preços válidos**. Hibisco, Alecrim e Camomila ficam confirmados no histórico.
+3. Na **Prévia dos itens**, associe **Melissa** com a mesma sequência de cadastro e associação da primeira cotação, usando **Nome** → `Melissa`. Deixe **Boldo** e **Mistura sem identificação** pendentes.
+4. Em **Confirmação de preços**, clique em **Salvar preços válidos**. A tentativa fica **Concluída com pendências**. Confira os resultados na **Prévia dos itens**.
 
    | Item | Resultado da segunda cotação |
    |---|---|

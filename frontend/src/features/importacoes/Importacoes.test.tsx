@@ -206,6 +206,25 @@ describe('Importações', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Leitura parcial');
   });
 
+  it('envia a configuração sugerida e os preços em uma única ação explícita', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg' };
+    abrir('/importacoes/1');
+
+    expect(await screen.findByRole('region', { name: 'Prévia dos itens' })).toBeVisible();
+    expect(screen.getByText(/ATACADO · KG · Saco de 1 kg · 21\/11\/2026/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Revisar dados de compra' })).toHaveAttribute('href', '#conferencia-comercial');
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar preços válidos' }));
+
+    await screen.findByText('Concluída com pendências');
+    const gravacoes = fetchMock.mock.calls.filter(([, init]) => ['POST', 'PUT'].includes(init?.method));
+    expect(gravacoes).toHaveLength(1);
+    expect(gravacoes[0][0]).toMatch(/\/confirmar-itens$/);
+    expect(JSON.parse(gravacoes[0][1].body)).toEqual({
+      revisao: 0, coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg', dataComercial: '2026-11-21',
+    });
+  });
+
   it('apresenta a configuração sugerida e salva apenas após ação explícita', async () => {
     tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
     conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg' };
@@ -284,8 +303,11 @@ describe('Importações', () => {
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
   });
 
-  it('retorna à linha com o novo produto selecionado para confirmação', async () => {
+  it('retorna a uma única prévia com o novo produto selecionado mesmo quando o ID coincide com a conferência', async () => {
     prepararVinculo();
+    conferencia.confirmada = { id: 3, base: { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco' },
+      dataComercial: '2026-11-21' };
+    vinculos[0].conferencia = 3;
     abrir('/importacoes/1');
     fireEvent.click(await screen.findByRole('button', { name: 'Associar produto da linha 1' }));
     fireEvent.click(screen.getByRole('link', { name: 'Cadastrar produto' }));
@@ -294,6 +316,7 @@ describe('Importações', () => {
     fireEvent.change(screen.getByLabelText('Preço de venda'), { target: { value: '40' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
     expect(await screen.findByText(/Selecionado · PRD-000003/)).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Prévia dos itens' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Confirmar associação' })).toBeEnabled();
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/vinculo'))).toBe(false);
   });
@@ -308,7 +331,7 @@ describe('Importações', () => {
       { linha: 2, estado: 'PENDENTE', classificacao: 'PENDENTE', variacao: null, preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
     ];
     abrir('/importacoes/1');
-    const confirmar = await screen.findByRole('button', { name: 'Confirmar itens válidos' });
+    const confirmar = await screen.findByRole('button', { name: 'Salvar preços válidos' });
     expect(screen.getByText(/Preço pronto para confirmar/)).toBeVisible();
     expect(screen.getByText('Aguardando confirmação do preço.')).toBeVisible();
     expect(screen.getAllByText('Classificação').map(rotulo => rotulo.parentElement?.textContent))
@@ -330,7 +353,7 @@ describe('Importações', () => {
     expect(screen.getByText('Conferência bloqueada após a confirmação de preços.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Corrigir item Açúcar' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Corrigir item linha 2' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Confirmar itens válidos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salvar preços válidos' })).not.toBeInTheDocument();
   });
 
   it.each([
