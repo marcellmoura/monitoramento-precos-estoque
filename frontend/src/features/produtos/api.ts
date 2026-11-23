@@ -46,6 +46,17 @@ export function destinoImportacao(params: URLSearchParams) {
     ? `/importacoes/${tentativa}?linha=${linha}` : null;
 }
 
+export interface ContextoPrecoCotado { preco: number | null; embalagem: string | null; conferido: boolean }
+
+export async function carregarContextoCadastro({ request }: LoaderFunctionArgs) {
+  const params = new URL(request.url).searchParams;
+  if (!destinoImportacao(params)) return null;
+  try {
+    return await requestJson<ContextoPrecoCotado>(
+      `/importacoes/${params.get('tentativa')}/itens/${params.get('linha')}/preco-cotado`, { signal: request.signal });
+  } catch { return null; }
+}
+
 export async function cadastrarProduto({ request }: ActionFunctionArgs) {
   const data = await request.formData();
   const nome = String(data.get('nome') ?? '').trim();

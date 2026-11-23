@@ -120,7 +120,14 @@ export interface LinhaConfirmacao {
   conflito?: ConflitoPreco | null;
 }
 
-export interface ConfirmacaoImportacao { itens: LinhaConfirmacao[] }
+export interface PreviaGravacao {
+  prontos: { linha: number; descricao: string; referencia: string | null; embalagem: string; preco: number;
+    anterior: { preco: number } | null; variacao: LinhaConfirmacao['variacao'] }[];
+  pendentes: number;
+  revisao: string;
+}
+
+export interface ConfirmacaoImportacao { itens: LinhaConfirmacao[]; previaGravacao?: PreviaGravacao | null }
 
 export interface DetalheTentativa extends TentativaImportacao {
   previa?: PreviaImportacao;
@@ -323,8 +330,10 @@ function dadosConferencia(form: FormData) {
 }
 
 async function gravarPrecos(id: string, form: FormData) {
+  const revisaoPrevia = form.get('revisaoPrevia');
+  const consulta = typeof revisaoPrevia === 'string' ? `?${new URLSearchParams({ revisaoPrevia })}` : '';
   try {
-    await mutateJson<ConfirmacaoImportacao>(`/importacoes/${id}/confirmar-itens`, 'POST',
+    await mutateJson<ConfirmacaoImportacao>(`/importacoes/${id}/confirmar-itens${consulta}`, 'POST',
       form.has('coluna') ? dadosConferencia(form) : undefined);
     return redirect(`/importacoes/${id}`);
   } catch (error) {

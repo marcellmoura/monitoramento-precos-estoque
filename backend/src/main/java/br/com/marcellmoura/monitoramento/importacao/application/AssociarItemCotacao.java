@@ -53,9 +53,12 @@ public class AssociarItemCotacao {
     }
 
     private List<Situacao> listar(long tentativa, boolean incluirReaproveitamento) {
-        var previa = importacoes.previa(tentativa);
-        var base = conferencias.atual(tentativa).orElse(null);
-        var revisados = porLinha(revisoes.listar(tentativa));
+        return listar(tentativa, importacoes.previa(tentativa), conferencias.atual(tentativa).orElse(null),
+                porLinha(revisoes.listar(tentativa)), incluirReaproveitamento);
+    }
+
+    List<Situacao> listar(long tentativa, PreviaImportacao previa, Revisao base, Map<Integer, RevisaoItem> revisados,
+            boolean incluirReaproveitamento) {
         var associados = vinculos.listar(tentativa).stream().collect(Collectors.toMap(VinculoItem::linha, Function.identity()));
         var linhas = linhas(previa, base, revisados);
         Map<Integer, VinculoItem.Reaproveitamento> reutilizados = incluirReaproveitamento

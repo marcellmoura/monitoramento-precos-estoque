@@ -47,7 +47,7 @@ A prévia recalcula essa associação a partir das revisões atuais. A V12 index
 
 ## Confirmação de preços
 
-Em **Confirmação de preços**, consulte o total de itens prontos, confirmados e pendentes. **Salvar preços válidos** grava apenas linhas com associação vigente, unidade e embalagem conferidas e preço de compra positivo. Uma associação reaproveitada aponta para a confirmação manual que a originou. A data comercial pode ser anterior à do envio.
+Em **Confirmação de preços**, confira a lista de preços prontos, o preço anterior e a variação quando disponíveis, e quantas linhas ficarão pendentes. Em uma cotação recorrente, a lista aparece junto da configuração sugerida e antes do botão. Se a lista mudar entre a consulta e a gravação, atualize a tela para conferir os preços atuais. **Salvar preços válidos** grava apenas linhas com associação vigente, unidade e embalagem conferidas e preço de compra positivo. Uma associação reaproveitada aponta para a confirmação manual que a originou. A data comercial pode ser anterior à do envio.
 
 Após a confirmação parcial, a tentativa fica **Concluída com pendências**. Corrija ou associe as linhas ainda pendentes e confirme novamente. O botão grava apenas as novas linhas válidas. Quando todas estiverem confirmadas, a tentativa fica **Concluída**. A primeira gravação bloqueia a conferência comercial e cada linha confirmada. O catálogo e o estoque não são alterados.
 
@@ -126,8 +126,9 @@ Mantenha o limite de transporte do arquivo acima do funcional e reserve espaço 
 | GET | `/api/importacoes/catalogo?unidade=KG&nome=&pagina=0` | Lista paginada de candidatos ativos na unidade, com código, nome e unidade |
 | GET | `/api/importacoes/{id}/vinculos` | Identidade comercial, vínculo manual e, quando aplicável, vínculo reaproveitado com a tentativa e o vínculo manual de origem |
 | PUT | `/api/importacoes/{id}/itens/{linha}/vinculo` | Confirma `produto`, `conferencia`, `revisaoItem` e `vinculo`. Use 0 para revisão individual ou vínculo ainda ausente. Retorna `409` se a escolha ficou desatualizada. |
-| GET | `/api/importacoes/{id}/precos` | Validação por linha com estado, preço, motivos e registro confirmado quando disponível |
-| POST | `/api/importacoes/{id}/confirmar-itens` | Revalida e grava os itens elegíveis em uma transação. Repetir a solicitação devolve os mesmos registros quando não houver novos itens prontos. |
+| GET | `/api/importacoes/{id}/precos` | Validação por linha e prévia de gravação quando existe uma base comercial salva ou sugerida. A prévia inclui identificação, preços prontos, comparação, total de pendências e revisão para confirmar. |
+| GET | `/api/importacoes/{id}/itens/{linha}/preco-cotado` | Valor e embalagem da linha para contextualizar o cadastro de produto, com indicação de revisão individual quando aplicável. |
+| POST | `/api/importacoes/{id}/confirmar-itens` | Revalida e grava os itens elegíveis em uma transação. O parâmetro `revisaoPrevia` retorna `409` quando a lista exibida muda. A solicitação sem o parâmetro mantém a compatibilidade. |
 | POST | `/api/importacoes/{id}/reprocessamento` | Reagenda a mesma tentativa com falha de extração e mantém o histórico de execuções |
 
 As alterações exigem sessão, perfil autorizado e CSRF. Sem fornecedor identificado, o envio retorna `400` ou `404`. A validação verifica o formato e a presença de texto com Apache PDFBox, sem guardar o texto. Arquivos corrompidos, protegidos ou sem texto recebem motivo explícito. Os logs registram identificador e status, sem nomes de arquivos ou conteúdo. [Apache PDFBox 3.0.8](https://pdfbox.apache.org/3.0/getting-started.html)

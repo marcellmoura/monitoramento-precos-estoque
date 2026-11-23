@@ -5,7 +5,7 @@ import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados, formatarDataComercial } from './api';
-import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, PreviaGravacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -114,7 +114,8 @@ export function DetalheImportacao() {
       <input type="hidden" name="operacao" value="reprocessar" />
       <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
     </fetcher.Form>}
-    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} conferencia={tentativa.conferencia} />}
+    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} conferencia={tentativa.conferencia}
+      previa={tentativa.precos.previaGravacao} />}
     {tentativa.previa && <Previa previa={tentativa.previa}
       conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
       precos={linhasPrecos} tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
@@ -277,7 +278,24 @@ function FormularioConflito({ linha, conflito, fetcher }: {
   </fetcher.Form>;
 }
 
-function ConfirmacaoItens({ linhas, conferencia }: { linhas: LinhaConfirmacao[]; conferencia?: ConferenciaCotacao }) {
+function ResumoGravacao({ previa }: { previa: PreviaGravacao }) {
+  return <div className={importacoes.resumoGravacao}>
+    <p><strong>{previa.prontos.length === 1 ? '1 preço pronto para salvar' : `${previa.prontos.length} preços prontos para salvar`}</strong></p>
+    {previa.prontos.length > 0 && <ul className={styles.lista}>
+      {previa.prontos.map(item => <li key={item.linha}>
+        <a href={`#item-${item.linha}`}>{[item.descricao, item.referencia, item.embalagem].filter(Boolean).join(' · ')}</a>
+        <p>{item.anterior ? <>De {moeda.format(item.anterior.preco)} para </> : null}
+          <strong>{moeda.format(item.preco)}</strong>{item.variacao && ` (${percentual.format(item.variacao.percentual)}%)`}
+        </p>
+      </li>)}
+    </ul>}
+    {previa.pendentes > 0 && <p>{previa.pendentes === 1 ? '1 item ficará pendente.' : `${previa.pendentes} itens ficarão pendentes.`}</p>}
+  </div>;
+}
+
+function ConfirmacaoItens({ linhas, conferencia, previa }: {
+  linhas: LinhaConfirmacao[]; conferencia?: ConferenciaCotacao; previa?: PreviaGravacao | null;
+}) {
   const fetcher = useFetcher<FalhaImportacao>();
   const prontos = linhas.filter(linha => linha.estado === 'PRONTO').length;
   const confirmados = linhas.filter(linha => linha.estado === 'CONFIRMADO').length;
@@ -292,16 +310,18 @@ function ConfirmacaoItens({ linhas, conferencia }: { linhas: LinhaConfirmacao[];
       {sugestao ? <>
         <p>Podemos reaproveitar os dados de compra da última cotação deste fornecedor.</p>
         <p>{sugestao.coluna} · {sugestao.unidade} · {sugestao.embalagem} · {formatarDataComercial(sugestao.dataComercial)}</p>
-        <p>O sistema salva os preços com vínculo válido no catálogo. Os demais itens ficam pendentes para revisão.</p>
+        {previa?.prontos.length === 0 && <p>Revise os dados de compra para salvar a conferência e tratar as pendências.</p>}
       </> : <p>Confira a prévia abaixo e confirme os dados de compra para vincular os itens ao catálogo.</p>}
       <a href="#conferencia-comercial">Revisar dados de compra</a>
     </> : <>
       <p>{prontos} pronto(s) · {confirmados} confirmado(s) · {pendentes} pendente(s)</p>
       {prontos === 0 && pendentes > 0 && <p>Veja o que falta em cada item da prévia.</p>}
     </>}
+    {previa && (sugestao || prontos > 0) && <ResumoGravacao previa={previa} />}
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    {(prontos > 0 || sugestao) && <fetcher.Form method="post" className={styles.formulario}>
+    {previa && previa.prontos.length > 0 && <fetcher.Form method="post" className={styles.formulario}>
       <input type="hidden" name="operacao" value="confirmar-itens" />
+      <input type="hidden" name="revisaoPrevia" value={previa.revisao} />
       {sugestao && <>
         <input type="hidden" name="revisao" value={0} />
         <input type="hidden" name="coluna" value={sugestao.coluna} />

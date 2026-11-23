@@ -60,6 +60,7 @@ beforeEach(() => {
       return Response.json(conferencia);
     }
     if (url.pathname.endsWith('/precos')) return Response.json(precos);
+    if (url.pathname.endsWith('/preco-cotado')) return Response.json({ preco: 32, embalagem: 'Saco', conferido: false });
     if (url.pathname.endsWith('/resolver-conflito-preco') && options?.method === 'POST') {
       if (falharConfirmacao) return Response.json({ mensagem: 'O conflito mudou. Confira novamente os preços.' }, { status: 409 });
       const item = precos.itens[0];
@@ -206,12 +207,25 @@ describe('Importações', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Leitura parcial');
   });
 
+  const previaGravacao: NonNullable<ConfirmacaoImportacao['previaGravacao']> = {
+    prontos: [{ linha: 1, descricao: 'Açúcar', referencia: 'A01', embalagem: 'Saco de 1 kg', preco: 35,
+      anterior: { preco: 33 }, variacao: { diferencaAbsoluta: 2, percentual: '6.06' } }],
+    pendentes: 1,
+    revisao: 'revisao-precos',
+  };
+
   it('envia a configuração sugerida e os preços em uma única ação explícita', async () => {
     tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
     conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg' };
+    precos.previaGravacao = previaGravacao;
     abrir('/importacoes/1');
 
     expect(await screen.findByRole('region', { name: 'Prévia dos itens' })).toBeVisible();
+    const confirmacao = within(screen.getByRole('region', { name: 'Confirmação de preços' }));
+    expect(confirmacao.getByText('1 preço pronto para salvar')).toBeVisible();
+    expect(confirmacao.getByRole('link', { name: 'Açúcar · A01 · Saco de 1 kg' })).toHaveAttribute('href', '#item-1');
+    expect(confirmacao.getByRole('listitem')).toHaveTextContent(/De R\$\s*33,00 para R\$\s*35,00 \(\+6,06%\)/);
+    expect(confirmacao.getByText('1 item ficará pendente.')).toBeVisible();
     expect(screen.getByText(/ATACADO · KG · Saco de 1 kg · 21\/11\/2026/)).toBeVisible();
     expect(screen.getByRole('link', { name: 'Revisar dados de compra' })).toHaveAttribute('href', '#conferencia-comercial');
     fireEvent.click(screen.getByRole('button', { name: 'Salvar preços válidos' }));
@@ -219,10 +233,22 @@ describe('Importações', () => {
     await screen.findByText('Concluída com pendências');
     const gravacoes = fetchMock.mock.calls.filter(([, init]) => ['POST', 'PUT'].includes(init?.method));
     expect(gravacoes).toHaveLength(1);
-    expect(gravacoes[0][0]).toMatch(/\/confirmar-itens$/);
+    expect(gravacoes[0][0]).toContain('/confirmar-itens?revisaoPrevia=revisao-precos');
     expect(JSON.parse(gravacoes[0][1].body)).toEqual({
       revisao: 0, coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg', dataComercial: '2026-11-21',
     });
+  });
+
+  it('mantém a revisão de compra disponível quando a sugestão não tem preços prontos', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg' };
+    precos.previaGravacao = { ...previaGravacao, prontos: [], pendentes: 2 };
+    abrir('/importacoes/1');
+
+    expect(await screen.findByText('0 preços prontos para salvar')).toBeVisible();
+    expect(screen.getByText('2 itens ficarão pendentes.')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Revisar dados de compra' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Salvar preços válidos' })).not.toBeInTheDocument();
   });
 
   it('apresenta a configuração sugerida e salva apenas após ação explícita', async () => {
@@ -311,7 +337,10 @@ describe('Importações', () => {
     abrir('/importacoes/1');
     fireEvent.click(await screen.findByRole('button', { name: 'Associar produto da linha 1' }));
     fireEvent.click(screen.getByRole('link', { name: 'Cadastrar produto' }));
-    fireEvent.change(await screen.findByLabelText('Nome'), { target: { value: 'Açúcar recém-cadastrado' } });
+    expect(await screen.findByText('Preço cotado no PDF')).toBeVisible();
+    expect(screen.getByText(/R\$\s*32,00 · Saco/)).toBeVisible();
+    expect(screen.getByLabelText('Preço de compra de referência (opcional)')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Açúcar recém-cadastrado' } });
     fireEvent.change(screen.getByLabelText('Unidade'), { target: { value: 'KG' } });
     fireEvent.change(screen.getByLabelText('Preço de venda'), { target: { value: '40' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
@@ -330,6 +359,7 @@ describe('Importações', () => {
         motivos: ['Aguardando confirmação do preço.'], confirmado: null },
       { linha: 2, estado: 'PENDENTE', classificacao: 'PENDENTE', variacao: null, preco: null, motivos: ['Informe um preço positivo.'], confirmado: null },
     ];
+    precos.previaGravacao = previaGravacao;
     abrir('/importacoes/1');
     const confirmar = await screen.findByRole('button', { name: 'Salvar preços válidos' });
     expect(screen.getByText(/Preço pronto para confirmar/)).toBeVisible();

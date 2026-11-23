@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Conflito;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.ContextoPreco;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Estado;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PrecoPronto;
+import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PreviaGravacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Linha;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.Operacao;
 import br.com.marcellmoura.monitoramento.importacao.domain.ConfirmacaoImportacao.PrecoAnterior;
@@ -59,16 +63,40 @@ public class ConfirmarPrecos {
     }
 
     public ConfirmacaoImportacao consultar(long tentativa) {
-        return new ConfirmacaoImportacao(avaliar(tentativa, produtos::findAllById).stream().map(Avaliacao::linha).toList());
+        var dados = conferencia.consultar(tentativa);
+        var atual = dados.confirmada();
+        var avaliadas = avaliar(tentativa, atual, produtos::findAllById);
+        if (atual != null) {
+            return new ConfirmacaoImportacao(avaliadas.stream().map(Avaliacao::linha).toList(), previaGravacao(tentativa, atual, avaliadas));
+        }
+        var sugestao = dados.sugestao() == null ? null : new Revisao(0, dados.sugestao(), dados.dataSugerida());
+        var previa = sugestao == null ? null : previaGravacao(tentativa, sugestao, avaliar(tentativa, sugestao, produtos::findAllById));
+        return new ConfirmacaoImportacao(avaliadas.stream().map(Avaliacao::linha).toList(), previa);
+    }
+
+    public ContextoPreco contextoPreco(long tentativa, int linha) {
+        var itens = importacoes.previa(tentativa).itens();
+        if (linha > itens.size()) throw new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da prévia não encontrado.");
+        var base = conferencias.atual(tentativa).orElse(null);
+        if (base == null) return new ContextoPreco(null, null, false);
+        var corrigido = AssociarItemCotacao.porLinha(revisoes.listar(tentativa)).get(linha);
+        var bruto = itens.get(linha - 1);
+        var embalagem = bruto.dados() == null ? null : bruto.dados().apresentacao();
+        return new ContextoPreco(precoDaLinha(bruto, corrigido, base), corrigido == null ? embalagem : corrigido.dados().embalagem(),
+                corrigido != null);
     }
 
     @Transactional
-    public ConfirmacaoImportacao confirmar(long tentativa, long ator, ConferirCotacao.Escolha escolha) {
+    public ConfirmacaoImportacao confirmar(long tentativa, long ator, ConferirCotacao.Escolha escolha, String revisaoPrevia) {
         conferencias.bloquearTentativa(tentativa);
         precos.bloquearFornecedor(tentativa);
         if (escolha != null) conferencia.confirmar(tentativa, ator, escolha);
-        var avaliadas = avaliar(tentativa, this::bloquearProdutos);
-        var prontos = avaliadas.stream().filter(item -> item.linha().estado() == ConfirmacaoImportacao.Estado.PRONTO).toList();
+        var base = conferencias.atual(tentativa).orElse(null);
+        var avaliadas = avaliar(tentativa, base, this::bloquearProdutos);
+        if (revisaoPrevia != null && (base == null || !revisaoPrevia.equals(previaGravacao(tentativa, base, avaliadas).revisao()))) {
+            throw new ImportacaoException(409, "PREVIA_DESATUALIZADA", "Os preços prontos mudaram. Atualize a página e confira a lista antes de salvar.");
+        }
+        var prontos = avaliadas.stream().filter(item -> item.linha().estado() == Estado.PRONTO).toList();
         if (prontos.isEmpty()) return new ConfirmacaoImportacao(avaliadas.stream().map(Avaliacao::linha).toList());
 
         prontos.forEach(item -> precos.inserir(tentativa, ator, item.registro(), 1, null));
@@ -87,7 +115,7 @@ public class ConfirmarPrecos {
         conferencias.bloquearTentativa(tentativa);
         precos.bloquearFornecedor(tentativa);
 
-        var avaliadas = avaliar(tentativa, this::bloquearProdutos);
+        var avaliadas = avaliar(tentativa, conferencias.atual(tentativa).orElse(null), this::bloquearProdutos);
         var avaliada = avaliadas.stream().filter(item -> item.linha().linha() == linha).findFirst()
                 .orElseThrow(() -> new ImportacaoException(404, "ITEM_NAO_ENCONTRADO", "Item da cotação não encontrado."));
         var confirmado = avaliada.linha().confirmado();
@@ -135,12 +163,11 @@ public class ConfirmarPrecos {
         }
     }
 
-    private List<Avaliacao> avaliar(long tentativa, Function<List<Long>, List<Produto>> consultarProdutos) {
+    private List<Avaliacao> avaliar(long tentativa, Revisao base, Function<List<Long>, List<Produto>> consultarProdutos) {
         var previa = importacoes.previa(tentativa);
-        var base = conferencias.atual(tentativa).orElse(null);
         var confirmados = precos.listar(tentativa);
         var corrigidos = AssociarItemCotacao.porLinha(revisoes.listar(tentativa));
-        var situacoes = associacoes.listar(tentativa);
+        var situacoes = associacoes.listar(tentativa, previa, base, corrigidos, true);
         var ids = situacoes.stream().filter(item -> !confirmados.containsKey(item.linha()))
                 .map(ConfirmarPrecos::produto).filter(Objects::nonNull).map(ProdutoCatalogo::id).distinct().toList();
         var catalogo = consultarProdutos.apply(ids).stream().collect(Collectors.toMap(Produto::getId, Function.identity()));
@@ -151,6 +178,25 @@ public class ConfirmarPrecos {
                     : avaliarLinha(situacao, previa.itens().get(linha - 1), corrigidos.get(linha), base, catalogo);
         }).toList();
         return base == null ? avaliadas : verificarConflitos(tentativa, base, avaliadas);
+    }
+
+    private PreviaGravacao previaGravacao(long tentativa, Revisao base, List<Avaliacao> avaliadas) {
+        var registros = avaliadas.stream().filter(item -> item.linha().estado() == Estado.PRONTO)
+                .map(Avaliacao::registro).toList();
+        long pendentes = avaliadas.stream().filter(item -> item.linha().estado() == Estado.PENDENTE).count();
+        var anteriores = registros.isEmpty() ? Map.<Chave, ConfirmacaoImportacao.BaseComparacao>of()
+                : precos.anteriores(tentativa, base.dataComercial());
+        var prontos = registros.stream().map(registro -> {
+            var identidade = registro.identidade();
+            var anterior = anteriores.get(registro.chave());
+            var variacao = anterior == null ? null : ConfirmacaoImportacao.comparar(registro.preco(), anterior);
+            return new PrecoPronto(registro.linha(), identidade.descricao(), identidade.referencia(), identidade.embalagem(),
+                    registro.preco(), anterior, variacao);
+        }).toList();
+        // A sugestão já terá um ID persistido quando a confirmação comparar esta revisão.
+        var vinculos = registros.stream().map(registro -> List.of(registro.produto(), registro.vinculo())).toList();
+        var assinatura = List.of(tentativa, base.base(), base.dataComercial(), prontos, vinculos, pendentes).toString();
+        return new PreviaGravacao(prontos, pendentes, UUID.nameUUIDFromBytes(assinatura.getBytes(StandardCharsets.UTF_8)).toString());
     }
 
     private List<Avaliacao> verificarConflitos(long tentativa, Revisao base, List<Avaliacao> avaliadas) {
@@ -185,7 +231,7 @@ public class ConfirmarPrecos {
         if (escolhido == null) motivos.add("Confirme a associação ao produto do catálogo.");
         else if (!produtoValido(catalogo.get(escolhido.id()), identidade)) motivos.add("Selecione um produto ativo com a mesma unidade.");
 
-        BigDecimal preco = corrigido == null ? PrecoCotado.lerPositivo(bruto.precos().get(base.base().coluna())) : corrigido.dados().preco();
+        BigDecimal preco = precoDaLinha(bruto, corrigido, base);
         if (!precoValido(preco)) motivos.add("Informe um preço de compra positivo e válido.");
         if (!motivos.isEmpty()) return Avaliacao.pendente(linha, motivos);
 
@@ -195,6 +241,10 @@ public class ConfirmarPrecos {
         var novo = new NovoPreco(linha, base.id(), corrigido == null ? null : corrigido.id(), origem,
                 escolhido.id(), identidade, chave, base.dataComercial(), preco);
         return new Avaliacao(Linha.pronto(linha, preco), novo);
+    }
+
+    private static BigDecimal precoDaLinha(Item bruto, RevisaoItem corrigido, Revisao base) {
+        return corrigido == null ? PrecoCotado.lerPositivo(bruto.precos().get(base.base().coluna())) : corrigido.dados().preco();
     }
 
     private boolean precoValido(BigDecimal preco) {

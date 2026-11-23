@@ -163,10 +163,15 @@ public class ImportacaoController {
     @GetMapping("/{id}/precos")
     public ConfirmacaoImportacao consultarPrecos(@PathVariable @Positive long id) { return precos.consultar(id); }
 
+    @GetMapping("/{id}/itens/{linha}/preco-cotado")
+    public ConfirmacaoImportacao.ContextoPreco consultarPrecoCotado(@PathVariable @Positive long id, @PathVariable @Positive int linha) {
+        return precos.contextoPreco(id, linha);
+    }
+
     @PostMapping("/{id}/confirmar-itens")
     public ConfirmacaoImportacao confirmarItens(@PathVariable @Positive long id, @AuthenticationPrincipal UsuarioAutenticado ator,
-            @Valid @RequestBody(required = false) ConfirmacaoComercial dados) {
-        return precos.confirmar(id, ator.getId(), dados == null ? null : escolha(dados));
+            @Valid @RequestBody(required = false) ConfirmacaoComercial dados, @RequestParam(required = false) @Size(max = 36) String revisaoPrevia) {
+        return precos.confirmar(id, ator.getId(), dados == null ? null : escolha(dados), revisaoPrevia);
     }
 
     public record ResolucaoPreco(@NotNull Operacao operacao, @NotNull @Positive Long precoReferencia,

@@ -86,7 +86,7 @@ describe('Produtos', () => {
     expect(new Headers(escrita?.[1]?.headers).get('X-CSRF-TOKEN')).toBe('csrf-teste');
   });
   it('normaliza centavos com vírgula e mantém compra zero distinta de ausência', async () => {
-    await formulario(); preencher('Preço de venda', '99999999999999999,99'); preencher('Preço de compra (opcional)', '0');
+    await formulario(); preencher('Preço de venda', '99999999999999999,99'); preencher('Preço de compra de referência (opcional)', '0');
     preencher('Categoria (opcional)', 'Alimentos');
     fireEvent.click(screen.getByRole('button', { name: 'Cadastrar produto' }));
     await screen.findByRole('status');

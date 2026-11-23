@@ -8,7 +8,7 @@ import { Usuarios, NovoUsuario, AdministrarUsuario } from '../features/usuarios/
 import { carregarUsuarios, carregarUsuario, cadastrarUsuario, administrarUsuario } from '../features/usuarios/api';
 
 import { Produtos, NovoProduto, DetalheProduto, EditarProduto } from '../features/produtos/Produtos';
-import { carregarProdutos, carregarProduto, cadastrarProduto, editarProduto } from '../features/produtos/api';
+import { carregarContextoCadastro, carregarProdutos, carregarProduto, cadastrarProduto, editarProduto } from '../features/produtos/api';
 
 import { Fornecedores, NovoFornecedor, DetalheFornecedor } from '../features/fornecedores/Fornecedores';
 import { carregarFornecedores, carregarFornecedor, cadastrarFornecedor } from '../features/fornecedores/api';
@@ -22,7 +22,7 @@ export const routes: RouteObject[] = [{
   children: [
     { index: true, element: <Inicio /> },
     { path: 'produtos', element: <Produtos />, loader: carregarProdutos },
-    { path: 'produtos/novo', element: <NovoProduto />, action: cadastrarProduto },
+    { path: 'produtos/novo', element: <NovoProduto />, loader: carregarContextoCadastro, action: cadastrarProduto },
     { path: 'produtos/:id', element: <DetalheProduto />, loader: carregarProduto },
     { path: 'produtos/:id/editar', element: <EditarProduto />, loader: carregarProduto, action: editarProduto },
     { path: 'fornecedores', element: <Fornecedores />, loader: carregarFornecedores },

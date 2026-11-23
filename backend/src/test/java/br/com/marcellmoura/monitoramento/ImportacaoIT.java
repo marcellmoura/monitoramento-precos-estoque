@@ -442,6 +442,13 @@ class ImportacaoIT {
         var salva = json(admin.enviar("PUT", rota + "/conferencia", dados, true));
         assertThat(salva.get("pendenciasComerciais").get(0).size()).isZero();
         assertThat(leitura.get("baseDoPdf")).isEqualTo(salva.get("confirmada").get("base"));
+        var contexto = rota + "/itens/1/preco-cotado";
+        var precoCotado = json(admin.enviar("GET", contexto, null, false));
+        assertThat(precoCotado.get("preco").decimalValue()).isEqualByComparingTo("33.00");
+        assertThat(precoCotado.get("embalagem").asText()).isEqualTo("Saco de 1 kg");
+        assertThat(precoCotado.get("conferido").asBoolean()).isFalse();
+        assertThat(entrar(Perfil.CONSULTA).enviar("GET", contexto, null, false).statusCode()).isEqualTo(403);
+        assertThat(admin.enviar("GET", rota + "/itens/7/preco-cotado", null, false).statusCode()).isEqualTo(404);
         long baseSalva = salva.get("confirmada").get("id").asLong();
         gravarVinculo(rota, cadastrarProduto("Hibisco", "KG"), baseSalva, 0);
         assertThat(admin.enviar("POST", rota + "/confirmar-itens", null, true).statusCode()).isEqualTo(200);
@@ -474,7 +481,19 @@ class ImportacaoIT {
         var escolhaSugerida = escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-08");
         var confirmacao = outrosItens + "/confirmar-itens";
         assertThat(admin.enviar("POST", confirmacao, escolhaSugerida, false).statusCode()).isEqualTo(403);
-        var resultado = json(admin.enviar("POST", confirmacao, escolhaSugerida, true));
+        var previa = json(admin.enviar("GET", outrosItens + "/precos", null, false)).get("previaGravacao");
+        assertThat(previa.get("pendentes").asInt()).isEqualTo(5);
+        assertThat(previa.get("prontos").size()).isEqualTo(1);
+        var pronto = previa.get("prontos").get(0);
+        assertThat(pronto.get("descricao").asText()).isEqualTo("Hibisco");
+        assertThat(pronto.get("referencia").asText()).isEqualTo("H01");
+        assertThat(pronto.get("preco").decimalValue()).isEqualByComparingTo("35.00");
+        assertThat(pronto.get("anterior").get("preco").decimalValue()).isEqualByComparingTo("33.00");
+        assertThat(pronto.get("variacao").get("percentual").asText()).isEqualTo("6.06");
+        assertThat(admin.enviar("POST", confirmacao + "?revisaoPrevia=antiga", escolhaSugerida, true).statusCode()).isEqualTo(409);
+        assertThat(json(admin.enviar("GET", outrosItens + "/conferencia", null, false)).get("confirmada").isNull()).isTrue();
+        var resultado = json(admin.enviar("POST", confirmacao + "?revisaoPrevia=" + previa.get("revisao").asText(),
+                escolhaSugerida, true));
         assertThat(resultado.get("itens").get(0).get("estado").asText()).isEqualTo("CONFIRMADO");
         assertThat(resultado.get("itens").get(0).get("preco").decimalValue()).isEqualByComparingTo("35.00");
         for (int linha = 1; linha < resultado.get("itens").size(); linha++) {

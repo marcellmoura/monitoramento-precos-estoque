@@ -6,7 +6,7 @@ P5 cobre cadastro e consulta de produtos (US-01/US-02), edição de produto/esto
 
 Após entrar com senha definitiva, selecione **Consultar produtos**. A listagem oferece paginação e acesso ao detalhe. Administrador e Compras também encontram **Cadastrar produto**.
 
-Informe nome, unidade e preço de venda. Categoria e preço de compra são opcionais. Aceitam-se KG/G/L/ML/UN. Nos preços, use vírgula ou ponto para os centavos, sem separador de milhar; valores não negativos, com até duas casas. Venda zero é válida. Compra em branco fica desconhecida e aparece como **Não informado**; compra zero aparece como **R$ 0,00**.
+Informe nome, unidade e preço de venda. Categoria e **Preço de compra de referência (opcional)** são opcionais. Ao abrir o cadastro pela importação, o preço cotado aparece como contexto. A confirmação desse preço é feita na importação e o valor entra no histórico do fornecedor. Aceitam-se KG/G/L/ML/UN. Nos preços, use vírgula ou ponto para os centavos, sem separador de milhar; valores não negativos, com até duas casas. Venda zero é válida. Compra em branco fica desconhecida e aparece como **Não informado**; compra zero aparece como **R$ 0,00**.
 
 O servidor gera o código interno e inicia o produto ativo, com estoques atual/mínimo zero. Esses estados não são campos configuráveis neste cadastro. Nomes podem repetir; a identificação interna distingue os produtos. O detalhe mostra código, categoria, unidade, valores autorizados e estado.
 
