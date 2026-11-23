@@ -4,6 +4,8 @@ Fluxo implementado para US-29 e US-32; logout e expiração da US-30 implementad
 
 ## Criar o primeiro administrador
 
+Para executar o bootstrap interativo no Compose, siga o [README](../README.md#executar-com-docker-compose).
+
 Prepare o PostgreSQL e exporte as variáveis conforme [persistência](persistencia.md). Na raiz do projeto, com Java 25 e Docker disponíveis:
 
 ```sh

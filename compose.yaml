@@ -18,5 +18,48 @@ services:
       retries: 10
       start_period: 10s
 
+  backend:
+    build: ./backend
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-monitoramento}
+      DB_USER: ${DB_USER:?Defina DB_USER no arquivo .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      IMPORTACAO_PASTA: /app/storage/importacoes
+      IMPORTACAO_LIMITE_BYTES: ${IMPORTACAO_LIMITE_BYTES:-10485760}
+      IMPORTACAO_LIMITE_PAGINAS: ${IMPORTACAO_LIMITE_PAGINAS:-50}
+      IMPORTACAO_LIMITE_TRANSPORTE_ARQUIVO: ${IMPORTACAO_LIMITE_TRANSPORTE_ARQUIVO:-12MB}
+      IMPORTACAO_LIMITE_TRANSPORTE_REQUISICAO: ${IMPORTACAO_LIMITE_TRANSPORTE_REQUISICAO:-13MB}
+      IMPORTACAO_PROCESSAMENTO_ATIVO: ${IMPORTACAO_PROCESSAMENTO_ATIVO:-true}
+      IMPORTACAO_INTERVALO_EXTRACAO_MS: ${IMPORTACAO_INTERVALO_EXTRACAO_MS:-2000}
+      IMPORTACAO_PRAZO_EXTRACAO_SEGUNDOS: ${IMPORTACAO_PRAZO_EXTRACAO_SEGUNDOS:-120}
+      IMPORTACAO_FUSO_COMERCIAL: ${IMPORTACAO_FUSO_COMERCIAL:-America/Fortaleza}
+    volumes:
+      - pdfs_data:/app/storage/importacoes
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", ": </dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:${APP_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   postgres_data:
+  pdfs_data:
