@@ -114,13 +114,13 @@ export function DetalheImportacao() {
       <input type="hidden" name="operacao" value="reprocessar" />
       <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
     </fetcher.Form>}
-    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia} bloqueada={bloqueada}
-      key={`${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
-    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} />}
+    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} conferencia={tentativa.conferencia} />}
     {tentativa.previa && <Previa previa={tentativa.previa}
       conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
       precos={linhasPrecos} tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
-      key={`${tentativa.id}-${params.get('produto') ?? ''}`} />}
+      key={`previa-${tentativa.id}-${params.get('produto') ?? ''}`} />}
+    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia} bloqueada={bloqueada}
+      key={`conferencia-${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
   </section>;
 }
 
@@ -135,7 +135,6 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
   const leituraParcial = previa.itens.some(item => item.dados === null);
   return <section aria-labelledby="previa-itens">
     <h3 id="previa-itens">Prévia dos itens</h3>
-    {!base && <p>Salve a conferência comercial para habilitar a correção dos itens.</p>}
     <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
     {leituraParcial && <p role="alert">Leitura parcial. Confira as linhas não reconhecidas no PDF.</p>}
     <ol className={styles.lista}>
@@ -162,14 +161,14 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
           {!dados && <p>{textoOriginal}</p>}
           {pendencias.length > 0 && <p>{pendencias.join(' ')}</p>}
           {!revisao && <>
-            {pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
+            {base && pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
             {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p key={aviso}>{aviso}</p>)}
           </>}
           {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
             revisao={revisao} associado={associado} bloqueado={confirmado} />}
           {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
             produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
-          {preco && <>
+          {preco && (base || preco.estado !== 'PENDENTE' || preco.conflito) && <>
             {preco.classificacao && <p><strong>Classificação</strong> · {classificacoes[preco.classificacao]}</p>}
             <EstadoPreco linha={preco} />
           </>}
@@ -278,18 +277,41 @@ function FormularioConflito({ linha, conflito, fetcher }: {
   </fetcher.Form>;
 }
 
-function ConfirmacaoItens({ linhas }: { linhas: LinhaConfirmacao[] }) {
+function ConfirmacaoItens({ linhas, conferencia }: { linhas: LinhaConfirmacao[]; conferencia?: ConferenciaCotacao }) {
   const fetcher = useFetcher<FalhaImportacao>();
   const prontos = linhas.filter(linha => linha.estado === 'PRONTO').length;
   const confirmados = linhas.filter(linha => linha.estado === 'CONFIRMADO').length;
   const pendentes = linhas.length - prontos - confirmados;
-  return <section aria-labelledby="confirmar-precos">
+  const exigeConferencia = conferencia && !conferencia.confirmada;
+  const sugestao = exigeConferencia && conferencia.sugestao
+    ? { ...conferencia.sugestao, dataComercial: conferencia.dataSugerida }
+    : null;
+  return <section className={importacoes.proximoPasso} aria-labelledby="confirmar-precos">
     <h3 id="confirmar-precos">Confirmação de preços</h3>
-    <p>{prontos} pronto(s) · {confirmados} confirmado(s) · {pendentes} pendente(s)</p>
+    {exigeConferencia ? <>
+      {sugestao ? <>
+        <p>Podemos reaproveitar os dados de compra da última cotação deste fornecedor.</p>
+        <p>{sugestao.coluna} · {sugestao.unidade} · {sugestao.embalagem} · {formatarDataComercial(sugestao.dataComercial)}</p>
+        <p>O sistema salva os preços com vínculo válido no catálogo. Os demais itens ficam pendentes para revisão.</p>
+      </> : <p>Confira a prévia abaixo e confirme os dados de compra para vincular os itens ao catálogo.</p>}
+      <a href="#conferencia-comercial">Revisar dados de compra</a>
+    </> : <>
+      <p>{prontos} pronto(s) · {confirmados} confirmado(s) · {pendentes} pendente(s)</p>
+      {prontos === 0 && pendentes > 0 && <p>Veja o que falta em cada item da prévia.</p>}
+    </>}
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    {prontos > 0 && <fetcher.Form method="post" className={styles.formulario}>
+    {(prontos > 0 || sugestao) && <fetcher.Form method="post" className={styles.formulario}>
       <input type="hidden" name="operacao" value="confirmar-itens" />
-      <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar itens válidos</button>
+      {sugestao && <>
+        <input type="hidden" name="revisao" value={0} />
+        <input type="hidden" name="coluna" value={sugestao.coluna} />
+        <input type="hidden" name="unidade" value={sugestao.unidade} />
+        <input type="hidden" name="embalagem" value={sugestao.embalagem} />
+        <input type="hidden" name="dataComercial" value={sugestao.dataComercial} />
+      </>}
+      <button type="submit" disabled={fetcher.state !== 'idle'}>
+        {fetcher.state === 'idle' ? 'Salvar preços válidos' : 'Salvando…'}
+      </button>
     </fetcher.Form>}
   </section>;
 }

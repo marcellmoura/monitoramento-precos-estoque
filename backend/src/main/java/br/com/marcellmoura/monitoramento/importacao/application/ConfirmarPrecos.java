@@ -45,15 +45,17 @@ public class ConfirmarPrecos {
     private final AssociarItemCotacao associacoes;
     private final PrecoConfirmadoRepository precos;
     private final ProdutoRepository produtos;
+    private final ConferirCotacao conferencia;
 
     public ConfirmarPrecos(RegistroImportacoes importacoes, ConferenciaRepository conferencias, RevisaoItemRepository revisoes,
-            AssociarItemCotacao associacoes, PrecoConfirmadoRepository precos, ProdutoRepository produtos) {
+            AssociarItemCotacao associacoes, PrecoConfirmadoRepository precos, ProdutoRepository produtos, ConferirCotacao conferencia) {
         this.importacoes = importacoes;
         this.conferencias = conferencias;
         this.revisoes = revisoes;
         this.associacoes = associacoes;
         this.precos = precos;
         this.produtos = produtos;
+        this.conferencia = conferencia;
     }
 
     public ConfirmacaoImportacao consultar(long tentativa) {
@@ -61,9 +63,10 @@ public class ConfirmarPrecos {
     }
 
     @Transactional
-    public ConfirmacaoImportacao confirmar(long tentativa, long ator) {
+    public ConfirmacaoImportacao confirmar(long tentativa, long ator, ConferirCotacao.Escolha escolha) {
         conferencias.bloquearTentativa(tentativa);
         precos.bloquearFornecedor(tentativa);
+        if (escolha != null) conferencia.confirmar(tentativa, ator, escolha);
         var avaliadas = avaliar(tentativa, this::bloquearProdutos);
         var prontos = avaliadas.stream().filter(item -> item.linha().estado() == ConfirmacaoImportacao.Estado.PRONTO).toList();
         if (prontos.isEmpty()) return new ConfirmacaoImportacao(avaliadas.stream().map(Avaliacao::linha).toList());

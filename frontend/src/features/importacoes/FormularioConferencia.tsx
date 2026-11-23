@@ -5,8 +5,8 @@ import styles from '../../shared/gestao.module.css';
 
 export function FormularioConferencia({ conferencia, bloqueada }: { conferencia: ConferenciaCotacao; bloqueada: boolean }) {
   const fetcher = useFetcher<FalhaImportacao>();
-  const { colunas, confirmada, sugestao, dataSugerida } = conferencia;
-  const base = confirmada?.base ?? sugestao;
+  const { colunas, confirmada, sugestao, baseDoPdf, dataSugerida } = conferencia;
+  const base = confirmada?.base ?? sugestao ?? baseDoPdf;
   if (bloqueada && confirmada) {
     return <section aria-labelledby="conferencia-comercial">
       <h3 id="conferencia-comercial">Conferência comercial</h3>
@@ -15,16 +15,17 @@ export function FormularioConferencia({ conferencia, bloqueada }: { conferencia:
     </section>;
   }
   return <section aria-labelledby="conferencia-comercial">
-    <h3 id="conferencia-comercial">Conferência comercial</h3>
-    {confirmada && <p>Conferência comercial salva.</p>}
+    <h3 id="conferencia-comercial" tabIndex={-1}>Dados para usar os preços</h3>
+    {confirmada && <p>Conferência comercial salva. <a href="#previa-itens">Voltar à prévia dos itens</a></p>}
     {!confirmada && sugestao && <p>Configuração sugerida a partir de uma cotação deste fornecedor. Confira os campos antes de salvar.</p>}
-    <p>Escolha a base de preço de compra. Itens com divergências ou dados ausentes continuam pendentes.</p>
+    {!confirmada && !sugestao && baseDoPdf && <p>Preenchemos os dados que aparecem no PDF. Confira antes de continuar.</p>}
+    <p>Confira qual preço usar e a apresentação de compra. Os itens com informações diferentes podem ser revisados depois.</p>
     <fetcher.Form method="post" className={styles.formulario}>
       <input type="hidden" name="operacao" value="conferir" />
       <input type="hidden" name="revisao" value={confirmada?.id ?? 0} />
       <div className={styles.campo}>
         <label htmlFor="coluna-compra">Coluna de preço de compra</label>
-        <select id="coluna-compra" name="coluna" defaultValue={base?.coluna ?? ''} required>
+        <select id="coluna-compra" name="coluna" defaultValue={base?.coluna ?? (colunas.length === 1 ? colunas[0] : '')} required>
           <option value="" disabled>Selecione</option>
           {colunas.map(coluna => <option key={coluna} value={coluna}>{coluna}</option>)}
         </select>

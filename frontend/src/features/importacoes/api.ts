@@ -58,6 +58,7 @@ export interface ConferenciaCotacao {
   dataSugerida: string;
   confirmada: { id: number; base: BaseComercial; dataComercial: string } | null;
   sugestao: BaseComercial | null;
+  baseDoPdf?: BaseComercial | null;
   pendenciasComerciais: string[][];
 }
 
@@ -259,17 +260,11 @@ export async function atualizarTentativa({ params, request }: ActionFunctionArgs
   const operacao = form.get('operacao');
   try {
     if (operacao === 'resolver-conflito-preco') return resolverConflitoPreco(id, form);
-    if (operacao === 'confirmar-itens') return gravarPrecos(id);
+    if (operacao === 'confirmar-itens') return gravarPrecos(id, form);
     if (operacao === 'associar-item') return salvarVinculo(id, form);
     if (operacao === 'corrigir-item') return salvarCorrecao(id, form);
     if (operacao === 'conferir') {
-      await mutateJson<ConferenciaCotacao>(`/importacoes/${id}/conferencia`, 'PUT', {
-        revisao: Number(form.get('revisao')),
-        coluna: form.get('coluna'),
-        unidade: form.get('unidade'),
-        embalagem: form.get('embalagem'),
-        dataComercial: form.get('dataComercial'),
-      });
+      await mutateJson<ConferenciaCotacao>(`/importacoes/${id}/conferencia`, 'PUT', dadosConferencia(form));
     } else {
       const destino = operacao === 'reprocessar' ? 'reprocessamento' : 'confirmacao';
       await mutateJson<TentativaImportacao>(`/importacoes/${id}/${destino}`, 'POST');
@@ -317,9 +312,20 @@ async function salvarVinculo(id: string, form: FormData) {
   } catch (error) { return tratarFalha(error); }
 }
 
-async function gravarPrecos(id: string) {
+function dadosConferencia(form: FormData) {
+  return {
+    revisao: Number(form.get('revisao')),
+    coluna: form.get('coluna'),
+    unidade: form.get('unidade'),
+    embalagem: form.get('embalagem'),
+    dataComercial: form.get('dataComercial'),
+  };
+}
+
+async function gravarPrecos(id: string, form: FormData) {
   try {
-    await mutateJson<ConfirmacaoImportacao>(`/importacoes/${id}/confirmar-itens`, 'POST');
+    await mutateJson<ConfirmacaoImportacao>(`/importacoes/${id}/confirmar-itens`, 'POST',
+      form.has('coluna') ? dadosConferencia(form) : undefined);
     return redirect(`/importacoes/${id}`);
   } catch (error) {
     if (error instanceof HttpError && error.status >= 500) {

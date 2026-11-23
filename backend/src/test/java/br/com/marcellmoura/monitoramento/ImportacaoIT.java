@@ -432,7 +432,7 @@ class ImportacaoIT {
         assertThat(json(admin.enviar("GET", rota, null, false)).get("status").asText()).isEqualTo("AGUARDANDO_CONFERENCIA");
     }
 
-    @Test void sugereBaseSomenteComMesmoFornecedorLayoutEItensCompativeis() throws Exception {
+    @Test void reaproveitaBaseEGravaApenasPrecosCompativeisEmUmaAcao() throws Exception {
         var arquivo = "sinteticos/tabela-v1.pdf";
         var original = ler(arquivo);
         var rota = processar(fornecedor, "tabela.pdf", original);
@@ -441,6 +441,10 @@ class ImportacaoIT {
         var dados = escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-03");
         var salva = json(admin.enviar("PUT", rota + "/conferencia", dados, true));
         assertThat(salva.get("pendenciasComerciais").get(0).size()).isZero();
+        assertThat(leitura.get("baseDoPdf")).isEqualTo(salva.get("confirmada").get("base"));
+        long baseSalva = salva.get("confirmada").get("id").asLong();
+        gravarVinculo(rota, cadastrarProduto("Hibisco", "KG"), baseSalva, 0);
+        assertThat(admin.enviar("POST", rota + "/confirmar-itens", null, true).statusCode()).isEqualTo(200);
         byte[] variacao;
         try (var documento = Loader.loadPDF(original); var saida = new ByteArrayOutputStream()) {
             documento.getDocumentInformation().setTitle("Nova cotação");
@@ -457,9 +461,28 @@ class ImportacaoIT {
         var outroFornecedor = processar(salvarFornecedor(), "nova-cotacao.pdf", variacao);
         assertThat(admin.enviar("POST", outroFornecedor + "/confirmacao", null, true).statusCode()).isEqualTo(200);
         processamento.executarFila();
-        for (var tentativa : java.util.List.of(outroLayout, outrosItens, outroFornecedor)) {
+        for (var tentativa : java.util.List.of(outroLayout, outroFornecedor)) {
             assertThat(json(admin.enviar("GET", tentativa + "/conferencia", null, false)).get("sugestao").isNull()).isTrue();
         }
+
+        var parcial = json(admin.enviar("GET", outrosItens + "/conferencia", null, false));
+        assertThat(parcial.get("sugestao")).isEqualTo(salva.get("confirmada").get("base"));
+        assertThat(parcial.get("confirmada").isNull()).isTrue();
+        assertThat(parcial.get("pendenciasComerciais").get(4).isEmpty()).isFalse();
+        assertThat(parcial.get("pendenciasComerciais").get(5).isEmpty()).isFalse();
+
+        var escolhaSugerida = escolha(0, "Preço", "KG", "Saco de 1 kg", "2026-11-08");
+        var confirmacao = outrosItens + "/confirmar-itens";
+        assertThat(admin.enviar("POST", confirmacao, escolhaSugerida, false).statusCode()).isEqualTo(403);
+        var resultado = json(admin.enviar("POST", confirmacao, escolhaSugerida, true));
+        assertThat(resultado.get("itens").get(0).get("estado").asText()).isEqualTo("CONFIRMADO");
+        assertThat(resultado.get("itens").get(0).get("preco").decimalValue()).isEqualByComparingTo("35.00");
+        for (int linha = 1; linha < resultado.get("itens").size(); linha++) {
+            assertThat(resultado.get("itens").get(linha).get("estado").asText()).isEqualTo("PENDENTE");
+        }
+        assertThat(json(admin.enviar("POST", confirmacao, escolhaSugerida, true))).isEqualTo(resultado);
+        assertThat(json(admin.enviar("GET", outrosItens + "/conferencia", null, false))
+                .get("confirmada").get("dataComercial").asText()).isEqualTo("2026-11-08");
     }
 
     @Test void revisaItensDaPreviaPreservandoOrigemEHistorico() throws Exception {
