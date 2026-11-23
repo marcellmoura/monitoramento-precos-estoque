@@ -1,0 +1,108 @@
+.menu {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  gap: 1.5rem;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 1.5rem .875rem 1.125rem;
+  border-radius: 0 1rem 1rem 0;
+  background: linear-gradient(155deg, #0a362b, #06291f);
+  color: #f2faf5;
+}
+
+.pular {
+  position: absolute;
+  z-index: 1;
+  top: .5rem;
+  left: .5rem;
+  padding: .75rem;
+  border-radius: .5rem;
+  background: white;
+  color: #123d2e;
+  transform: translateY(-200%);
+}
+
+.pular:focus { transform: none; }
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding-inline: .5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.marca span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.5rem;
+  height: 2.5rem;
+  border-radius: .625rem;
+  background: linear-gradient(145deg, #3b8d62, #20573c);
+}
+
+.navegacao {
+  display: grid;
+  gap: .25rem;
+}
+
+.navegacao a, .saida button {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 2.75rem;
+  padding: .625rem .75rem;
+  border-radius: .625rem;
+  color: inherit;
+  font-size: .9375rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navegacao a:hover, .saida button:hover { background: #ffffff1a; }
+.navegacao a[aria-current='page'] { background: #326c50; }
+.navegacao svg, .marca svg, .saida svg { flex-shrink: 0; }
+
+.menu :focus-visible {
+  outline: 2px solid #b2ebc7;
+  outline-offset: 2px;
+}
+
+.saida {
+  margin-top: auto;
+  padding-top: .625rem;
+  border-top: 1px solid #ffffff32;
+}
+
+.saida button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.saida button:disabled { opacity: .7; cursor: wait; }
+.saida [role='alert'] { margin: .5rem .75rem 0; color: #ffcbc7; }
+
+@media (max-width: 48rem) {
+  .menu {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .625rem;
+    min-height: 0;
+    padding: .75rem;
+    border-radius: 0 0 .875rem .875rem;
+  }
+
+  .marca { padding: 0; }
+  .navegacao { grid-area: 2 / 1 / 3 / 3; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
+  .navegacao a { padding-inline: .5rem; }
+  .saida { grid-area: 1 / 2; margin: 0; padding: 0; border: 0; }
+}

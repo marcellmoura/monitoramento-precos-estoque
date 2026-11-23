@@ -1,0 +1,272 @@
+.pagina {
+  --login-verde: #095238;
+  --login-texto: #182820;
+  --login-borda: #738679;
+  display: grid;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: clamp(1rem, 4vw, 4rem);
+  background:
+    linear-gradient(142deg, transparent 31%, #22634a12 31%, #22634a0a 47%, transparent 47%),
+    radial-gradient(ellipse at 12% 100%, #bed9cf, transparent 75%),
+    #edf5f0;
+  color: var(--login-texto);
+}
+
+.cartao {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  width: min(100%, 72rem);
+  min-height: 34rem;
+  margin-inline: auto;
+  border: 1px solid #92ad9f;
+  border-radius: 1.5rem;
+  background: white;
+  box-shadow: 0 1.5rem 4rem #12463131;
+}
+
+.identidade {
+  display: grid;
+  align-content: center;
+  gap: clamp(1.75rem, 3.5vw, 3rem);
+  padding: clamp(2rem, 4.2vw, 3.75rem);
+  border-radius: 1.45rem 0 0 1.45rem;
+  background:
+    linear-gradient(90deg, #062d24f5, #062d24eb 37%, #062d24a6 66%, #062d2424 100%),
+    #062d24 url('../../shared/armazem.jpg') right center / cover no-repeat;
+  color: #f4f7f5;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+
+.simbolo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 3.25rem;
+  height: 3.25rem;
+  border-radius: .875rem;
+  background: linear-gradient(150deg, #2b915d, #11613f);
+  color: #f4fff7;
+}
+
+.simbolo svg { width: 1.875rem; height: 1.875rem; }
+
+.apresentacao::before {
+  display: block;
+  width: 2.75rem;
+  height: .375rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  background: #60c68c;
+  content: '';
+}
+
+.tituloProduto {
+  max-width: 16ch;
+  margin: 0;
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+
+.tituloProduto span { color: #a7e7bc; }
+
+.descricao {
+  max-width: 34ch;
+  margin: 1rem 0 0;
+  color: #dcebe1;
+  line-height: 1.55;
+}
+
+.recursos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recursos li {
+  display: grid;
+  justify-items: center;
+  gap: .375rem;
+  width: 6.25rem;
+  padding: .65rem .4rem;
+  border: 1px solid #a7e7bc36;
+  border-radius: .75rem;
+  background: #07382de8;
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.recursos svg { color: #a7e7bc; }
+
+.acesso {
+  align-self: center;
+  min-width: 0;
+  padding: clamp(1.5rem, 5vw, 3.75rem);
+}
+
+.acesso h1 {
+  margin: 0 0 2rem;
+  font-size: clamp(2rem, 3.3vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -.035em;
+}
+
+.formulario {
+  display: grid;
+  gap: 1.125rem;
+}
+
+.rotuloAcessivel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.campo input, .enviar {
+  min-height: 3.375rem;
+  border-radius: .625rem;
+  font: inherit;
+}
+
+.campo input {
+  width: 100%;
+  min-width: 0;
+  padding: .625rem .75rem .625rem 2.75rem;
+  border: 1px solid var(--login-borda);
+  background: white;
+  color: var(--login-texto);
+}
+
+.campo input::placeholder {
+  color: #626b66;
+  opacity: 1;
+}
+
+.campo input:focus::placeholder { color: transparent; }
+
+.campo { position: relative; }
+
+.iconeCampo {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: .875rem;
+  display: grid;
+  place-items: center;
+  color: #52645a;
+  pointer-events: none;
+}
+
+.campoSenha input { padding-inline-end: 3rem; }
+.campoSenha input::-ms-reveal { display: none; }
+
+.campoSenha button {
+  position: absolute;
+  inset-block: 1px;
+  inset-inline-end: 1px;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: .625rem;
+  background: transparent;
+  color: #52645a;
+  cursor: pointer;
+}
+
+.campoSenha button:hover { color: var(--login-verde); }
+
+.enviar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .625rem;
+  margin-top: .25rem;
+  padding: .625rem .75rem;
+  border: 1px solid transparent;
+  background: var(--login-verde);
+  color: white;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.enviar:hover:not(:disabled) { background: #19392b; }
+
+.enviar:disabled {
+  background: #53695c;
+  cursor: wait;
+}
+
+.formulario :focus-visible {
+  outline: 3px solid #2d6995;
+  outline-offset: 2px;
+}
+
+.campoSenha button:focus-visible { outline-offset: -4px; }
+
+.aviso, .formulario [role='alert'] {
+  padding: .625rem .75rem;
+  border: 1px solid;
+  border-radius: .625rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.aviso {
+  margin: 0 0 1rem;
+  background: #edf6ef;
+  color: var(--login-verde);
+}
+
+.formulario [role='alert'] { background: #fdf2f1; }
+
+@media (max-width: 48rem) {
+  .cartao {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 32rem;
+    min-height: 0;
+  }
+
+  .identidade {
+    gap: .875rem;
+    padding: clamp(1rem, 5vw, 1.5rem);
+    border-radius: 1.45rem 1.45rem 0 0;
+    background-image:
+      linear-gradient(90deg, #062d24f5, #062d24d9 48%, #062d2499),
+      url('../../shared/armazem.jpg');
+  }
+
+  .marca { font-size: 1rem; }
+  .simbolo { flex-basis: 2.125rem; height: 2.125rem; border-radius: .625rem; }
+  .simbolo svg { width: 1.25rem; height: 1.25rem; }
+  .apresentacao::before { display: none; }
+
+  .tituloProduto {
+    max-width: none;
+    font-size: clamp(1.625rem, 5vw, 2.25rem);
+    text-wrap: wrap;
+  }
+
+  .descricao { max-width: 36ch; margin-top: .5rem; font-size: .9375rem; }
+  .recursos { display: none; }
+  .acesso h1 { margin-bottom: 1.25rem; }
+}

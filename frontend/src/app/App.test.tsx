@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routes } from './routes';
@@ -62,7 +62,7 @@ describe('Fluxo de acesso', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Senha alterada. Entre com a nova senha.');
     await entrar('Definitiva-teste-456');
     expect(await screen.findByRole('heading', { name: 'Olá, Marina Teste' })).toBeVisible();
-    expect(screen.getByText('Perfil: Administrador')).toBeVisible();
+    expect(within(screen.getByRole('region', { name: 'Olá, Marina Teste' })).getByText('Administrador')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
     await screen.findByRole('heading', { name: 'Entrar' });
     const escrita = fetchMock.mock.calls.find(([url]) => (url as string).endsWith('/senha'));
@@ -85,6 +85,14 @@ describe('Fluxo de acesso', () => {
     sessao = { ...usuario, trocaSenhaObrigatoria: false }; const router = abrir('/login');
     await screen.findByRole('heading', { name: 'Olá, Marina Teste' });
     expect(router.state.location.pathname).toBe('/');
+  });
+  it('respeita as permissões no menu e nos atalhos do início', async () => {
+    sessao = { ...usuario, perfil: 'CONSULTA', trocaSenhaObrigatoria: false };
+    abrir();
+    const menu = within(await screen.findByRole('navigation', { name: 'Navegação principal' }));
+    const atalhos = within(screen.getByRole('navigation', { name: 'Acesso rápido' }));
+    expect(menu.getAllByRole('link').map(link => link.getAttribute('href'))).toEqual(['/', '/produtos']);
+    expect(atalhos.getAllByRole('link').map(link => link.getAttribute('href'))).toEqual(['/produtos']);
   });
   it('mantém formulário bloqueado durante envio', async () => {
     abrir('/login'); await screen.findByRole('heading', { name: 'Entrar' });

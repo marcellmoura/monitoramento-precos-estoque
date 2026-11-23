@@ -36,8 +36,13 @@ beforeEach(() => {
     };
     if (path.pathname === '/api/produtos') {
       const pagina = Number(path.searchParams.get('pagina') ?? 0);
-      return Response.json({ itens: catalogo.slice(pagina * tamanho, (pagina + 1) * tamanho).map(filtrar), pagina,
-        tamanho, total: catalogo.length, paginas: Math.ceil(catalogo.length / tamanho) });
+      const busca = path.searchParams.get('busca')?.toLowerCase() ?? '';
+      const ativo = path.searchParams.get('ativo');
+      const unidade = path.searchParams.get('unidade');
+      const resultado = catalogo.filter(item => (item.nome.toLowerCase().includes(busca) || item.codigo.toLowerCase().includes(busca))
+        && (!unidade || item.unidade === unidade) && (!ativo || String(item.ativo) === ativo));
+      return Response.json({ itens: resultado.slice(pagina * tamanho, (pagina + 1) * tamanho).map(filtrar), pagina,
+        tamanho, total: resultado.length, paginas: Math.ceil(resultado.length / tamanho) });
     }
     const item = catalogo.find(p => p.id === Number(path.pathname.split('/')[3]));
     if (item && init?.method === 'PATCH') {
@@ -132,6 +137,26 @@ describe('Produtos', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Página anterior' })); await screen.findByText('Arroz');
     await act(() => router.navigate('/produtos?pagina=8'));
     expect(await screen.findByText('Nenhum produto nesta página.')).toBeVisible();
+  });
+  it('combina filtros no catálogo e preserva os critérios na segunda página', async () => {
+    tamanho = 1;
+    catalogo.push(
+      { ...produto, id: 2, codigo: 'PRD-000002', nome: 'Arroz inativo', ativo: false },
+      { ...produto, id: 3, codigo: 'PRD-000003', nome: 'Arroz integral' },
+    );
+    abrir();
+    const buscar = await screen.findByRole('button', { name: 'Buscar' });
+    preencher('Buscar por código ou nome', 'arroz');
+    preencher('Estado', 'true');
+    preencher('Unidade', 'KG');
+    fireEvent.click(buscar);
+    await screen.findByText('2 produtos encontrados.');
+    fireEvent.click(screen.getByRole('link', { name: 'Próxima página' }));
+    expect(await screen.findByText('Arroz integral')).toBeVisible();
+    expect(screen.getByLabelText('Estado')).toHaveValue('true');
+    expect(screen.getByLabelText('Unidade')).toHaveValue('KG');
+    expect(screen.getByRole('searchbox')).toHaveValue('arroz');
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe('/api/produtos?pagina=1&busca=arroz&unidade=KG&ativo=true');
   });
   it('apresenta 404 e erro de rede sem alterar catálogo', async () => {
     const router = abrir('/produtos/999'); expect(await screen.findByRole('alert')).toHaveTextContent('Produto não encontrado.');

@@ -46,8 +46,11 @@ public class ProdutoController {
     public record Pagina(List<ProdutoResposta> itens, int pagina, int tamanho, long total, int paginas) {}
     @GetMapping public Pagina listar(@AuthenticationPrincipal UsuarioAutenticado ator,
             @RequestParam(defaultValue="0") @Min(0) int pagina,
-            @RequestParam(defaultValue="20") @Min(1) @Max(100) int tamanho) {
-        var resultado = service.listar(pagina, tamanho);
+            @RequestParam(defaultValue="20") @Min(1) @Max(100) int tamanho,
+            @RequestParam(defaultValue="") @Size(max=255) String busca,
+            @RequestParam(required=false) Unidade unidade,
+            @RequestParam(required=false) Boolean ativo) {
+        var resultado = service.listar(pagina, tamanho, busca, unidade, ativo);
         return new Pagina(resultado.map(p -> ProdutoResposta.de(p, ator.getPerfil())).getContent(),
                 pagina, tamanho, resultado.getTotalElements(), resultado.getTotalPages());
     }

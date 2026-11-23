@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { HttpError, mutateJson, requestJson } from '../../shared/http';
 import { precoParaApi } from '../../shared/decimal';
 import { mensagemErro } from '../acesso/api';
+import type { Identidade } from '../acesso/api';
 
 export type Unidade = 'KG' | 'G' | 'L' | 'ML' | 'UN';
 export interface Produto {
@@ -13,6 +14,14 @@ export interface Produto {
 export interface PaginaProdutos { itens: Produto[]; pagina: number; tamanho: number; total: number; paginas: number }
 export interface FalhaProduto { erro: string }
 export const unidades: Record<Unidade, string> = { KG: 'Quilograma (KG)', G: 'Grama (G)', L: 'Litro (L)', ML: 'Mililitro (ML)', UN: 'Unidade (UN)' };
+
+export function podeCadastrar(usuario: Identidade) {
+  return usuario.perfil === 'ADMINISTRADOR' || usuario.perfil === 'COMPRAS';
+}
+
+export function quantidade(valor: string, unidade: Unidade) {
+  return unidade === 'UN' ? valor.split('.')[0] : valor.replace('.', ',');
+}
 
 function tratarFalha(error: unknown) {
   if (error instanceof HttpError) {
@@ -25,9 +34,14 @@ function tratarFalha(error: unknown) {
   return { erro: mensagemErro(error) };
 }
 export async function carregarProdutos({ request }: LoaderFunctionArgs): Promise<PaginaProdutos | FalhaProduto | Response> {
-  const pagina = new URL(request.url).searchParams.get('pagina') ?? '0';
+  const filtros = new URL(request.url).searchParams;
+  const consulta = new URLSearchParams({ pagina: filtros.get('pagina') ?? '0' });
+  for (const chave of ['busca', 'unidade', 'ativo']) {
+    const valor = filtros.get(chave)?.trim();
+    if (valor) consulta.set(chave, valor);
+  }
   try {
-    const result = await requestJson<PaginaProdutos>(`/produtos?pagina=${encodeURIComponent(pagina)}`);
+    const result = await requestJson<PaginaProdutos>(`/produtos?${consulta}`, { signal: request.signal });
     if (!result) throw new Error('Resposta ausente.');
     return result;
   } catch (error) { return tratarFalha(error); }

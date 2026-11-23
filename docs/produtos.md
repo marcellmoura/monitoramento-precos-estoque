@@ -22,7 +22,7 @@ A API omite os campos restritos. Esconder colunas no frontend complementa a auto
 
 | Método | Rota | Contrato |
 |---|---|---|
-| GET | `/api/produtos?pagina=0&tamanho=20` | `itens`, `pagina`, `tamanho`, `total`, `paginas`; ordenação estável por ID |
+| GET | `/api/produtos?pagina=0&tamanho=20` | `itens`, `pagina`, `tamanho`, `total`, `paginas`. Aceita filtros opcionais `busca` (trecho do nome ou código), `ativo` e `unidade`. Filtra antes de paginar e ordena por ID. |
 | GET | `/api/produtos/{id}` | Consulta de um produto, com campos filtrados pelo perfil |
 | POST | `/api/produtos` | `nome`, `categoria` opcional, `unidade`, `precoCompra` opcional, `precoVenda`; 201 com Location |
 

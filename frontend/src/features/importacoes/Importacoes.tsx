@@ -1,11 +1,13 @@
-import { Link, useFetcher, useLoaderData, useRevalidator, useSearchParams } from 'react-router';
-import { Fragment, useEffect, useId, useState } from 'react';
-import type { Fornecedor } from '../fornecedores/api';
+import { Link, useFetcher, useLoaderData, useOutletContext, useRevalidator, useSearchParams } from 'react-router';
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { PaginaInterna } from '../../app/PaginaInterna';
+import { IconeInterface } from '../../shared/IconeInterface';
+import type { Identidade } from '../acesso/api';
 import { AssociacaoItem } from './AssociacaoItem';
 import { CorrecaoItem } from './CorrecaoItem';
 import { FormularioConferencia } from './FormularioConferencia';
 import { estados, formatarDataComercial } from './api';
-import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, PreviaGravacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PaginaImportacoes, PreviaImportacao } from './api';
+import type { ClassificacaoPreco, ConflitoPreco, LinhaConfirmacao, PreviaGravacao, ProdutoCatalogo, SituacaoVinculo, ConferenciaCotacao, RevisaoItem, DetalheTentativa, FalhaImportacao, PreviaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
@@ -15,58 +17,8 @@ function Falha({ mensagem }: { mensagem: string }) {
   return <p role="alert" className={styles.erro}>{mensagem}</p>;
 }
 
-export function Importacoes() {
-  const dados = useLoaderData<PaginaImportacoes | FalhaImportacao>();
-  if ('erro' in dados) {
-    return <section><h2>Importações</h2><Falha mensagem={dados.erro} /><Link to="/">Voltar ao início</Link></section>;
-  }
-  return <section className={styles.painel}>
-    <div className={styles.cabecalho}><h2>Importações</h2><Link to="/importacoes/nova">Enviar PDF</Link></div>
-    {dados.itens.length === 0 ? <p>{dados.total === 0 ? 'Nenhum envio registrado.' : 'Nenhum envio nesta página.'}</p> :
-      <ul className={styles.lista}>
-        {dados.itens.map(item => <li key={item.id}>
-          <Link to={`/importacoes/${item.id}`}>#{item.id} · {item.arquivo}</Link>
-          <p>{item.fornecedorCodigo} · {item.fornecedorNome} · {dataHora.format(new Date(item.enviadaEm))}</p>
-          <p>{estados[item.status]}{item.quantidadeItens != null && ` · ${item.quantidadeItens} item(ns)`}</p>
-        </li>)}
-      </ul>}
-    {(dados.pagina > 0 || dados.paginas > 1) && <nav className={styles.paginacao} aria-label="Paginação de importações">
-      {dados.pagina > 0 && <Link to={`?pagina=${dados.pagina - 1}`}>Página anterior</Link>}
-      {dados.pagina + 1 < dados.paginas && <Link to={`?pagina=${dados.pagina + 1}`}>Próxima página</Link>}
-    </nav>}
-    <Link to="/">Voltar ao início</Link>
-  </section>;
-}
-
-export function NovoEnvio() {
-  const opcoes = useLoaderData<Fornecedor[] | FalhaImportacao>();
-  return <section className={styles.painel}>
-    <h2>Enviar PDF</h2>
-    {'erro' in opcoes ? <Falha mensagem={opcoes.erro} /> : <FormularioEnvio fornecedores={opcoes} />}
-    <Link to="/importacoes">Voltar às importações</Link>
-  </section>;
-}
-
-function FormularioEnvio({ fornecedores }: { fornecedores: Fornecedor[] }) {
-  const fetcher = useFetcher<FalhaImportacao>();
-  if (fornecedores.length === 0) {
-    return <p>Cadastre um fornecedor antes de enviar um PDF. <Link to="/fornecedores/novo">Cadastrar fornecedor</Link></p>;
-  }
-  return <fetcher.Form method="post" encType="multipart/form-data" className={styles.formulario}>
-    <div className={styles.campo}>
-      <label htmlFor="fornecedor-envio">Fornecedor</label>
-      <select id="fornecedor-envio" name="fornecedorId" defaultValue="" required>
-        <option value="" disabled>Selecione</option>
-        {fornecedores.map(fornecedor => <option key={fornecedor.id} value={fornecedor.id}>{fornecedor.codigo} · {fornecedor.nome}</option>)}
-      </select>
-    </div>
-    <label>Arquivo PDF<input type="file" name="arquivo" accept=".pdf,application/pdf" required /></label>
-    {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    <button type="submit" disabled={fetcher.state !== 'idle'}>{fetcher.state === 'idle' ? 'Enviar PDF' : 'Enviando…'}</button>
-  </fetcher.Form>;
-}
-
 export function DetalheImportacao() {
+  const usuario = useOutletContext<Identidade>();
   const tentativa = useLoaderData<DetalheTentativa | FalhaImportacao>();
   const [params] = useSearchParams();
   const fetcher = useFetcher<FalhaImportacao>();
@@ -85,66 +37,104 @@ export function DetalheImportacao() {
     return () => window.clearTimeout(timer);
   }, [aguardando, revalidate, state]);
   if ('erro' in tentativa) {
-    return <section><h1>Tentativa de importação</h1><Falha mensagem={tentativa.erro} />
-      <Link to="/importacoes">Voltar às importações</Link></section>;
+    return <PaginaInterna titulo="Detalhes da importação" usuario={usuario}>
+      <section className={`${importacoes.cotacao} ${importacoes.painelCotacao}`}>
+        <Falha mensagem={tentativa.erro} />
+        <Link to="/importacoes">Voltar às importações</Link>
+      </section>
+    </PaginaInterna>;
   }
   const linhasPrecos = tentativa.precos?.itens ?? [];
   const bloqueada = linhasPrecos.some(linha => linha.estado === 'CONFIRMADO');
-  return <section className={importacoes.cotacao}>
-    <nav className={importacoes.trilha} aria-label="Localização">
-      <Link to="/importacoes">Voltar às importações</Link>
-      <span aria-hidden="true">/</span>
-      <span>Tentativa #{tentativa.id}</span>
-    </nav>
-    <header className={importacoes.cabecalhoCotacao}>
-      <div className={importacoes.tituloCotacao}>
-        <h1>{tentativa.fornecedorNome}</h1>
-        <p role="status" className={importacoes.estadoCotacao} data-estado={tentativa.status}>{estados[tentativa.status]}</p>
-      </div>
-      <p className={importacoes.codigoFornecedor}>{tentativa.fornecedorCodigo}</p>
-      {tentativa.motivo && <p>{tentativa.motivo}</p>}
-      <dl className={importacoes.dadosCotacao}>
-        <div><dt>Arquivo</dt><dd>{tentativa.arquivo}</dd></div>
-        <div><dt>Enviado em</dt><dd>{dataHora.format(new Date(tentativa.enviadaEm))}</dd></div>
-        {tentativa.paginas != null && <div><dt>Páginas</dt><dd>{tentativa.paginas}</dd></div>}
-        {tentativa.quantidadeItens != null && <div><dt>Itens</dt><dd>{tentativa.quantidadeItens}</dd></div>}
-      </dl>
-      <nav className={importacoes.acoesCotacao} aria-label="Ações da tentativa">
-        {tentativa.importacaoExistenteId != null && <Link to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
-        <Link to={`/historico-precos?tentativa=${tentativa.id}`}>Ver histórico desta tentativa</Link>
+  return <PaginaInterna titulo="Detalhes da importação" usuario={usuario}>
+    <div className={importacoes.cotacao}>
+      <nav className={importacoes.trilha} aria-label="Localização">
+        <Link to="/importacoes">Voltar às importações</Link>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">Tentativa #{tentativa.id}</span>
       </nav>
-    </header>
-    {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    {tentativa.status === 'AGUARDANDO_CONFIRMACAO' && <fetcher.Form method="post" className={styles.formulario}>
-      <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar para este fornecedor</button>
-    </fetcher.Form>}
-    {tentativa.status === 'FALHA_EXTRACAO' && <fetcher.Form method="post" className={styles.formulario}>
-      <input type="hidden" name="operacao" value="reprocessar" />
-      <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
-    </fetcher.Form>}
-    {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} conferencia={tentativa.conferencia}
-      previa={tentativa.precos.previaGravacao} />}
-    {tentativa.previa && <Previa previa={tentativa.previa}
-      conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
-      precos={linhasPrecos} tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
-      key={`previa-${tentativa.id}-${params.get('produto') ?? ''}`} />}
-    {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia} bloqueada={bloqueada}
-      key={`conferencia-${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
-  </section>;
+      <header className={importacoes.cabecalhoCotacao}>
+        <div className={importacoes.resumoEnvio}>
+          <div className={importacoes.tituloCotacao}>
+            <span className={importacoes.iconeTitulo}><IconeInterface nome="documento" /></span>
+            <div>
+              <h2>{tentativa.fornecedorNome}</h2>
+              <p className={importacoes.codigoFornecedor}>{tentativa.fornecedorCodigo}</p>
+              <p className={importacoes.arquivoEnvio}><span className={importacoes.soLeitor}>Arquivo </span>{tentativa.arquivo}</p>
+            </div>
+          </div>
+          <dl className={importacoes.dadosCotacao}>
+            <div><dt>Enviado em</dt><dd><time dateTime={tentativa.enviadaEm}>{dataHora.format(new Date(tentativa.enviadaEm))}</time></dd></div>
+            {tentativa.paginas != null && <div><dt>Páginas</dt><dd>{tentativa.paginas}</dd></div>}
+            {tentativa.quantidadeItens != null && <div><dt>Itens</dt><dd>{tentativa.quantidadeItens}</dd></div>}
+          </dl>
+          <p role="status" className={importacoes.estadoCotacao} data-estado={tentativa.status}>{estados[tentativa.status]}</p>
+        </div>
+        {tentativa.motivo && <p className={importacoes.motivoEnvio}>{tentativa.motivo}</p>}
+        <nav className={importacoes.acoesCotacao} aria-label="Ações da tentativa">
+          {tentativa.importacaoExistenteId != null && <Link className={importacoes.abrirOriginal} to={`/importacoes/${tentativa.importacaoExistenteId}`}>Abrir tentativa original</Link>}
+          <Link to={`/historico-precos?tentativa=${tentativa.id}`}>Ver histórico desta tentativa</Link>
+        </nav>
+      </header>
+      {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
+      {tentativa.status === 'AGUARDANDO_CONFIRMACAO' && <fetcher.Form method="post" className={styles.formulario}>
+        <button type="submit" disabled={fetcher.state !== 'idle'}>Confirmar para este fornecedor</button>
+      </fetcher.Form>}
+      {tentativa.status === 'FALHA_EXTRACAO' && <fetcher.Form method="post" className={styles.formulario}>
+        <input type="hidden" name="operacao" value="reprocessar" />
+        <button type="submit" disabled={fetcher.state !== 'idle'}>Tentar novamente</button>
+      </fetcher.Form>}
+      {tentativa.precos && <ConfirmacaoItens linhas={linhasPrecos} conferencia={tentativa.conferencia}
+        previa={tentativa.precos.previaGravacao} />}
+      {tentativa.previa && <Previa previa={tentativa.previa}
+        conferencia={tentativa.conferencia} revisoes={tentativa.revisoes ?? []} vinculos={tentativa.vinculos ?? []}
+        previaGravacao={tentativa.precos?.previaGravacao}
+        precos={linhasPrecos} tentativa={tentativa.id} linhaRetorno={linhaRetorno} produtoCriado={tentativa.produtoCriado}
+        key={`previa-${tentativa.id}-${params.get('produto') ?? ''}`} />}
+      {tentativa.conferencia && <FormularioConferencia conferencia={tentativa.conferencia} bloqueada={bloqueada}
+        key={`conferencia-${tentativa.id}-${tentativa.conferencia.confirmada?.id ?? 0}`} />}
+    </div>
+  </PaginaInterna>;
 }
 
-function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, linhaRetorno, produtoCriado }: {
+function abrirDetalhesItem(id: string) {
+  const detalhes = document.getElementById(id)?.querySelector('details');
+  if (!detalhes) return;
+  detalhes.open = true;
+  detalhes.querySelector('summary')?.focus({ preventScroll: true });
+}
+
+function DetalhesItem({ abrir, children }: { abrir: boolean; children: ReactNode }) {
+  const detalhes = useRef<HTMLDetailsElement>(null);
+  useLayoutEffect(() => {
+    if (abrir && detalhes.current) detalhes.current.open = true;
+  }, [abrir]);
+  return <details ref={detalhes}>{children}</details>;
+}
+
+function Previa({ previa, conferencia, revisoes, vinculos, precos, previaGravacao, tentativa, linhaRetorno, produtoCriado }: {
   previa: PreviaImportacao; conferencia?: ConferenciaCotacao; revisoes: RevisaoItem[];
-  vinculos: SituacaoVinculo[]; precos: LinhaConfirmacao[]; tentativa: number; linhaRetorno: number; produtoCriado?: ProdutoCatalogo;
+  vinculos: SituacaoVinculo[]; precos: LinhaConfirmacao[]; previaGravacao?: PreviaGravacao | null;
+  tentativa: number; linhaRetorno: number; produtoCriado?: ProdutoCatalogo;
 }) {
   const precosPorLinha = new Map(precos.map(preco => [preco.linha, preco]));
+  const prontosPorLinha = new Map(previaGravacao?.prontos.map(item => [item.linha, item.preco]));
   const vinculosPorLinha = new Map(vinculos.map(vinculo => [vinculo.linha, vinculo]));
   const porLinha = new Map(revisoes.map(revisao => [revisao.linha, revisao]));
   const base = conferencia?.confirmada;
   const leituraParcial = previa.itens.some(item => item.dados === null);
+  useEffect(() => {
+    function abrirItemDaUrl() {
+      const alvo = window.location.hash.slice(1);
+      if (/^item-\d+$/.test(alvo)) abrirDetalhesItem(alvo);
+    }
+    abrirItemDaUrl();
+    window.addEventListener('hashchange', abrirItemDaUrl);
+    return () => window.removeEventListener('hashchange', abrirItemDaUrl);
+  }, [tentativa]);
   return <section className={importacoes.painelCotacao} aria-labelledby="previa-itens">
     <div className={importacoes.cabecalhoPrevia}>
-      <h2 id="previa-itens">Prévia dos itens</h2>
+      <h2 id="previa-itens" tabIndex={-1} className={importacoes.tituloSecao}><IconeInterface nome="caixa" />Prévia dos itens</h2>
       <p>Data no PDF: {previa.dataReferencia ?? 'Não informada'}</p>
     </div>
     {leituraParcial && <p role="alert">Leitura parcial. Confira as linhas não reconhecidas no PDF.</p>}
@@ -156,35 +146,58 @@ function Previa({ previa, conferencia, revisoes, vinculos, precos, tentativa, li
         const situacao = vinculosPorLinha.get(linha);
         const preco = precosPorLinha.get(linha);
         const confirmado = preco?.estado === 'CONFIRMADO';
+        const substituido = preco?.confirmado?.substituido === true;
         const associado = confirmado || Boolean(situacao?.reaproveitado || (situacao?.vinculo && !situacao.revalidar));
-        return <li key={linha} id={`item-${linha}`} className={importacoes.itemCotacao}>
-          <h3>{dados?.descricao ?? 'Linha não reconhecida'}</h3>
-          {revisao && <h4>Dados extraídos do PDF</h4>}
-          {dados && <dl className={importacoes.dadosCotacao}>
-            <div><dt>Referência</dt><dd>{dados.referencia || 'Não informada'}</dd></div>
-            <div><dt>Unidade</dt><dd>{dados.unidade || 'Não informada'}</dd></div>
-            <div><dt>Apresentação</dt><dd>{dados.apresentacao || 'Não informada'}</dd></div>
-            <div><dt>Quantidade</dt><dd>{dados.quantidade || 'Não informada'}</dd></div>
-            {Object.entries(precos).map(([coluna, valor]) => <div key={coluna} className={importacoes.valorItem}>
-              <dt>{coluna}</dt><dd>{valor || 'Não informado'}</dd>
-            </div>)}
-          </dl>}
-          {!dados && <p>{textoOriginal}</p>}
-          {pendencias.length > 0 && <p className={importacoes.avisoCotacao}>{pendencias.join(' ')}</p>}
-          {!revisao && <>
-            {base && !preco && pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
-            {conferencia?.pendenciasComerciais[indice]?.map(aviso => <p className={importacoes.avisoCotacao} key={aviso}>{aviso}</p>)}
-          </>}
-          {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
-            revisao={revisao} associado={associado} bloqueado={confirmado} />}
-          {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
-            produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
-          {preco && (base || preco.estado !== 'PENDENTE' || preco.conflito) && <>
-            {preco.classificacao && <p className={importacoes.classificacao} data-classificacao={preco.classificacao}>
-              <strong>Classificação</strong> · {classificacoes[preco.classificacao]}
-            </p>}
-            <EstadoPreco linha={preco} />
-          </>}
+        const avisosComerciais = revisao ? [] : conferencia?.pendenciasComerciais[indice] ?? [];
+        const precoSugerido = base ? undefined : prontosPorLinha.get(linha);
+        const pronto = preco?.estado === 'PRONTO' || precoSugerido !== undefined;
+        const temAvisos = pendencias.length > 0 || avisosComerciais.length > 0 || Boolean(base && !associado);
+        const pendente = !confirmado && !pronto && (!dados || preco?.estado === 'PENDENTE' || temAvisos);
+        const estado = confirmado ? (substituido ? 'Substituído' : 'Confirmado') : pronto ? 'Pronto para salvar' : pendente ? 'Pendente' : 'Extraído do PDF';
+        const valor = precoSugerido ?? preco?.preco;
+        return <li key={linha} id={`item-${linha}`} className={importacoes.itemCotacao} data-pendente={pendente}>
+          <DetalhesItem abrir={pendente || substituido || Boolean(base && !confirmado && temAvisos) || linha === linhaRetorno}>
+            <summary className={importacoes.resumoItem}>
+              <span className={importacoes.nomeItem}>
+                <strong>{dados?.descricao ?? 'Linha não reconhecida'}</strong>
+                {dados && <small>Ref. {dados.referencia || 'não informada'} · {dados.apresentacao || 'Apresentação não informada'}</small>}
+              </span>
+              {dados && <span className={importacoes.medidasItem}>
+                <span><small>Unidade</small><strong>{dados.unidade || '—'}</strong></span>
+                {dados.quantidade && <span><small>Quantidade</small><strong>{dados.quantidade}</strong></span>}
+                {Object.entries(precos).map(([coluna, valor]) => <span key={coluna} className={importacoes.valorItem}>
+                  <small>{coluna}</small><strong>{valor || '—'}</strong>
+                </span>)}
+              </span>}
+              <span className={importacoes.estadoItem} data-pendente={pendente}>
+                {estado}{valor != null && <small>{moeda.format(valor)}</small>}
+              </span>
+              <span className={importacoes.setaItem}><IconeInterface nome="seta" /></span>
+            </summary>
+            <div className={importacoes.detalhesItem}>
+              {revisao && <p className={importacoes.notaItem}>A linha acima mostra os dados originais do PDF.</p>}
+              {!dados && <p>{textoOriginal}</p>}
+              {pendencias.length > 0 && <p className={importacoes.avisoCotacao}>{pendencias.join(' ')}</p>}
+              {pendente && conferencia && !base && pendencias.length === 0 && avisosComerciais.length === 0 && !preco?.conflito &&
+                <p className={importacoes.avisoCotacao}>
+                  <a href="#conferencia-comercial">Revise os dados de compra</a> para continuar a conferência deste item.
+                </p>}
+              {!revisao && <>
+                {base && !preco && pendencias.length === 0 && !associado && <p>Pendente de associação.</p>}
+                {avisosComerciais.map(aviso => <p className={importacoes.avisoCotacao} key={aviso}>{aviso}</p>)}
+              </>}
+              {base && <CorrecaoItem item={item} linha={linha} base={base} colunas={conferencia?.colunas ?? []}
+                revisao={revisao} associado={associado} bloqueado={confirmado} />}
+              {situacao && !confirmado && <AssociacaoItem tentativa={tentativa} situacao={situacao} abrirAoVoltar={linha === linhaRetorno}
+                produtoCriado={linha === linhaRetorno ? produtoCriado : undefined} />}
+              {preco && (base || preco.estado !== 'PENDENTE' || preco.conflito) && <>
+                {preco.classificacao && <p className={importacoes.classificacao} data-classificacao={preco.classificacao}>
+                  <strong>Classificação</strong> · {classificacoes[preco.classificacao]}
+                </p>}
+                <EstadoPreco linha={preco} />
+              </>}
+            </div>
+          </DetalhesItem>
         </li>;
       })}
     </ol>
@@ -295,7 +308,7 @@ function ResumoGravacao({ previa }: { previa: PreviaGravacao }) {
     <h3>{previa.prontos.length === 1 ? '1 preço pronto para salvar' : `${previa.prontos.length} preços prontos para salvar`}</h3>
     {previa.prontos.length > 0 && <ul role="list" className={importacoes.listaPrecos}>
       {previa.prontos.map(item => <li key={item.linha}>
-        <a href={`#item-${item.linha}`}>{[item.descricao, item.referencia, item.embalagem].filter(Boolean).join(' · ')}</a>
+        <a href={`#item-${item.linha}`} onClick={() => abrirDetalhesItem(`item-${item.linha}`)}>{[item.descricao, item.referencia, item.embalagem].filter(Boolean).join(' · ')}</a>
         <p>{item.anterior ? <>De {moeda.format(item.anterior.preco)} para </> : null}
           <strong>{moeda.format(item.preco)}</strong>{item.variacao &&
             <span className={importacoes.variacao}>{` (${percentual.format(item.variacao.percentual)}%)`}</span>}
@@ -315,30 +328,37 @@ function ConfirmacaoItens({ linhas, conferencia, previa }: {
   const prontos = linhas.filter(linha => linha.estado === 'PRONTO').length;
   const confirmados = linhas.filter(linha => linha.estado === 'CONFIRMADO').length;
   const pendentes = linhas.length - prontos - confirmados;
+  const temPendencias = (previa?.pendentes ?? pendentes) > 0;
   const exigeConferencia = conferencia && !conferencia.confirmada;
   const sugestao = exigeConferencia && conferencia.sugestao
     ? { ...conferencia.sugestao, dataComercial: conferencia.dataSugerida }
     : null;
+  const calculoSugerido = sugestao ? previa : null;
   return <section className={importacoes.proximoPasso} aria-labelledby="confirmar-precos">
-    <h2 id="confirmar-precos">Confirmação de preços</h2>
-    {exigeConferencia ? <>
+    <h2 id="confirmar-precos" className={importacoes.tituloSecao}><IconeInterface nome="grafico" />Confirmação de preços</h2>
+    {exigeConferencia && <>
       {sugestao ? <>
         <p>Podemos reaproveitar os dados de compra da última cotação deste fornecedor.</p>
         <p>{sugestao.coluna} · {sugestao.unidade} · {sugestao.embalagem} · {formatarDataComercial(sugestao.dataComercial)}</p>
         {previa?.prontos.length === 0 && <p>Revise os dados de compra para salvar a conferência e tratar as pendências.</p>}
       </> : <p>Confira a prévia abaixo e confirme os dados de compra para vincular os itens ao catálogo.</p>}
-    </> : <>
+    </>}
+    {(!exigeConferencia || calculoSugerido) && <>
       <dl className={importacoes.contadores}>
-        <div><dt>Prontos</dt><dd>{prontos}</dd></div>
-        <div><dt>Confirmados</dt><dd>{confirmados}</dd></div>
-        <div><dt>Pendentes</dt><dd>{pendentes}</dd></div>
+        <div><dt><IconeInterface nome="confirmado" />Prontos</dt><dd>{calculoSugerido?.prontos.length ?? prontos}</dd></div>
+        <div><dt><IconeInterface nome="documento" />Confirmados</dt><dd>{confirmados}</dd></div>
+        <div className={temPendencias ? importacoes.contadorPendente : undefined}>
+          <dt><IconeInterface nome="atencao" />Pendentes</dt><dd>{calculoSugerido?.pendentes ?? pendentes}</dd>
+        </div>
       </dl>
-      {prontos === 0 && pendentes > 0 && <p>Veja o que falta em cada item da prévia.</p>}
     </>}
     {previa && (sugestao || prontos > 0) && <ResumoGravacao previa={previa} />}
     {fetcher.data?.erro && <Falha mensagem={fetcher.data.erro} />}
-    {(exigeConferencia || Boolean(previa?.prontos.length)) && <div className={importacoes.acoesPrecos}>
-      {exigeConferencia && <a className={importacoes.revisar} href="#conferencia-comercial">Revisar dados de compra</a>}
+    {(exigeConferencia || temPendencias || Boolean(previa?.prontos.length)) && <div className={importacoes.acoesPrecos}>
+      <div className={importacoes.atalhosPrecos}>
+        {exigeConferencia && <a className={importacoes.revisar} href="#conferencia-comercial">Revisar dados de compra</a>}
+        {temPendencias && <a href="#previa-itens">Ver pendências na prévia</a>}
+      </div>
       {previa && previa.prontos.length > 0 && <fetcher.Form method="post" className={`${styles.formulario} ${importacoes.salvarPrecos}`}>
         <input type="hidden" name="operacao" value="confirmar-itens" />
         <input type="hidden" name="revisaoPrevia" value={previa.revisao} />

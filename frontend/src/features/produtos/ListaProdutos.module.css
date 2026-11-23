@@ -1,0 +1,178 @@
+.painel {
+  min-width: 0;
+  padding: clamp(.875rem, 2.2vw, 1.5rem);
+  border: 1px solid #d3e0d7;
+  border-radius: 1rem;
+  background: white;
+}
+
+.cabecalho, .titulo {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.cabecalho { justify-content: space-between; flex-wrap: wrap; }
+.titulo h2 { margin: 0; font-size: clamp(1.2rem, 2.4vw, 1.5rem); line-height: 1.2; }
+.titulo p { margin: .25rem 0 0; color: #4c6658; }
+
+.icone {
+  display: grid;
+  flex: 0 0 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: .7rem;
+  background: #e3f2e8;
+  color: #164a35;
+}
+
+.cadastrar, .filtrar, .consultar {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  min-height: 2.75rem;
+  padding: .5rem .8rem;
+  border-radius: .625rem;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.cadastrar { background: #0a573d; color: white; }
+.cadastrar:hover { background: #07442f; }
+
+.filtros {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: .75rem;
+  margin: 1rem 0;
+}
+
+.filtros label {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+  font-size: .85rem;
+  font-weight: 650;
+}
+
+.busca { position: relative; display: grid; }
+.busca svg { position: absolute; top: 50%; left: .65rem; transform: translateY(-50%); color: #52695b; pointer-events: none; }
+
+.filtros input, .filtros select {
+  width: 100%;
+  min-width: 0;
+  height: 2.75rem;
+  padding: .5rem .65rem;
+  border: 1px solid #84998d;
+  border-radius: .625rem;
+  background: white;
+  color: #182820;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.filtros .busca input { padding-inline-start: 2.25rem; }
+.filtros input::placeholder { color: #52695b; opacity: 1; }
+
+.filtrar {
+  border: 1px solid #819e8f;
+  background: #f0f7f2;
+  color: #164a35;
+  cursor: pointer;
+}
+
+.filtrar:hover, .consultar:hover { background: #e5f2e8; }
+.painel :focus-visible { outline: 2px solid #2d6995; outline-offset: 2px; }
+
+.limpar, .voltar, .paginacao a {
+  width: fit-content;
+  color: #164a35;
+  text-underline-offset: .2em;
+}
+
+.limpar { grid-column: 1 / -1; font-size: .875rem; }
+.voltar { display: inline-block; margin-top: 1rem; }
+.vazio, .erro { margin: 0; padding: .75rem; border-radius: .625rem; }
+.vazio { color: #435d50; background: #f2f7f4; }
+.erro { color: #942c22; background: #fce7e4; }
+
+.moldura { border: 1px solid #d8e5dd; border-radius: .75rem; }
+
+.tabela {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  font-size: .875rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.tabela th, .tabela td { padding: .65rem .75rem; vertical-align: middle; }
+.tabela thead th { background: #eef5f1; font-weight: 700; }
+.colunaProduto { width: 26%; border-top-left-radius: .7rem; }
+.tabela thead th:last-child { border-top-right-radius: .7rem; }
+.tabela tbody tr + tr > * { border-top: 1px solid #e3ece6; }
+.tabela tbody tr:hover { background: #f9fcfa; }
+
+.produto small { display: block; margin-top: .15rem; color: #4c6658; font-weight: 400; }
+.estoque { font-variant-numeric: tabular-nums; }
+.rotuloMovel { display: none; }
+
+.consultar {
+  border: 1px solid #819e8f;
+  min-height: 2.5rem;
+  color: #164a35;
+  white-space: nowrap;
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .5rem 1rem;
+  margin-top: .875rem;
+  color: #40574a;
+  font-size: .875rem;
+}
+
+@media (max-width: 64rem) {
+  .moldura { border: 0; }
+  .tabela { display: block; }
+  .tabela thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .tabela tbody { display: grid; gap: .625rem; }
+  .tabela tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .625rem .875rem;
+    padding: .75rem;
+    border: 1px solid #d8e5dd;
+    border-radius: .75rem;
+  }
+  .tabela tbody tr > * { min-width: 0; padding: 0; }
+  .tabela tbody tr + tr > * { border-top: 0; }
+  .produto { grid-column: 1 / -1; }
+  .rotuloMovel { display: block; margin-bottom: .125rem; color: #4c6658; font-size: .75rem; }
+}
+
+@media (max-width: 42rem) {
+  .filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filtros label:first-child, .filtrar { grid-column: 1 / -1; }
+}
+
+@media (max-width: 25rem) {
+  .filtros { grid-template-columns: minmax(0, 1fr); }
+}

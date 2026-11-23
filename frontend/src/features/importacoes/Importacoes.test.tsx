@@ -136,6 +136,19 @@ describe('Importações', () => {
     expect(await screen.findByText('Nenhum envio registrado.')).toBeVisible();
   });
 
+  it('filtra a página atual sem alterar o total de envios ou a paginação', async () => {
+    tentativas = [{ ...base }, { ...base, id: 2, arquivo: 'outro.pdf' }];
+    abrir('/importacoes');
+    const filtro = await screen.findByRole('group', { name: 'Filtrar esta página' });
+    expect(screen.getByRole('link', { name: /^Importações$/ })).toHaveAttribute('aria-current', 'page');
+    fireEvent.change(within(filtro).getByRole('searchbox'), { target: { value: 'OUTRO' } });
+    expect(screen.getByRole('status')).toHaveTextContent('Nenhum envio corresponde aos filtros desta página.');
+    expect(screen.getByText('Total de envios').nextElementSibling).toHaveTextContent('2');
+    fireEvent.click(screen.getByRole('link', { name: 'Próxima página' }));
+    expect(await screen.findByRole('link', { name: '#2 · outro.pdf' })).toBeVisible();
+    expect(screen.getByRole('searchbox')).toHaveValue('');
+  });
+
   it('carrega fornecedores de várias páginas e distingue homônimos pelo código', async () => {
     abrir('/importacoes/nova');
     await screen.findByRole('option', { name: 'FOR-000002 · Distribuidora Teste' });
@@ -220,7 +233,9 @@ describe('Importações', () => {
     precos.previaGravacao = previaGravacao;
     abrir('/importacoes/1');
 
-    expect(await screen.findByRole('region', { name: 'Prévia dos itens' })).toBeVisible();
+    const previa = within(await screen.findByRole('region', { name: 'Prévia dos itens' }));
+    expect(previa.getByText('Pronto para salvar').closest('details')).not.toHaveAttribute('open');
+    expect(previa.getByText('Linha não reconhecida').closest('details')).toHaveAttribute('open');
     const confirmacao = within(screen.getByRole('region', { name: 'Confirmação de preços' }));
     expect(confirmacao.getByText('1 preço pronto para salvar')).toBeVisible();
     expect(confirmacao.getByRole('link', { name: 'Açúcar · A01 · Saco de 1 kg' })).toHaveAttribute('href', '#item-1');
@@ -270,6 +285,23 @@ describe('Importações', () => {
       revisao: 0, coluna: 'ATACADO', unidade: 'KG', embalagem: 'Saco de 1 kg', dataComercial: '2026-11-20',
     });
     expect(screen.getByLabelText('Data comercial')).toHaveValue('2026-11-20');
+  });
+
+  it('preserva a embalagem sugerida e permite selecionar uma descrição personalizada', async () => {
+    tentativas = [{ ...base, status: 'AGUARDANDO_CONFERENCIA', quantidadeItens: 2 }];
+    conferencia.sugestao = { coluna: 'ATACADO', unidade: 'KG', embalagem: 'Pacote de 750 g' };
+    abrir('/importacoes/1');
+    const embalagem = await screen.findByLabelText('Embalagem de compra');
+    expect(embalagem).toHaveDisplayValue('Pacote de 750 g');
+    fireEvent.change(embalagem, { target: { value: 'embalagem:A Granel' } });
+    expect(embalagem).toHaveDisplayValue('A Granel');
+    fireEvent.change(embalagem, { target: { value: 'outra' } });
+    const descricao = screen.getByLabelText('Descreva a embalagem');
+    expect(descricao).toBeRequired();
+    fireEvent.change(descricao, { target: { value: 'Caixa de 12 unidades' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    expect(await screen.findByText('Conferência comercial salva.')).toBeVisible();
+    expect(screen.getByLabelText('Embalagem de compra')).toHaveDisplayValue('Caixa de 12 unidades');
   });
 
   it('corrige uma linha e preserva os valores originais na prévia', async () => {

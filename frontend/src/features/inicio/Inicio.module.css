@@ -1,0 +1,110 @@
+.boasVindas, .atalhos a {
+  border: 1px solid #d3e0d7;
+  border-radius: 1rem;
+  background: white;
+}
+
+.resumo h2 { margin: 0; }
+
+.icone {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: .75rem;
+  background: #e5f2e9;
+  color: #1f5d43;
+}
+
+.resumo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.9fr);
+  gap: 1.25rem;
+}
+
+.boasVindas {
+  position: relative;
+  isolation: isolate;
+  min-height: 10rem;
+  padding: 1.5rem;
+  box-shadow: 0 .25rem .75rem #183a290c;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.boasVindas h2 {
+  font-size: clamp(1.375rem, 2.4vw, 1.875rem);
+  letter-spacing: -.025em;
+}
+
+.perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  margin: .75rem 0 0;
+  padding: .375rem .75rem;
+  border-radius: 1.25rem;
+  background: #e0f1e6;
+  color: #1a573e;
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.perfil svg { width: 1rem; height: 1rem; }
+
+.orientacao {
+  max-width: 32ch;
+  margin: 1rem 0 0;
+  color: #40574a;
+  line-height: 1.5;
+}
+
+.marcaBoasVindas {
+  position: absolute;
+  z-index: -1;
+  right: -1.25rem;
+  bottom: -1.75rem;
+  display: flex;
+  color: #e2f1e8;
+  pointer-events: none;
+}
+
+.marcaBoasVindas svg { width: 7.5rem; height: 7.5rem; stroke-width: 1.1; }
+
+.atalhos h2 { font-size: 1.1875rem; }
+
+.atalhos ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: .75rem;
+  margin: .875rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atalhos a {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .625rem;
+  height: 100%;
+  padding: .625rem .75rem;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.atalhos a:hover { border-color: #6a9a7d; background: #f9fdfb; }
+.atalhos a > svg { color: #306548; }
+.atalhos a:focus-visible { outline: 3px solid #2d6995; outline-offset: 2px; }
+
+@media (max-width: 56rem) {
+  .resumo { grid-template-columns: minmax(0, 1fr); }
+  .boasVindas { min-height: 0; }
+}
+
+@media (max-width: 34rem) {
+  .atalhos ul { grid-template-columns: minmax(0, 1fr); }
+}

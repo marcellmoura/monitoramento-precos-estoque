@@ -22,8 +22,8 @@ public class ProdutoService {
         this.produtos = produtos;
         this.jdbc = jdbc;
     }
-    public Page<Produto> listar(int pagina, int tamanho) {
-        return produtos.findAll(PageRequest.of(pagina, tamanho, Sort.by("id")));
+    public Page<Produto> listar(int pagina, int tamanho, String busca, Unidade unidade, Boolean ativo) {
+        return produtos.buscar(busca.strip(), unidade, ativo, PageRequest.of(pagina, tamanho, Sort.by("id")));
     }
     public Produto consultar(Long id) {
         return produtos.findById(id).orElseThrow(ProdutoNaoEncontradoException::new);

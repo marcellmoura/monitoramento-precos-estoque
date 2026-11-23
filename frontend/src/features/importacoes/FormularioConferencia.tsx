@@ -1,27 +1,39 @@
+import { useState } from 'react';
 import { useFetcher } from 'react-router';
+import { IconeInterface } from '../../shared/IconeInterface';
 import { unidades } from '../produtos/api';
 import type { ConferenciaCotacao, FalhaImportacao } from './api';
 import styles from '../../shared/gestao.module.css';
 import importacoes from './Importacoes.module.css';
 
+const embalagensPredefinidas = ['A Granel', 'Saco de 1 kg', 'Saco de 5 kg', 'Saco de 25 kg', 'Caixa', 'Fardo'];
+const outraEmbalagem = 'outra';
+const prefixoEmbalagem = 'embalagem:';
+
 export function FormularioConferencia({ conferencia, bloqueada }: { conferencia: ConferenciaCotacao; bloqueada: boolean }) {
   const fetcher = useFetcher<FalhaImportacao>();
   const { colunas, confirmada, sugestao, baseDoPdf, dataSugerida } = conferencia;
   const base = confirmada?.base ?? sugestao ?? baseDoPdf;
+  const embalagemInicial = base?.embalagem ?? '';
+  const [embalagemSelecionada, selecionarEmbalagem] = useState(embalagemInicial ? prefixoEmbalagem + embalagemInicial : '');
+  const personalizada = embalagemSelecionada === outraEmbalagem;
+  const embalagens = embalagensPredefinidas.map(embalagem =>
+    embalagem.toLowerCase() === embalagemInicial.toLowerCase() ? embalagemInicial : embalagem);
+  if (embalagemInicial && !embalagens.includes(embalagemInicial)) embalagens.push(embalagemInicial);
+
   if (bloqueada && confirmada) {
     return <section className={importacoes.painelCotacao} aria-labelledby="conferencia-comercial">
-      <h2 id="conferencia-comercial">Conferência comercial</h2>
+      <h2 id="conferencia-comercial" className={importacoes.tituloSecao}><IconeInterface nome="documento" />Conferência comercial</h2>
       <p>{confirmada.base.coluna} · {confirmada.base.unidade} · {confirmada.base.embalagem} · {confirmada.dataComercial.split('-').reverse().join('/')}</p>
       <p>Conferência bloqueada após a confirmação de preços.</p>
     </section>;
   }
   return <section className={importacoes.painelCotacao} aria-labelledby="conferencia-comercial">
-    <h2 id="conferencia-comercial" tabIndex={-1}>Dados para usar os preços</h2>
+    <h2 id="conferencia-comercial" tabIndex={-1} className={importacoes.tituloSecao}><IconeInterface nome="documento" />Dados para usar os preços</h2>
     {confirmada && <p>Conferência comercial salva. <a href="#previa-itens">Voltar à prévia dos itens</a></p>}
     {!confirmada && sugestao && <p>Configuração sugerida a partir de uma cotação deste fornecedor. Confira os campos antes de salvar.</p>}
     {!confirmada && !sugestao && baseDoPdf && <p>Preenchemos os dados que aparecem no PDF. Confira antes de continuar.</p>}
-    <p>Confira qual preço usar e a apresentação de compra. Os itens com informações diferentes podem ser revisados depois.</p>
-    <fetcher.Form method="post" className={styles.formulario}>
+    <fetcher.Form method="post" className={`${styles.formulario} ${importacoes.formularioConferencia}`}>
       <input type="hidden" name="operacao" value="conferir" />
       <input type="hidden" name="revisao" value={confirmada?.id ?? 0} />
       <div className={styles.campo}>
@@ -38,13 +50,26 @@ export function FormularioConferencia({ conferencia, bloqueada }: { conferencia:
           {Object.entries(unidades).map(([codigo, nome]) => <option key={codigo} value={codigo}>{nome}</option>)}
         </select>
       </div>
-      <label>Embalagem de compra<input name="embalagem" required maxLength={120} defaultValue={base?.embalagem ?? ''} /></label>
+      <div className={styles.campo}>
+        <label htmlFor="embalagem-compra">Embalagem de compra</label>
+        <select id="embalagem-compra" value={embalagemSelecionada} onChange={evento => selecionarEmbalagem(evento.target.value)} required>
+          <option value="" disabled>Selecione</option>
+          {embalagens.map(embalagem => <option key={embalagem} value={prefixoEmbalagem + embalagem}>{embalagem}</option>)}
+          <option value={outraEmbalagem}>Outra embalagem</option>
+        </select>
+      </div>
       <label>Data comercial<input type="date" name="dataComercial" required max="9999-12-31"
         defaultValue={confirmada?.dataComercial ?? dataSugerida} /></label>
+      {personalizada ? <label className={importacoes.embalagemPersonalizada}>Descreva a embalagem
+        <input name="embalagem" required maxLength={120} placeholder="Ex.: Caixa de 12 unidades" />
+      </label> : <input type="hidden" name="embalagem" value={embalagemSelecionada.slice(prefixoEmbalagem.length)} />}
       {fetcher.data?.erro && <p role="alert" className={styles.erro}>{fetcher.data.erro}</p>}
-      <button type="submit" disabled={fetcher.state !== 'idle'}>
-        {fetcher.state === 'idle' ? 'Salvar conferência' : 'Salvando…'}
-      </button>
+      <div className={importacoes.rodapeConferencia}>
+        <p>Salvar a conferência define os dados de compra. Para gravar no histórico, use <strong>Salvar preços válidos</strong>.</p>
+        <button type="submit" disabled={fetcher.state !== 'idle'}>
+          {fetcher.state === 'idle' ? 'Salvar conferência' : 'Salvando…'}
+        </button>
+      </div>
     </fetcher.Form>
   </section>;
 }

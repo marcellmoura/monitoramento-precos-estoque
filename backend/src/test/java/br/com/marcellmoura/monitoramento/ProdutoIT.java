@@ -170,6 +170,24 @@ class ProdutoIT {
                 .statusCode()).isEqualTo(404);
     }
 
+    @Test void filtraCatalogoAntesDePaginar() throws Exception {
+        produto();
+        var arroz = produtos.saveAndFlush(new Produto("Arroz integral", null, Unidade.KG, null, BigDecimal.TEN));
+        var outro = new Produto("Arroz branco", null, Unidade.KG, null, BigDecimal.TEN);
+        outro.alterarEstado(false);
+        produtos.saveAndFlush(outro);
+
+        var resposta = admin.enviar("GET", "/api/produtos?busca=ARROZ&unidade=KG&ativo=true&tamanho=1", null, false);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        var resultado = json(resposta);
+        assertThat(resultado.get("total").asInt()).isEqualTo(1);
+        assertThat(resultado.get("itens").get(0).get("id").asLong()).isEqualTo(arroz.getId());
+
+        var porCodigo = json(admin.enviar("GET", "/api/produtos?busca=" + arroz.getCodigo().toLowerCase(java.util.Locale.ROOT), null, false));
+        assertThat(porCodigo.get("total").asInt()).isEqualTo(1);
+        assertThat(porCodigo.get("itens").get(0).get("id").asLong()).isEqualTo(arroz.getId());
+    }
+
     @Test void administradorEditaCadastroVendaEstadoEEstoqueComHistorico() throws Exception {
         var p = produto();
         var caminho = "/api/produtos/" + p.getId();

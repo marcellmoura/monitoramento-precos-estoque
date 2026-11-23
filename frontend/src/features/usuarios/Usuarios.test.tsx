@@ -63,7 +63,12 @@ function preencherCadastro() {
 
 describe('Administração de usuários', () => {
   it('oferece navegação administrativa somente para Administrador', async () => {
-    abrir('/'); expect(await screen.findByRole('link', { name: 'Administrar usuários' })).toBeVisible();
+    abrir('/');
+    const menu = await screen.findByRole('navigation', { name: 'Navegação principal' });
+    const atalhos = screen.getByRole('navigation', { name: 'Acesso rápido' });
+    expect(within(menu).getByRole('link', { name: 'Administrar usuários' })).toHaveAttribute('href', '/usuarios');
+    fireEvent.click(within(atalhos).getByRole('link', { name: 'Administrar usuários' }));
+    expect(await screen.findByRole('heading', { name: 'Usuários' })).toBeVisible();
   });
   it('lista contas e navega entre páginas', async () => {
     tamanhoPagina = 1; const router = abrir();

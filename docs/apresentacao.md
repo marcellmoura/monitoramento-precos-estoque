@@ -16,19 +16,19 @@ A revisão começa pelo detalhe da cotação. Em cada tela, executar a ação co
 
 Registrar cada ajuste com a tela, o que aconteceu, o resultado esperado e como verificá-lo. Durante a revisão, priorizar bloqueios de funcionamento, depois clareza e navegação, e então os ajustes visuais da mesma tela.
 
-## Proposta inicial de identidade visual
+## Identidade visual do fluxo da apresentação
 
-A identidade parte de uma interface de compras com fundo claro e leitura rápida de valores. Aplicar primeiro no detalhe da cotação e usar essa tela para decidir o padrão antes de estender às demais.
+A interface usa fundo claro, navegação em verde escuro e rótulos textuais para os estados. O padrão foi aplicado ao login, ao início, à lista de importações, ao envio do PDF, aos detalhes da importação, ao histórico de preços e às quatro telas de produtos.
 
-| Elemento | Proposta |
+| Elemento | Padrão aplicado |
 |---|---|
-| Paleta | Fundo `#F4F7F5`, superfícies `#FFFFFF`, texto `#182820` e verde escuro `#234B39` para a ação principal. |
-| Tipografia | **Source Sans 3** como candidata, com fonte do sistema como alternativa. Usar números tabulares onde preços ficam lado a lado. |
+| Paleta | Fundos claros, superfícies brancas, texto `#182820` e verde escuro `#0A573D` nas ações principais. |
+| Tipografia | Fonte do sistema e números tabulares nas comparações de preços e estoques. |
 | Hierarquia | Fornecedor, arquivo e data no cabeçalho. Preços prontos e ação principal juntos. Dados extraídos e pendências nas linhas correspondentes. |
 | Estados | Rótulos textuais para aumento, redução, preço novo e pendência. Usar cor como apoio e verificar contraste e foco pelo teclado. |
 | Leitura em telas menores | Manter identificação, preço e ação visíveis na sequência de leitura. Conferir a tela em janela estreita e no tamanho usado na apresentação. |
 
-A proposta será avaliada na primeira tela. Nome curto, marca e tipografia final ficam para decisão durante essa revisão.
+A revisão visual de Fornecedores, da administração de Usuários e da troca de senha temporária fica para depois da apresentação.
 
 ## Pendências de entrega
 
