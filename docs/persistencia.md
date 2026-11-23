@@ -6,7 +6,7 @@ Primeiro incremento da TT-04: banco local, evolução do schema e persistência 
 
 PostgreSQL 18.7-bookworm, imagem oficial fixada pelo digest multi-arquitetura `sha256:ece55f7868da684e400f82f1030a050718adbdd65c23aa500c486f6e2950dc0f`. Compose e Testcontainers usam a mesma imagem; funciona em ARM64 e AMD64. Spring Boot 4.1.2 gerencia Hibernate 7.4.13.Final, Flyway 12.4.0 e JDBC PostgreSQL 42.7.14.
 
-[Compose](../compose.yaml) inicia somente PostgreSQL, acessível em `127.0.0.1`, com healthcheck e volume `monitoramento_postgres_data`. PostgreSQL 18 armazena seus dados sob `/var/lib/postgresql`; o volume usa esse caminho. A aplicação continua executada pelo Maven e o frontend pelo npm. Dockerfiles e Compose da aplicação completa pertencem à etapa P10.
+O [Compose](../compose.yaml) inclui PostgreSQL, backend e frontend. A aplicação completa segue o [README](../README.md#executar-com-docker-compose). Para desenvolvimento, as instruções abaixo iniciam apenas o PostgreSQL. Seu healthcheck, endereço de loopback e volume `monitoramento_postgres_data` atendem aos dois modos. PostgreSQL 18 armazena os dados em `/var/lib/postgresql`, onde o Compose monta o volume.
 
 ## Execução local
 
