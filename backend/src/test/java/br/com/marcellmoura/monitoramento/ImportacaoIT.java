@@ -301,6 +301,7 @@ class ImportacaoIT {
         boolean fichas = arquivo.contains("fichas");
         assertThat(previa.get("layout").asText()).isEqualTo(fichas ? "FICHAS" : "TABELA");
         assertThat(previa.get("dataReferencia").asText()).isEqualTo(arquivo.contains("v1") ? "01/11/2026" : "08/11/2026");
+        assertThat(itens.size()).isEqualTo(arquivo.contains("v1") ? 4 : 6);
         for (var amostra : esperados) {
             if (!arquivo.endsWith(amostra.get("arquivo").asText())) continue;
             var linhas = amostra.get("linhas");
@@ -320,7 +321,82 @@ class ImportacaoIT {
                     assertThat(item.get("pendencias").size()).isPositive();
                 }
             }
+            return;
         }
+        fail("Arquivo sem dados esperados no manifesto: " + arquivo);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"tabela", "fichas"})
+    void confirmaAsVariacoesEsperadasEntreVersoesDosPdfsSinteticos(String formato) throws Exception {
+        String arquivoV1 = formato + "-v1.pdf";
+        String arquivoV2 = formato + "-v2.pdf";
+        String coluna = "tabela".equals(formato) ? "Preço" : "Valor de compra";
+        byte[] pdfV1 = ler("sinteticos/" + arquivoV1);
+        byte[] pdfV2 = ler("sinteticos/" + arquivoV2);
+        long hibisco = cadastrarProduto("Hibisco", "KG");
+        long alecrim = cadastrarProduto("Alecrim", "KG");
+        long camomila = cadastrarProduto("Camomila", "KG");
+        long ervaDoce = cadastrarProduto("Erva-doce", "KG");
+        long melissa = cadastrarProduto("Melissa", "KG");
+        long boldo = cadastrarProduto("Boldo", "KG");
+
+        var v1 = processar(fornecedor, arquivoV1, pdfV1);
+        long baseV1 = selecionarBaseSintetica(v1, coluna, "2026-11-01");
+        gravarVinculo(v1, 1, hibisco, baseV1, 0);
+        gravarVinculo(v1, 2, alecrim, baseV1, 0);
+        gravarVinculo(v1, 3, camomila, baseV1, 0);
+        gravarVinculo(v1, 4, ervaDoce, baseV1, 0);
+        var precosV1 = confirmarLinhas(v1);
+        for (var linha : precosV1) {
+            assertThat(linha.get("classificacao").asText()).isEqualTo("NOVO");
+        }
+
+        var outroFornecedor = processar(salvarFornecedor(), arquivoV1, pdfV1);
+        assertThat(statusDaTentativa(outroFornecedor)).isEqualTo("AGUARDANDO_CONFIRMACAO");
+        assertThat(admin.enviar("POST", outroFornecedor + "/confirmacao", null, true).statusCode()).isEqualTo(200);
+        processamento.executarFila();
+        long outraBase = selecionarBaseSintetica(outroFornecedor, coluna, "2026-11-04");
+        gravarVinculo(outroFornecedor, hibisco, outraBase, 0);
+        assertThat(confirmarPrimeiraLinha(outroFornecedor).get("anterior").isNull()).isTrue();
+
+        var v2 = processar(fornecedor, arquivoV2, pdfV2);
+        long baseV2 = selecionarBaseSintetica(v2, coluna, "2026-11-08");
+        gravarVinculo(v2, 4, melissa, baseV2, 0);
+        gravarVinculo(v2, 5, boldo, baseV2, 0);
+        var precosV2 = confirmarLinhas(v2);
+        verificarVariacaoSintetica(precosV1.get(0), precosV2.get(0), "AUMENTOU", "35", "6.06");
+        verificarVariacaoSintetica(precosV1.get(1), precosV2.get(1), "DIMINUIU", "14", "-6.67");
+        verificarVariacaoSintetica(precosV1.get(2), precosV2.get(2), "SEM_ALTERACAO", "38", "0.00");
+        assertThat(precosV2.get(3).get("classificacao").asText()).isEqualTo("NOVO");
+        assertThat(precosV2.get(3).get("confirmado").get("preco").decimalValue()).isEqualByComparingTo("20");
+        assertThat(precosV2.get(3).get("variacao").isNull()).isTrue();
+        assertThat(precosV2.get(4).get("motivos").get(0).asText()).contains("preço de compra positivo");
+        assertThat(precosV2.get(5).get("motivos").get(0).asText()).contains("unidade e a embalagem");
+        assertThat(statusDaTentativa(v2)).isEqualTo("CONCLUIDA_COM_PENDENCIAS");
+
+        String historico = ROTA + "/historico-precos?fornecedorId=" + fornecedor.getId();
+        var registros = json(admin.enviar("GET", historico, null, false)).get("itens");
+        assertThat(registros.size()).isEqualTo(8);
+        var ausente = json(admin.enviar("GET", historico + "&produtoId=" + ervaDoce, null, false)).get("itens");
+        assertThat(ausente.size()).isEqualTo(1);
+        assertThat(ausente.get(0).get("id")).isEqualTo(precosV1.get(3).get("confirmado").get("id"));
+        assertThat(ausente.get(0).get("preco").decimalValue()).isEqualByComparingTo("22");
+        assertThat(json(admin.enviar("GET", "/api/produtos/" + ervaDoce, null, false)).get("ativo").asBoolean()).isTrue();
+
+        var duplicada = json(upload(admin, fornecedor, "copia-" + arquivoV2, pdfV2));
+        assertThat(duplicada.get("status").asText()).isEqualTo("DUPLICADA");
+        assertThat(ROTA + "/" + duplicada.get("importacaoExistenteId").asLong()).isEqualTo(v2);
+        assertThat(json(admin.enviar("GET", historico, null, false)).get("itens")).isEqualTo(registros);
+    }
+
+    private void verificarVariacaoSintetica(JsonNode anterior, JsonNode atual, String classificacao,
+            String preco, String percentual) {
+        assertThat(atual.get("classificacao").asText()).isEqualTo(classificacao);
+        var confirmado = atual.get("confirmado");
+        assertThat(confirmado.get("preco").decimalValue()).isEqualByComparingTo(preco);
+        assertThat(confirmado.get("anterior").get("id")).isEqualTo(anterior.get("confirmado").get("id"));
+        assertThat(atual.get("variacao").get("percentual").asText()).isEqualTo(percentual);
     }
 
     @Test void confirmaBaseComercialSemAlterarPreviaEProtegeContraRevisaoDesatualizada() throws Exception {
@@ -778,9 +854,13 @@ class ImportacaoIT {
     }
 
     private JsonNode confirmarPrimeiraLinha(String rota) throws Exception {
+        return confirmarLinhas(rota).get(0).get("confirmado");
+    }
+
+    private JsonNode confirmarLinhas(String rota) throws Exception {
         var resposta = admin.enviar("POST", rota + "/confirmar-itens", null, true);
         assertThat(resposta.statusCode()).isEqualTo(200);
-        return json(resposta).get("itens").get(0).get("confirmado");
+        return json(resposta).get("itens");
     }
 
     private JsonNode consultarPrimeiraLinha(String rota) throws Exception {
@@ -1114,9 +1194,14 @@ class ImportacaoIT {
     }
 
     private long selecionarBaseTabela(String rota, String data) throws Exception {
-        var base = json(admin.enviar("PUT", rota + "/conferencia",
-                escolha(0, "Preço", "KG", "Saco de 1 kg", data), true));
-        return base.get("confirmada").get("id").asLong();
+        return selecionarBaseSintetica(rota, "Preço", data);
+    }
+
+    private long selecionarBaseSintetica(String rota, String coluna, String data) throws Exception {
+        var resposta = admin.enviar("PUT", rota + "/conferencia",
+                escolha(0, coluna, "KG", "Saco de 1 kg", data), true);
+        assertThat(resposta.statusCode()).isEqualTo(200);
+        return json(resposta).get("confirmada").get("id").asLong();
     }
 
     private long cadastrarProduto(String nome, String unidade) throws Exception {
